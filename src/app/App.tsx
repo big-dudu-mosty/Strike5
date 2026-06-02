@@ -7,10 +7,14 @@ import { PositionsPanel } from '../components/positions/PositionsPanel';
 import { VaultHealthPanel } from '../components/vault-health/VaultHealthPanel';
 import { ChartPanel } from '../components/chart/ChartPanel';
 import { PREDICT_CONFIG } from '../config/predict';
+import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
+import { formatTime } from '../lib/formatters';
 
 export function App() {
   const account = useCurrentAccount();
   const network = useCurrentNetwork();
+  const marketOverview = usePredictMarketOverview();
+  const activeOracle = marketOverview.data?.activeOracle;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -47,7 +51,7 @@ export function App() {
           <InfoTile
             icon={<Activity className="h-5 w-5" />}
             label="Settlement"
-            value="15 min"
+            value={activeOracle ? formatTime(activeOracle.expiry) : '15 min'}
             detail="Nearest Predict oracle expiry"
           />
           <InfoTile
@@ -71,9 +75,17 @@ export function App() {
           </div>
 
           <aside className="flex flex-col gap-4">
-            <MarketPulsePanel />
+            <MarketPulsePanel
+              error={marketOverview.error}
+              isLoading={marketOverview.isLoading}
+              overview={marketOverview.data}
+            />
             <TradePanel />
-            <VaultHealthPanel />
+            <VaultHealthPanel
+              error={marketOverview.error}
+              isLoading={marketOverview.isLoading}
+              overview={marketOverview.data}
+            />
           </aside>
         </section>
       </div>

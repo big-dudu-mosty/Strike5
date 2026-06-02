@@ -91,3 +91,4 @@ Date: YYYY-MM-DD
 - `0001-mvp-architecture-baseline.md`
 - `0002-decision-record-process.md`
 - `0003-frontend-scaffold-choice.md`
+- `0004-predict-server-data-foundation.md`

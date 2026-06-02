@@ -121,6 +121,8 @@ src/
 
 建立 DeepBook Predict、Sui 和 market data 的基础配置与客户端。
 
+状态：Predict Server 数据基础已完成，BTC K-line provider 待后续 Milestone 3 决策和实现。
+
 预计工作：
 
 - 建立 `PREDICT_CONFIG`。
@@ -153,6 +155,15 @@ suiRpcUrl
 - 能 fetch vault summary。
 - 能展示当前 active oracle expiry。
 - 能展示 oracle spot / freshness。
+
+当前完成内容：
+
+- Predict Server client 已建立。
+- Predict Server response types 已建立。
+- `usePredictMarketOverview` 已建立。
+- Market Pulse 已显示 Oracle Spot、Forward、Freshness、Current Expiry、Next Expiry。
+- Vault & Oracle Health 已显示 vault balance、vault value、available liquidity、total max payout、utilization 和 PLP share price。
+- Chart Price 仍等待 BTC K-line provider 接入。
 
 ## 6. Milestone 3: Chart and Market Pulse
 
