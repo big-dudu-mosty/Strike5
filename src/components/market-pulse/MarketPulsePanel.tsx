@@ -12,11 +12,19 @@ import type { PredictMarketOverview } from '../../lib/predict-server/types';
 
 interface MarketPulsePanelProps {
   overview?: PredictMarketOverview;
+  chartPrice: number | null;
+  chartOracleDiff: string | null;
   isLoading: boolean;
   error: Error | unknown;
 }
 
-export function MarketPulsePanel({ overview, isLoading, error }: MarketPulsePanelProps) {
+export function MarketPulsePanel({
+  overview,
+  chartPrice,
+  chartOracleDiff,
+  isLoading,
+  error,
+}: MarketPulsePanelProps) {
   const { t } = useI18n();
   const now = useNow();
   const latestPrice = overview?.oracleState?.latest_price;
@@ -27,10 +35,10 @@ export function MarketPulsePanel({ overview, isLoading, error }: MarketPulsePane
   const pending = t('marketPulse.pending');
 
   const pulseRows = [
-    [t('marketPulse.chartPrice'), t('marketPulse.pendingProvider')],
+    [t('marketPulse.chartPrice'), chartPrice == null ? t('marketPulse.pendingProvider') : formatUsd(chartPrice)],
     [t('marketPulse.oracleSpot'), oracleSpot == null ? pending : formatUsd(oracleSpot)],
     [t('marketPulse.oracleForward'), forward == null ? pending : formatUsd(forward)],
-    [t('marketPulse.chartOracleDiff'), t('marketPulse.pendingChartProvider')],
+    [t('marketPulse.chartOracleDiff'), chartOracleDiff ?? t('marketPulse.pendingChartProvider')],
     [
       t('marketPulse.oracleFreshness'),
       latestPrice ? formatFreshness(now, latestPrice.onchain_timestamp) : pending,

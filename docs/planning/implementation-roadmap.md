@@ -171,6 +171,8 @@ suiRpcUrl
 
 完成用户决策所需的视觉基础。
 
+状态：BTC K-line 和 Chart / Oracle price comparison 已完成基础版本。
+
 预计工作：
 
 - 接入 BTC K-line provider。
@@ -192,6 +194,16 @@ suiRpcUrl
 - 页面能同时看到 Chart Price 和 Oracle Spot。
 - 两者偏差能显示。
 - Countdown 正确指向 nearest active 15m expiry。
+
+当前完成内容：
+
+- BTC K-line provider 决策已记录。
+- CryptoCompare K-line client 已接入。
+- 支持 1m / 5m / 15m candles。
+- `lightweight-charts` 已渲染真实 BTC candles。
+- Oracle Spot 已作为 chart price line 显示。
+- Market Pulse 已显示 Chart Price。
+- Market Pulse 已显示 Chart / Oracle Diff。
 
 ## 7. Milestone 4: Wallet and PredictManager
 

@@ -24,6 +24,10 @@ export const messages: Record<Locale, Messages> = {
     'chart.placeholder.title': 'Chart module placeholder',
     'chart.placeholder.body':
       'Next step: connect BTC K-line data and draw Oracle Spot, selected strike, range band, and expiry marker.',
+    'chart.loading': 'Loading BTC candles...',
+    'chart.error': 'BTC K-line provider unavailable.',
+    'chart.source': 'Source',
+    'chart.oracleLine': 'Oracle Spot',
     'marketPulse.title': 'Market Pulse',
     'marketPulse.subtitle': 'Chart reference vs DeepBook Predict oracle',
     'marketPulse.chartPrice': 'Chart Price',
@@ -87,6 +91,10 @@ export const messages: Record<Locale, Messages> = {
     'chart.placeholder.title': 'K 线模块占位',
     'chart.placeholder.body':
       '下一步：接入 BTC K 线数据，并绘制 Oracle Spot、所选 strike、range 区间和 expiry 标记。',
+    'chart.loading': '正在加载 BTC K 线...',
+    'chart.error': 'BTC K 线行情源暂不可用。',
+    'chart.source': '数据源',
+    'chart.oracleLine': 'Oracle Spot',
     'marketPulse.title': '市场脉冲',
     'marketPulse.subtitle': 'K 线参考价 vs DeepBook Predict oracle',
     'marketPulse.chartPrice': 'K 线价格',

@@ -1,4 +1,5 @@
 import { Activity, BarChart3, CircleDollarSign, ShieldCheck, Wallet } from 'lucide-react';
+import { useState } from 'react';
 import { useCurrentAccount, useCurrentNetwork } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { MarketPulsePanel } from '../components/market-pulse/MarketPulsePanel';
@@ -9,15 +10,25 @@ import { ChartPanel } from '../components/chart/ChartPanel';
 import { LanguageToggle } from '../components/language/LanguageToggle';
 import { PREDICT_CONFIG } from '../config/predict';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
-import { formatTime } from '../lib/formatters';
+import { useBtcKlines } from '../hooks/useBtcKlines';
+import { formatPercent, formatTime, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
+import type { KlineInterval } from '../lib/market-data/types';
 
 export function App() {
+  const [chartInterval, setChartInterval] = useState<KlineInterval>('1m');
   const account = useCurrentAccount();
   const network = useCurrentNetwork();
   const marketOverview = usePredictMarketOverview();
+  const btcKlines = useBtcKlines(chartInterval);
   const activeOracle = marketOverview.data?.activeOracle;
   const { t } = useI18n();
+  const chartPrice = btcKlines.data?.latestPrice ?? null;
+  const oracleSpot = scaleOracleUsd(marketOverview.data?.oracleState?.latest_price?.spot);
+  const oracleDiff =
+    chartPrice != null && oracleSpot != null && oracleSpot > 0
+      ? (chartPrice - oracleSpot) / oracleSpot
+      : null;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -72,13 +83,23 @@ export function App() {
 
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
           <div className="flex flex-col gap-4">
-            <ChartPanel />
+            <ChartPanel
+              candles={btcKlines.data?.candles ?? []}
+              error={btcKlines.error}
+              interval={chartInterval}
+              isLoading={btcKlines.isLoading}
+              onIntervalChange={setChartInterval}
+              oracleSpot={oracleSpot}
+              provider={btcKlines.data?.provider}
+            />
             <PositionsPanel />
           </div>
 
           <aside className="flex flex-col gap-4">
             <MarketPulsePanel
               error={marketOverview.error}
+              chartOracleDiff={oracleDiff == null ? null : formatPercent(oracleDiff)}
+              chartPrice={chartPrice}
               isLoading={marketOverview.isLoading}
               overview={marketOverview.data}
             />
