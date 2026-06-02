@@ -93,3 +93,35 @@ export interface PredictMarketOverview {
   oracleState: PredictOracleState | null;
   fetchedAt: number;
 }
+
+export interface PredictManagerCreated {
+  event_digest: string;
+  digest: string;
+  sender: string;
+  checkpoint: number;
+  checkpoint_timestamp_ms: number;
+  tx_index: number;
+  event_index: number;
+  package: string;
+  manager_id: string;
+  owner: string;
+}
+
+export interface PredictAssetBalanceSummary {
+  quote_asset: string;
+  balance: number;
+}
+
+export interface PredictManagerSummary {
+  manager_id: string;
+  owner: string;
+  balances: PredictAssetBalanceSummary[];
+  trading_balance: number;
+  open_exposure: number;
+  redeemable_value: number;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  account_value: number;
+  open_positions: number;
+  awaiting_settlement_positions: number;
+}

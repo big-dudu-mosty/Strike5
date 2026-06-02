@@ -211,6 +211,8 @@ suiRpcUrl
 
 完成用户账户入口。
 
+状态：基础账户入口已完成。
+
 预计工作：
 
 - 接入 Sui wallet。
@@ -233,6 +235,16 @@ suiRpcUrl
 - 用户能看到 dUSDC 状态。
 - 用户能创建 / 加载 PredictManager。
 - 关键状态通过 Sui RPC 确认。
+
+当前完成内容：
+
+- Wallet 连接状态已接入主页面。
+- dUSDC 钱包余额通过 Sui testnet RPC 读取。
+- `GET /managers?owner=<wallet_address>` 已用于发现用户 PredictManager。
+- `predict::create_manager` PTB 已由前端构造并通过钱包签名提交。
+- 交易确认后解析 `PredictManagerCreated` 事件，并刷新 Predict Server 查询。
+- Manager dUSDC、account value、open positions 已从 manager summary 展示。
+- PredictManager account flow 决策已记录在 `docs/decisions/0007-predict-manager-account-flow.md`。
 
 ## 8. Milestone 5: Trade Panel and Quote
 
@@ -345,11 +357,12 @@ suiRpcUrl
 
 ## 12. 当前下一步
 
-下一步进入 Milestone 2: Config and Data Foundation。
+下一步进入 Milestone 5: Trade Panel and Quote。
 
 建议下一轮先做：
 
-1. Predict Server API client。
-2. Active oracle fetch。
-3. Vault summary fetch。
-4. Market Pulse 中显示真实 oracle / vault 数据。
+1. Quick Picks 生成策略。
+2. Above / Below / Range 参数构造。
+3. strike / range snapping。
+4. devInspect quote preview。
+5. opening cutoff 状态展示。

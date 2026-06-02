@@ -94,3 +94,4 @@ Date: YYYY-MM-DD
 - `0004-predict-server-data-foundation.md`
 - `0005-lightweight-i18n.md`
 - `0006-btc-kline-provider-choice.md`
+- `0007-predict-manager-account-flow.md`

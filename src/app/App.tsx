@@ -8,9 +8,11 @@ import { PositionsPanel } from '../components/positions/PositionsPanel';
 import { VaultHealthPanel } from '../components/vault-health/VaultHealthPanel';
 import { ChartPanel } from '../components/chart/ChartPanel';
 import { LanguageToggle } from '../components/language/LanguageToggle';
+import { AccountPanel } from '../components/account/AccountPanel';
 import { PREDICT_CONFIG } from '../config/predict';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
+import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
 import { formatPercent, formatTime, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
 import type { KlineInterval } from '../lib/market-data/types';
@@ -20,6 +22,7 @@ export function App() {
   const account = useCurrentAccount();
   const network = useCurrentNetwork();
   const marketOverview = usePredictMarketOverview();
+  const accountOverview = usePredictAccountOverview();
   const btcKlines = useBtcKlines(chartInterval);
   const activeOracle = marketOverview.data?.activeOracle;
   const { t } = useI18n();
@@ -103,6 +106,7 @@ export function App() {
               isLoading={marketOverview.isLoading}
               overview={marketOverview.data}
             />
+            <AccountPanel overview={accountOverview} />
             <TradePanel />
             <VaultHealthPanel
               error={marketOverview.error}

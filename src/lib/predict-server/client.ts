@@ -1,6 +1,8 @@
 import { PREDICT_CONFIG } from '../../config/predict';
 import type {
   PredictMarketOverview,
+  PredictManagerCreated,
+  PredictManagerSummary,
   PredictOracle,
   PredictOracleState,
   PredictProtocolState,
@@ -33,6 +35,15 @@ export function fetchVaultSummary() {
 
 export function fetchOracleState(oracleId: string) {
   return fetchJson<PredictOracleState>(`/oracles/${oracleId}/state`);
+}
+
+export function fetchPredictManagers(owner: string) {
+  const query = new URLSearchParams({ owner });
+  return fetchJson<PredictManagerCreated[]>(`/managers?${query.toString()}`);
+}
+
+export function fetchPredictManagerSummary(managerId: string) {
+  return fetchJson<PredictManagerSummary>(`/managers/${managerId}/summary`);
 }
 
 export async function fetchPredictMarketOverview(now = Date.now()): Promise<PredictMarketOverview> {
