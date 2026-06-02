@@ -125,3 +125,87 @@ export interface PredictManagerSummary {
   open_positions: number;
   awaiting_settlement_positions: number;
 }
+
+export type PredictPositionStatus =
+  | 'active'
+  | 'awaiting_settlement'
+  | 'redeemable'
+  | 'lost'
+  | 'redeemed'
+  | string;
+
+export interface PredictManagerPositionSummary {
+  predict_id: string;
+  manager_id: string;
+  quote_asset: string;
+  oracle_id: string;
+  underlying_asset: string | null;
+  expiry: number;
+  strike: number;
+  is_up: boolean;
+  minted_quantity: number;
+  redeemed_quantity: number;
+  open_quantity: number;
+  total_cost: number;
+  total_payout: number;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  open_cost_basis: number;
+  average_entry_price: number | null;
+  average_exit_price: number | null;
+  mark_price: number | null;
+  mark_value: number | null;
+  status: PredictPositionStatus;
+  first_minted_at: number;
+  last_activity_at: number;
+}
+
+export interface PredictRangeMinted {
+  event_digest: string;
+  digest: string;
+  sender: string;
+  checkpoint: number;
+  checkpoint_timestamp_ms: number;
+  tx_index: number;
+  event_index: number;
+  package: string;
+  predict_id: string;
+  manager_id: string;
+  trader: string;
+  quote_asset: string;
+  oracle_id: string;
+  expiry: number;
+  lower_strike: number;
+  higher_strike: number;
+  quantity: number;
+  cost: number;
+  ask_price: number;
+}
+
+export interface PredictRangeRedeemed {
+  event_digest: string;
+  digest: string;
+  sender: string;
+  checkpoint: number;
+  checkpoint_timestamp_ms: number;
+  tx_index: number;
+  event_index: number;
+  package: string;
+  predict_id: string;
+  manager_id: string;
+  trader: string;
+  quote_asset: string;
+  oracle_id: string;
+  expiry: number;
+  lower_strike: number;
+  higher_strike: number;
+  quantity: number;
+  payout: number;
+  bid_price: number;
+  is_settled: boolean;
+}
+
+export interface PredictManagerRanges {
+  minted: PredictRangeMinted[];
+  redeemed: PredictRangeRedeemed[];
+}

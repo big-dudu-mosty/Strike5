@@ -335,7 +335,7 @@ suiRpcUrl
 
 待完成内容：
 
-- Positions panel 仍需接入真实 open positions。
+- redeem 交易仍需接入。
 
 ## 10. Milestone 7: Positions and Redeem
 
@@ -345,7 +345,7 @@ suiRpcUrl
 
 预计工作：
 
-- 展示 open positions。
+- 展示 open positions。已完成：方向仓位使用 Predict Server position summary，Range 仓位使用 mint/redeem 事件聚合。
 - 展示 market / expiry 状态。
 - 展示 redeemable positions。
 - 构造 redeem PTB。

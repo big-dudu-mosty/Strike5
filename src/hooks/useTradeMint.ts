@@ -56,6 +56,7 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
           queryKey: ['predict-market-overview', PREDICT_CONFIG.predictObjectId],
         }),
         queryClient.invalidateQueries({ queryKey: ['predict-trade-quote'] }),
+        queryClient.invalidateQueries({ queryKey: ['predict-manager-positions', managerId] }),
       ]);
     },
   });
