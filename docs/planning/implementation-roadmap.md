@@ -243,8 +243,11 @@ suiRpcUrl
 - `GET /managers?owner=<wallet_address>` 已用于发现用户 PredictManager。
 - `predict::create_manager` PTB 已由前端构造并通过钱包签名提交。
 - 交易确认后解析 `PredictManagerCreated` 事件，并刷新 Predict Server 查询。
+- dUSDC deposit PTB 已接入 `predict_manager::deposit<dUSDC>`。
+- 用户可以把钱包 dUSDC 显式存入当前 PredictManager。
 - Manager dUSDC、account value、open positions 已从 manager summary 展示。
 - PredictManager account flow 决策已记录在 `docs/decisions/0007-predict-manager-account-flow.md`。
+- dUSDC deposit 拆分决策已记录在 `docs/decisions/0008-separate-dusdc-deposit-before-mint.md`。
 
 ## 8. Milestone 5: Trade Panel and Quote
 

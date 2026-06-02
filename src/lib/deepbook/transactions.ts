@@ -10,3 +10,25 @@ export function buildCreatePredictManagerTransaction() {
 
   return tx;
 }
+
+export function buildDepositToPredictManagerTransaction({
+  amount,
+  managerId,
+}: {
+  amount: bigint;
+  managerId: string;
+}) {
+  const tx = new Transaction();
+  const coin = tx.coin({
+    type: PREDICT_CONFIG.dusdcType,
+    balance: amount,
+  });
+
+  tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::predict_manager::deposit`,
+    typeArguments: [PREDICT_CONFIG.dusdcType],
+    arguments: [tx.object(managerId), coin],
+  });
+
+  return tx;
+}

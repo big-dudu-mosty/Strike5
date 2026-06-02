@@ -1,5 +1,7 @@
 import { CheckCircle2, ExternalLink, Loader2, Plus, Wallet } from 'lucide-react';
+import { useState } from 'react';
 import { PREDICT_CONFIG } from '../../config/predict';
+import { parseDUsdcInput } from '../../lib/dusdc';
 import { formatDUsdc, scaleQuoteAsset } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
@@ -10,11 +12,13 @@ interface AccountPanelProps {
 
 export function AccountPanel({ overview }: AccountPanelProps) {
   const { t } = useI18n();
+  const [depositAmount, setDepositAmount] = useState('');
   const {
     address,
     createdManagerHint,
     createManagerMutation,
     currentNetwork,
+    depositDUsdcMutation,
     isExpectedNetwork,
     managerId,
     managerSource,
@@ -22,7 +26,22 @@ export function AccountPanel({ overview }: AccountPanelProps) {
     managerSummaryQuery,
     walletBalanceQuery,
     walletDUsdcBalance,
+    walletDUsdcBalanceRaw,
   } = overview;
+  const depositAmountRaw = parseDUsdcInput(depositAmount);
+  const isDepositInputEmpty = depositAmount.trim() === '';
+  const isDepositAmountInvalid = !isDepositInputEmpty && depositAmountRaw == null;
+  const isDepositInsufficient =
+    depositAmountRaw != null && walletDUsdcBalanceRaw != null && depositAmountRaw > walletDUsdcBalanceRaw;
+  const isDepositDisabled =
+    !isExpectedNetwork ||
+    !managerId ||
+    walletBalanceQuery.isLoading ||
+    walletDUsdcBalanceRaw == null ||
+    depositDUsdcMutation.isPending ||
+    isDepositInputEmpty ||
+    isDepositAmountInvalid ||
+    isDepositInsufficient;
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
@@ -117,9 +136,59 @@ export function AccountPanel({ overview }: AccountPanelProps) {
                 )}
                 {createManagerMutation.isPending
                   ? t('account.creatingManager')
-                  : t('account.createManager')}
+                    : t('account.createManager')}
               </button>
             )}
+
+            {managerId ? (
+              <form
+                className="mt-4 border-t border-zinc-800 pt-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!depositAmountRaw || isDepositDisabled) return;
+
+                  void overview.depositDUsdc(depositAmountRaw).then(() => {
+                    setDepositAmount('');
+                  });
+                }}
+              >
+                <label className="text-sm text-zinc-400" htmlFor="dusdc-deposit-amount">
+                  {t('account.depositAmount')}
+                </label>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
+                    id="dusdc-deposit-amount"
+                    inputMode="decimal"
+                    onChange={(event) => setDepositAmount(event.target.value)}
+                    placeholder={t('account.depositPlaceholder')}
+                    type="text"
+                    value={depositAmount}
+                  />
+                  <button
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                    disabled={isDepositDisabled}
+                    type="submit"
+                  >
+                    {depositDUsdcMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : null}
+                    {depositDUsdcMutation.isPending
+                      ? t('account.depositing')
+                      : t('account.depositButton')}
+                  </button>
+                </div>
+                <div className="mt-2 text-xs text-zinc-500">{t('account.depositNote')}</div>
+                {isDepositAmountInvalid ? (
+                  <div className="mt-2 text-xs text-red-300">{t('account.depositInvalid')}</div>
+                ) : null}
+                {isDepositInsufficient ? (
+                  <div className="mt-2 text-xs text-red-300">
+                    {t('account.depositInsufficient')}
+                  </div>
+                ) : null}
+              </form>
+            ) : null}
 
             {createdManagerHint ? (
               <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
@@ -132,6 +201,12 @@ export function AccountPanel({ overview }: AccountPanelProps) {
             {createManagerMutation.error ? (
               <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
                 {createManagerMutation.error.message}
+              </div>
+            ) : null}
+
+            {depositDUsdcMutation.error ? (
+              <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                {depositDUsdcMutation.error.message}
               </div>
             ) : null}
 
