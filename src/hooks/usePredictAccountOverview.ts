@@ -4,6 +4,7 @@ import {
   useCurrentAccount,
   useCurrentClient,
   useCurrentNetwork,
+  useCurrentWallet,
   useDAppKit,
 } from '@mysten/dapp-kit-react';
 import type { SuiClientTypes } from '@mysten/sui/client';
@@ -27,6 +28,7 @@ export function usePredictAccountOverview() {
   const account = useCurrentAccount();
   const client = useCurrentClient();
   const currentNetwork = useCurrentNetwork();
+  const currentWallet = useCurrentWallet();
   const dAppKit = useDAppKit();
   const queryClient = useQueryClient();
   const [createdManagerHint, setCreatedManagerHint] = useState<CreatedManagerHint | null>(null);
@@ -178,6 +180,7 @@ export function usePredictAccountOverview() {
   return {
     account,
     address,
+    currentWallet,
     currentNetwork,
     isExpectedNetwork: currentNetwork === PREDICT_CONFIG.network,
     walletDUsdcBalance,

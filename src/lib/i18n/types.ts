@@ -46,6 +46,8 @@ export type MessageKey =
   | 'account.subtitle'
   | 'account.connectPrompt'
   | 'account.wallet'
+  | 'account.connectedWallet'
+  | 'account.unknownWallet'
   | 'account.network'
   | 'account.networkWarning'
   | 'account.walletDUsdc'

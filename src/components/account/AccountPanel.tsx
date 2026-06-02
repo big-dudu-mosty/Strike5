@@ -18,6 +18,7 @@ export function AccountPanel({ overview }: AccountPanelProps) {
     createdManagerHint,
     createManagerMutation,
     currentNetwork,
+    currentWallet,
     depositDUsdcMutation,
     isExpectedNetwork,
     managerId,
@@ -60,6 +61,10 @@ export function AccountPanel({ overview }: AccountPanelProps) {
       ) : (
         <div className="mt-4 grid gap-3">
           <AccountRow label={t('account.wallet')} value={truncateAddress(address)} />
+          <AccountRow
+            label={t('account.connectedWallet')}
+            value={currentWallet?.name ?? t('account.unknownWallet')}
+          />
           <AccountRow
             label={t('account.network')}
             value={currentNetwork ?? PREDICT_CONFIG.network}
