@@ -1,4 +1,5 @@
 import { Transaction } from '@mysten/sui/transactions';
+import { SUI_CLOCK_OBJECT_ID } from '@mysten/sui/utils';
 import { PREDICT_CONFIG } from '../../config/predict';
 
 export function buildCreatePredictManagerTransaction() {
@@ -28,6 +29,90 @@ export function buildDepositToPredictManagerTransaction({
     target: `${PREDICT_CONFIG.predictPackageId}::predict_manager::deposit`,
     typeArguments: [PREDICT_CONFIG.dusdcType],
     arguments: [tx.object(managerId), coin],
+  });
+
+  return tx;
+}
+
+export function buildDirectionalQuoteTransaction({
+  expiry,
+  isUp,
+  oracleId,
+  quantity,
+  sender,
+  strike,
+}: {
+  expiry: bigint;
+  isUp: boolean;
+  oracleId: string;
+  quantity: bigint;
+  sender: string;
+  strike: bigint;
+}) {
+  const tx = new Transaction();
+  tx.setSender(sender);
+
+  const key = tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::market_key::new`,
+    arguments: [
+      tx.pure.id(oracleId),
+      tx.pure.u64(expiry),
+      tx.pure.u64(strike),
+      tx.pure.bool(isUp),
+    ],
+  });
+
+  tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::predict::get_trade_amounts`,
+    arguments: [
+      tx.object(PREDICT_CONFIG.predictObjectId),
+      tx.object(oracleId),
+      key,
+      tx.pure.u64(quantity),
+      tx.object(SUI_CLOCK_OBJECT_ID),
+    ],
+  });
+
+  return tx;
+}
+
+export function buildRangeQuoteTransaction({
+  expiry,
+  higherStrike,
+  lowerStrike,
+  oracleId,
+  quantity,
+  sender,
+}: {
+  expiry: bigint;
+  higherStrike: bigint;
+  lowerStrike: bigint;
+  oracleId: string;
+  quantity: bigint;
+  sender: string;
+}) {
+  const tx = new Transaction();
+  tx.setSender(sender);
+
+  const key = tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::range_key::new`,
+    arguments: [
+      tx.pure.id(oracleId),
+      tx.pure.u64(expiry),
+      tx.pure.u64(lowerStrike),
+      tx.pure.u64(higherStrike),
+    ],
+  });
+
+  tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::predict::get_range_trade_amounts`,
+    arguments: [
+      tx.object(PREDICT_CONFIG.predictObjectId),
+      tx.object(oracleId),
+      key,
+      tx.pure.u64(quantity),
+      tx.object(SUI_CLOCK_OBJECT_ID),
+    ],
   });
 
   return tx;

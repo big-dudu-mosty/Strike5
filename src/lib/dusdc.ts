@@ -14,3 +14,8 @@ export function parseDUsdcInput(value: string) {
 
   return amount > 0n ? amount : null;
 }
+
+export function scaleDUsdcRaw(value: bigint | null | undefined) {
+  if (value == null) return null;
+  return Number(value) / Number(DUSDC_SCALE);
+}

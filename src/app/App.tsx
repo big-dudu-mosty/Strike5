@@ -107,7 +107,7 @@ export function App() {
               overview={marketOverview.data}
             />
             <AccountPanel overview={accountOverview} />
-            <TradePanel />
+            <TradePanel accountOverview={accountOverview} overview={marketOverview.data} />
             <VaultHealthPanel
               error={marketOverview.error}
               isLoading={marketOverview.isLoading}

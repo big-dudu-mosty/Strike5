@@ -45,6 +45,11 @@ export function formatDUsdc(value: number | null | undefined) {
   return `${dusdcFormatter.format(value)} dUSDC`;
 }
 
+export function formatDUsdcRaw(value: bigint | null | undefined) {
+  if (value == null) return 'Pending';
+  return formatDUsdc(Number(value) / 1_000_000);
+}
+
 export function formatPercent(value: number | null | undefined) {
   if (value == null || Number.isNaN(value)) return 'Pending';
   return percentFormatter.format(value);
