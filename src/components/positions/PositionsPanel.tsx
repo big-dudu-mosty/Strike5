@@ -54,13 +54,8 @@ function PositionCard({ row }: { row: PredictPositionDisplayRow }) {
   const { t } = useI18n();
   const Icon = row.kind === 'above' ? ArrowUp : row.kind === 'below' ? ArrowDown : ScanLine;
   const titleKey = getPositionTitleKey(row.kind);
-  const pnl =
-    row.kind === 'range'
-      ? row.realizedPnl
-      : row.status === 'active'
-        ? row.unrealizedPnl
-        : row.realizedPnl;
   const markOrPayout = getMarkOrPayout(row);
+  const pnl = getPositionPnl(row, markOrPayout);
 
   return (
     <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
@@ -150,6 +145,12 @@ function getMarkOrPayout(row: PredictPositionDisplayRow) {
   if (row.status === 'redeemable') return row.openQuantity;
   if (row.status === 'lost') return 0;
   return null;
+}
+
+function getPositionPnl(row: PredictPositionDisplayRow, markOrPayout: number | null) {
+  if (row.openQuantity <= 0) return row.realizedPnl;
+  if (markOrPayout == null) return null;
+  return markOrPayout - row.costBasis;
 }
 
 function getPositionTitleKey(kind: PredictPositionDisplayRow['kind']): MessageKey {
