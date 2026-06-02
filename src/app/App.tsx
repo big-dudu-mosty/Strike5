@@ -95,7 +95,10 @@ export function App() {
               oracleSpot={oracleSpot}
               provider={btcKlines.data?.provider}
             />
-            <PositionsPanel managerId={accountOverview.managerId} />
+            <PositionsPanel
+              isExpectedNetwork={accountOverview.isExpectedNetwork}
+              managerId={accountOverview.managerId}
+            />
           </div>
 
           <aside className="flex flex-col gap-4">

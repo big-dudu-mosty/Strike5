@@ -335,7 +335,8 @@ suiRpcUrl
 
 待完成内容：
 
-- redeem 交易仍需接入。
+- active position early exit 暂未接入。
+- partial redeem 暂未接入。
 
 ## 10. Milestone 7: Positions and Redeem
 
@@ -347,10 +348,10 @@ suiRpcUrl
 
 - 展示 open positions。已完成：方向仓位使用 Predict Server position summary，Range 仓位使用 mint/redeem 事件聚合。
 - 展示 market / expiry 状态。
-- 展示 redeemable positions。
-- 构造 redeem PTB。
-- 支持 `redeem<dUSDC>`。
-- 支持 `redeem_range<dUSDC>`。
+- 展示 redeemable positions。已完成。
+- 构造 redeem PTB。已完成：settled winner redeem 与 settled loser clear。
+- 支持 `redeem<dUSDC>`。已完成。
+- 支持 `redeem_range<dUSDC>`。已完成。
 - 刷新 payout 和 manager balance。
 
 需要决策留存：
@@ -361,8 +362,8 @@ suiRpcUrl
 
 验收：
 
-- 到期后仓位能进入 redeemable 状态。
-- 用户能执行 redeem / redeem_range。
+- 到期后仓位能进入 redeemable / lost 状态。
+- 用户能执行 redeem / redeem_range，payout 回到 PredictManager。
 - payout 进入 PredictManager。
 
 ## 11. Milestone 8: Vault Health and Demo Hardening

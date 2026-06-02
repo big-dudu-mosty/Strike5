@@ -99,3 +99,4 @@ Date: YYYY-MM-DD
 - `0009-quick-picks-and-quote-preview.md`
 - `0010-mint-transactions-from-quote-preview.md`
 - `0011-positions-display-data-source.md`
+- `0012-settled-position-redeem-flow.md`

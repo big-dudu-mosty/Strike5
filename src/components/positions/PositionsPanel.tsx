@@ -1,4 +1,6 @@
 import { ArrowDown, ArrowUp, Layers, ScanLine } from 'lucide-react';
+import { useState } from 'react';
+import { usePositionRedeem } from '../../hooks/usePositionRedeem';
 import { usePredictPositions, type PredictPositionDisplayRow } from '../../hooks/usePredictPositions';
 import {
   formatDUsdc,
@@ -11,12 +13,16 @@ import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { MessageKey } from '../../lib/i18n/types';
 
 interface PositionsPanelProps {
+  isExpectedNetwork: boolean;
   managerId: string | null;
 }
 
-export function PositionsPanel({ managerId }: PositionsPanelProps) {
+export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelProps) {
   const { t } = useI18n();
   const positions = usePredictPositions(managerId);
+  const positionRedeem = usePositionRedeem({ managerId });
+  const [redeemFeedbackPositionId, setRedeemFeedbackPositionId] = useState<string | null>(null);
+  const [redeemingPositionId, setRedeemingPositionId] = useState<string | null>(null);
   const rows = positions.data?.rows ?? [];
 
   return (
@@ -42,7 +48,25 @@ export function PositionsPanel({ managerId }: PositionsPanelProps) {
       ) : (
         <div className="mt-4 grid gap-3">
           {rows.map((row) => (
-            <PositionCard key={row.id} row={row} />
+            <PositionCard
+              isExpectedNetwork={isExpectedNetwork}
+              isRedeeming={redeemingPositionId === row.id && positionRedeem.isPending}
+              key={row.id}
+              lastRedeemDigest={
+                positionRedeem.data?.positionId === row.id ? positionRedeem.data.digest : null
+              }
+              onRedeem={() => {
+                setRedeemFeedbackPositionId(row.id);
+                setRedeemingPositionId(row.id);
+                void positionRedeem.mutateAsync(row).finally(() => {
+                  setRedeemingPositionId(null);
+                });
+              }}
+              redeemError={
+                redeemFeedbackPositionId === row.id ? positionRedeem.error?.message ?? null : null
+              }
+              row={row}
+            />
           ))}
         </div>
       )}
@@ -50,12 +74,28 @@ export function PositionsPanel({ managerId }: PositionsPanelProps) {
   );
 }
 
-function PositionCard({ row }: { row: PredictPositionDisplayRow }) {
+function PositionCard({
+  isExpectedNetwork,
+  isRedeeming,
+  lastRedeemDigest,
+  onRedeem,
+  redeemError,
+  row,
+}: {
+  isExpectedNetwork: boolean;
+  isRedeeming: boolean;
+  lastRedeemDigest: string | null;
+  onRedeem: () => void;
+  redeemError: string | null;
+  row: PredictPositionDisplayRow;
+}) {
   const { t } = useI18n();
   const Icon = row.kind === 'above' ? ArrowUp : row.kind === 'below' ? ArrowDown : ScanLine;
   const titleKey = getPositionTitleKey(row.kind);
   const markOrPayout = getMarkOrPayout(row);
   const pnl = getPositionPnl(row, markOrPayout);
+  const canRedeem = canRedeemPosition(row);
+  const redeemLabel = getRedeemLabel(row, t);
 
   return (
     <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
@@ -97,6 +137,35 @@ function PositionCard({ row }: { row: PredictPositionDisplayRow }) {
           value={formatDUsdc(scaleQuoteAsset(row.redeemedQuantity))}
         />
       </dl>
+
+      {canRedeem ? (
+        <div className="mt-4 border-t border-zinc-800 pt-3">
+          <button
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+            disabled={!isExpectedNetwork || isRedeeming}
+            onClick={onRedeem}
+            type="button"
+          >
+            {isRedeeming ? t('positions.redeeming') : redeemLabel}
+          </button>
+          {lastRedeemDigest ? (
+            <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+              {t('positions.redeemSuccess')}{' '}
+              <span className="font-mono">{truncateDigest(lastRedeemDigest)}</span>
+            </div>
+          ) : null}
+          {redeemError ? (
+            <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              {redeemError}
+            </div>
+          ) : null}
+          {!isExpectedNetwork ? (
+            <div className="mt-2 text-xs text-amber-200">
+              {t('positions.networkRequired')}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -153,6 +222,14 @@ function getPositionPnl(row: PredictPositionDisplayRow, markOrPayout: number | n
   return markOrPayout - row.costBasis;
 }
 
+function canRedeemPosition(row: PredictPositionDisplayRow) {
+  return row.openQuantity > 0 && (row.status === 'redeemable' || row.status === 'lost');
+}
+
+function getRedeemLabel(row: PredictPositionDisplayRow, t: (key: MessageKey) => string) {
+  return row.status === 'lost' ? t('positions.clearLost') : t('positions.redeem');
+}
+
 function getPositionTitleKey(kind: PredictPositionDisplayRow['kind']): MessageKey {
   switch (kind) {
     case 'above':
@@ -194,4 +271,8 @@ function getStatusColorClass(status: string) {
     default:
       return 'border-zinc-700 bg-zinc-800 text-zinc-300';
   }
+}
+
+function truncateDigest(digest: string) {
+  return `${digest.slice(0, 8)}...${digest.slice(-6)}`;
 }
