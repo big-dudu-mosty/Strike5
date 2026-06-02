@@ -92,3 +92,4 @@ Date: YYYY-MM-DD
 - `0002-decision-record-process.md`
 - `0003-frontend-scaffold-choice.md`
 - `0004-predict-server-data-foundation.md`
+- `0005-lightweight-i18n.md`

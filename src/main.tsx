@@ -5,6 +5,7 @@ import { DAppKitProvider } from '@mysten/dapp-kit-react';
 import './styles.css';
 import { App } from './app/App';
 import { dAppKit } from './config/dapp-kit';
+import { I18nProvider } from './lib/i18n/I18nProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <DAppKitProvider dAppKit={dAppKit}>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <I18nProvider>
+          <App />
+        </I18nProvider>
       </QueryClientProvider>
     </DAppKitProvider>
   </StrictMode>,

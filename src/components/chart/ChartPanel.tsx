@@ -1,12 +1,15 @@
 import { CandlestickChart } from 'lucide-react';
+import { useI18n } from '../../lib/i18n/I18nProvider';
 
 export function ChartPanel() {
+  const { t } = useI18n();
+
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
         <div>
-          <h2 className="text-base font-semibold">BTC Chart</h2>
-          <p className="text-sm text-zinc-500">Reference K-line for short-cycle decisions</p>
+          <h2 className="text-base font-semibold">{t('chart.title')}</h2>
+          <p className="text-sm text-zinc-500">{t('chart.subtitle')}</p>
         </div>
         <div className="flex rounded-md border border-zinc-800 bg-zinc-950 p-1 text-sm">
           {['1m', '5m', '15m'].map((interval) => (
@@ -25,11 +28,8 @@ export function ChartPanel() {
         <div className="flex flex-col items-center gap-3 text-center text-zinc-500">
           <CandlestickChart className="h-10 w-10 text-zinc-600" aria-hidden="true" />
           <div>
-            <div className="text-sm font-medium text-zinc-300">Chart module placeholder</div>
-            <div className="mt-1 max-w-md text-sm">
-              Next step: connect BTC K-line data and draw Oracle Spot, selected strike, range band,
-              and expiry marker.
-            </div>
+            <div className="text-sm font-medium text-zinc-300">{t('chart.placeholder.title')}</div>
+            <div className="mt-1 max-w-md text-sm">{t('chart.placeholder.body')}</div>
           </div>
         </div>
       </div>

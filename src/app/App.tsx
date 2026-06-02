@@ -6,15 +6,18 @@ import { TradePanel } from '../components/trade-panel/TradePanel';
 import { PositionsPanel } from '../components/positions/PositionsPanel';
 import { VaultHealthPanel } from '../components/vault-health/VaultHealthPanel';
 import { ChartPanel } from '../components/chart/ChartPanel';
+import { LanguageToggle } from '../components/language/LanguageToggle';
 import { PREDICT_CONFIG } from '../config/predict';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { formatTime } from '../lib/formatters';
+import { useI18n } from '../lib/i18n/I18nProvider';
 
 export function App() {
   const account = useCurrentAccount();
   const network = useCurrentNetwork();
   const marketOverview = usePredictMarketOverview();
   const activeOracle = marketOverview.data?.activeOracle;
+  const { t } = useI18n();
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -27,16 +30,15 @@ export function App() {
               </div>
               <div>
                 <h1 className="text-xl font-semibold tracking-normal">Strike5</h1>
-                <p className="text-sm text-zinc-400">
-                  BTC fixed-risk trading powered by DeepBook Predict
-                </p>
+                <p className="text-sm text-zinc-400">{t('app.tagline')}</p>
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge icon={<ShieldCheck className="h-4 w-4" />} label="Sui testnet" />
-            <StatusBadge icon={<CircleDollarSign className="h-4 w-4" />} label="dUSDC" />
+            <LanguageToggle />
+            <StatusBadge icon={<ShieldCheck className="h-4 w-4" />} label={t('status.suiTestnet')} />
+            <StatusBadge icon={<CircleDollarSign className="h-4 w-4" />} label={t('status.dusdc')} />
             <ConnectButton />
           </div>
         </header>
@@ -44,26 +46,26 @@ export function App() {
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <InfoTile
             icon={<BarChart3 className="h-5 w-5" />}
-            label="Product Round"
-            value="5 min"
-            detail="UI trading rhythm"
+            label={t('tile.productRound.label')}
+            value={t('tile.productRound.value')}
+            detail={t('tile.productRound.detail')}
           />
           <InfoTile
             icon={<Activity className="h-5 w-5" />}
-            label="Settlement"
-            value={activeOracle ? formatTime(activeOracle.expiry) : '15 min'}
-            detail="Nearest Predict oracle expiry"
+            label={t('tile.settlement.label')}
+            value={activeOracle ? formatTime(activeOracle.expiry) : t('tile.settlement.fallback')}
+            detail={t('tile.settlement.detail')}
           />
           <InfoTile
             icon={<ShieldCheck className="h-5 w-5" />}
-            label="Authority"
-            value="OracleSVI"
-            detail="Quote and settlement reference"
+            label={t('tile.authority.label')}
+            value={t('tile.authority.value')}
+            detail={t('tile.authority.detail')}
           />
           <InfoTile
             icon={<Wallet className="h-5 w-5" />}
-            label="Wallet"
-            value={account ? truncateAddress(account.address) : 'Not connected'}
+            label={t('tile.wallet.label')}
+            value={account ? truncateAddress(account.address) : t('tile.wallet.notConnected')}
             detail={network ?? PREDICT_CONFIG.network}
           />
         </section>
