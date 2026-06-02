@@ -97,3 +97,4 @@ Date: YYYY-MM-DD
 - `0007-predict-manager-account-flow.md`
 - `0008-separate-dusdc-deposit-before-mint.md`
 - `0009-quick-picks-and-quote-preview.md`
+- `0010-mint-transactions-from-quote-preview.md`

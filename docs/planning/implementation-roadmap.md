@@ -298,6 +298,8 @@ suiRpcUrl
 
 完成真实开仓交易。
 
+状态：Quick Picks mint 基础版本已完成。
+
 预计工作：
 
 - 构造 mint PTB。
@@ -320,6 +322,20 @@ suiRpcUrl
 - 用户能真实 mint Range。
 - minted position 能出现在 Positions panel。
 - tx digest 可查看。
+
+当前完成内容：
+
+- Above / Below 已接入 `predict::mint<dUSDC>`。
+- Range 已接入 `predict::mint_range<dUSDC>`。
+- mint 交易复用当前 quote preview 的 strike / range / quantity 参数。
+- 交易成功后刷新 manager summary、market overview 和 quote preview。
+- 交易成功后显示 tx digest。
+- opening cutoff、manager 缺失、manager balance 未加载、余额不足、quote 缺失时禁用 mint。
+- Mint transaction 决策已记录在 `docs/decisions/0010-mint-transactions-from-quote-preview.md`。
+
+待完成内容：
+
+- Positions panel 仍需接入真实 open positions。
 
 ## 10. Milestone 7: Positions and Redeem
 

@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, ScanLine } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PRODUCT_TIMING } from '../../config/predict';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
+import { useTradeMint } from '../../hooks/useTradeMint';
 import { useTradeQuote } from '../../hooks/useTradeQuote';
 import { useNow } from '../../hooks/useNow';
 import { parseDUsdcInput } from '../../lib/dusdc';
@@ -71,6 +72,7 @@ export function TradePanel({ accountOverview, overview }: TradePanelProps) {
   const isOpeningCutoff =
     timeLeftMs != null && timeLeftMs <= PRODUCT_TIMING.openingCutoffMs;
   const tradeQuote = useTradeQuote(isOpeningCutoff ? null : quoteRequest);
+  const tradeMint = useTradeMint({ managerId: accountOverview.managerId });
   const selectedPick = quickPicks.find((pick) => pick.kind === selectedKind) ?? quickPicks[0];
   const managerBalanceRaw =
     accountOverview.managerSummary?.trading_balance == null
@@ -80,7 +82,21 @@ export function TradePanel({ accountOverview, overview }: TradePanelProps) {
     tradeQuote.data?.cost != null &&
     managerBalanceRaw != null &&
     tradeQuote.data.cost > managerBalanceRaw;
+  const isManagerBalanceUnavailable =
+    Boolean(accountOverview.managerId) && managerBalanceRaw == null;
   const isQuantityInvalid = quantityInput.trim() !== '' && quantity == null;
+  const isMintDisabled =
+    !accountOverview.isExpectedNetwork ||
+    !accountOverview.managerId ||
+    isManagerBalanceUnavailable ||
+    isManagerBalanceInsufficient ||
+    isOpeningCutoff ||
+    isQuantityInvalid ||
+    !quoteRequest ||
+    !tradeQuote.data ||
+    tradeQuote.isLoading ||
+    tradeQuote.isError ||
+    tradeMint.isPending;
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
@@ -177,14 +193,38 @@ export function TradePanel({ accountOverview, overview }: TradePanelProps) {
         {isManagerBalanceInsufficient ? (
           <div className="mt-3 text-sm text-red-300">{t('trade.insufficientManagerBalance')}</div>
         ) : null}
+        {!accountOverview.managerId ? (
+          <div className="mt-3 text-sm text-amber-200">{t('trade.managerRequired')}</div>
+        ) : null}
+        {isManagerBalanceUnavailable ? (
+          <div className="mt-3 text-sm text-amber-200">{t('trade.managerBalanceLoading')}</div>
+        ) : null}
 
         <button
-          className="mt-4 h-10 w-full rounded-md bg-zinc-800 px-3 text-sm font-semibold text-zinc-400"
-          disabled
+          className="mt-4 h-10 w-full rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+          disabled={isMintDisabled}
+          onClick={() => {
+            if (!quoteRequest || isMintDisabled) return;
+            void tradeMint.mutateAsync(quoteRequest);
+          }}
           type="button"
         >
-          {t('trade.mintComingSoon')}
+          {tradeMint.isPending
+            ? t('trade.minting')
+            : `${t('trade.mintButton')} ${t(selectedPick.typeKey)}`}
         </button>
+
+        {tradeMint.error ? (
+          <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            {tradeMint.error.message}
+          </div>
+        ) : null}
+        {tradeMint.data ? (
+          <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+            {t('trade.mintSuccess')}{' '}
+            <span className="font-mono">{truncateDigest(tradeMint.data.digest)}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 rounded-md border border-dashed border-zinc-700 p-3 text-sm text-zinc-500">
@@ -267,4 +307,8 @@ function formatInstrument(request: TradeQuoteRequest) {
 
 function formatRawStrike(value: bigint) {
   return formatUsd(Number(value) / Number(ORACLE_PRICE_SCALE), { integer: true });
+}
+
+function truncateDigest(digest: string) {
+  return `${digest.slice(0, 8)}...${digest.slice(-6)}`;
 }
