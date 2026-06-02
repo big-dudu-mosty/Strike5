@@ -119,6 +119,8 @@ export type MessageKey =
   | 'positions.redeeming'
   | 'positions.redeemSuccess'
   | 'positions.networkRequired'
+  | 'positions.error.walletPassword'
+  | 'positions.error.walletRejected'
   | 'vault.title'
   | 'vault.subtitle'
   | 'vault.balance'

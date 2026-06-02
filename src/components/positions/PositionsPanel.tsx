@@ -63,7 +63,9 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
                 });
               }}
               redeemError={
-                redeemFeedbackPositionId === row.id ? positionRedeem.error?.message ?? null : null
+                redeemFeedbackPositionId === row.id
+                  ? getRedeemErrorMessage(positionRedeem.error?.message, t)
+                  : null
               }
               row={row}
             />
@@ -228,6 +230,18 @@ function canRedeemPosition(row: PredictPositionDisplayRow) {
 
 function getRedeemLabel(row: PredictPositionDisplayRow, t: (key: MessageKey) => string) {
   return row.status === 'lost' ? t('positions.clearLost') : t('positions.redeem');
+}
+
+function getRedeemErrorMessage(message: string | null | undefined, t: (key: MessageKey) => string) {
+  if (!message) return null;
+
+  const normalized = message.toLowerCase();
+  if (normalized.includes('incorrect password')) return t('positions.error.walletPassword');
+  if (normalized.includes('reject') || normalized.includes('cancel')) {
+    return t('positions.error.walletRejected');
+  }
+
+  return message;
 }
 
 function getPositionTitleKey(kind: PredictPositionDisplayRow['kind']): MessageKey {

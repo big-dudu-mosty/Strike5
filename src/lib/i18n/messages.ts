@@ -123,6 +123,10 @@ export const messages: Record<Locale, Messages> = {
     'positions.redeeming': 'Redeeming...',
     'positions.redeemSuccess': 'Redeem submitted:',
     'positions.networkRequired': 'Switch to Sui testnet before redeeming.',
+    'positions.error.walletPassword':
+      'Wallet unlock failed: incorrect password. The redeem transaction was not submitted.',
+    'positions.error.walletRejected':
+      'Wallet signing was cancelled or rejected. The redeem transaction was not submitted.',
     'vault.title': 'Vault & Oracle Health',
     'vault.subtitle': 'Predict Vault / PLP risk surface',
     'vault.balance': 'Vault Balance',
@@ -254,6 +258,8 @@ export const messages: Record<Locale, Messages> = {
     'positions.redeeming': '赎回中...',
     'positions.redeemSuccess': '赎回已提交：',
     'positions.networkRequired': '请切换到 Sui 测试网后再赎回。',
+    'positions.error.walletPassword': '钱包解锁失败：密码错误。这笔赎回交易没有提交到链上。',
+    'positions.error.walletRejected': '钱包签名被取消或拒绝。这笔赎回交易没有提交到链上。',
     'vault.title': 'Vault 与 Oracle 健康度',
     'vault.subtitle': 'Predict Vault / PLP 风险状态',
     'vault.balance': 'Vault 余额',
