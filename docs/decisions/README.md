@@ -101,3 +101,4 @@ Date: YYYY-MM-DD
 - `0011-positions-display-data-source.md`
 - `0012-settled-position-redeem-flow.md`
 - `0013-custom-strike-range-builder.md`
+- `0014-chart-trade-overlays.md`

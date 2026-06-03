@@ -14,11 +14,19 @@ import type { BtcCandle, KlineInterval } from '../../lib/market-data/types';
 
 const intervals: KlineInterval[] = ['1m', '5m', '15m'];
 
+export interface ChartTradeOverlay {
+  higherStrike?: number;
+  kind: 'above' | 'below' | 'range';
+  lowerStrike?: number;
+  strike?: number;
+}
+
 interface ChartPanelProps {
   candles: BtcCandle[];
   interval: KlineInterval;
   onIntervalChange: (interval: KlineInterval) => void;
   oracleSpot: number | null;
+  tradeOverlay: ChartTradeOverlay | null;
   provider?: string;
   isLoading: boolean;
   error: Error | unknown;
@@ -29,6 +37,7 @@ export function ChartPanel({
   interval,
   onIntervalChange,
   oracleSpot,
+  tradeOverlay,
   provider,
   isLoading,
   error,
@@ -38,6 +47,9 @@ export function ChartPanel({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const oracleLineRef = useRef<IPriceLine | null>(null);
+  const rangeHigherLineRef = useRef<IPriceLine | null>(null);
+  const rangeLowerLineRef = useRef<IPriceLine | null>(null);
+  const selectedStrikeLineRef = useRef<IPriceLine | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -84,6 +96,9 @@ export function ChartPanel({
       chartRef.current = null;
       seriesRef.current = null;
       oracleLineRef.current = null;
+      rangeHigherLineRef.current = null;
+      rangeLowerLineRef.current = null;
+      selectedStrikeLineRef.current = null;
     };
   }, []);
 
@@ -115,6 +130,55 @@ export function ChartPanel({
       title: t('chart.oracleLine'),
     });
   }, [oracleSpot, t]);
+
+  useEffect(() => {
+    const series = seriesRef.current;
+    if (!series) return;
+
+    for (const lineRef of [selectedStrikeLineRef, rangeLowerLineRef, rangeHigherLineRef]) {
+      if (lineRef.current) {
+        series.removePriceLine(lineRef.current);
+        lineRef.current = null;
+      }
+    }
+
+    if (!tradeOverlay) return;
+
+    if (tradeOverlay.kind === 'range') {
+      if (tradeOverlay.lowerStrike != null) {
+        rangeLowerLineRef.current = series.createPriceLine({
+          price: tradeOverlay.lowerStrike,
+          color: '#fbbf24',
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: t('chart.rangeLowerLine'),
+        });
+      }
+      if (tradeOverlay.higherStrike != null) {
+        rangeHigherLineRef.current = series.createPriceLine({
+          price: tradeOverlay.higherStrike,
+          color: '#fbbf24',
+          lineWidth: 2,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: t('chart.rangeHigherLine'),
+        });
+      }
+      return;
+    }
+
+    if (tradeOverlay.strike == null) return;
+
+    selectedStrikeLineRef.current = series.createPriceLine({
+      price: tradeOverlay.strike,
+      color: tradeOverlay.kind === 'above' ? '#34d399' : '#fb7185',
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+      title: tradeOverlay.kind === 'above' ? t('chart.aboveLine') : t('chart.belowLine'),
+    });
+  }, [t, tradeOverlay]);
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900">
@@ -168,8 +232,24 @@ export function ChartPanel({
         <span>
           {t('chart.source')}: {provider ?? 'CryptoCompare'}
         </span>
-        <span>{t('chart.oracleLine')}</span>
+        <span>{tradeOverlay ? formatTradeOverlayLabel(tradeOverlay, t) : t('chart.oracleLine')}</span>
       </div>
     </section>
   );
+}
+
+function formatTradeOverlayLabel(
+  overlay: ChartTradeOverlay,
+  t: (key: 'chart.aboveLine' | 'chart.belowLine' | 'chart.rangeLine' | 'chart.oracleLine') => string,
+) {
+  switch (overlay.kind) {
+    case 'above':
+      return t('chart.aboveLine');
+    case 'below':
+      return t('chart.belowLine');
+    case 'range':
+      return t('chart.rangeLine');
+    default:
+      return t('chart.oracleLine');
+  }
 }

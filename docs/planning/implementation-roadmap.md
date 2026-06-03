@@ -202,8 +202,10 @@ suiRpcUrl
 - 支持 1m / 5m / 15m candles。
 - `lightweight-charts` 已渲染真实 BTC candles。
 - Oracle Spot 已作为 chart price line 显示。
+- 当前选择的 Above / Below strike 或 Range lower / higher 已作为 chart overlay 显示。
 - Market Pulse 已显示 Chart Price。
 - Market Pulse 已显示 Chart / Oracle Diff。
+- Chart trade overlay 决策已记录在 `docs/decisions/0014-chart-trade-overlays.md`。
 
 ## 7. Milestone 4: Wallet and PredictManager
 
@@ -287,6 +289,7 @@ suiRpcUrl
 - Quick Picks 会基于 active Oracle Spot 生成 strike / range。
 - Quick Picks 和 Custom Builder 都会按 oracle strike grid snapping。
 - Custom Builder 支持用户输入 Above / Below strike，以及 Range lower / higher strikes。
+- 当前选择的 custom strike / range 会同步显示在 BTC chart overlay 上。
 - 默认仓位大小为 `1 dUSDC`，用户可输入其他 size。
 - quote preview 通过 `simulateTransaction` 调用 `get_trade_amounts` / `get_range_trade_amounts`。
 - preview 已显示 cost、max payout、live redeem 和 max loss。

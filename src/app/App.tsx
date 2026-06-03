@@ -1,12 +1,12 @@
 import { Activity, BarChart3, CircleDollarSign, ShieldCheck, Wallet } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useCurrentAccount, useCurrentNetwork } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { MarketPulsePanel } from '../components/market-pulse/MarketPulsePanel';
 import { TradePanel } from '../components/trade-panel/TradePanel';
 import { PositionsPanel } from '../components/positions/PositionsPanel';
 import { VaultHealthPanel } from '../components/vault-health/VaultHealthPanel';
-import { ChartPanel } from '../components/chart/ChartPanel';
+import { ChartPanel, type ChartTradeOverlay } from '../components/chart/ChartPanel';
 import { LanguageToggle } from '../components/language/LanguageToggle';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { PREDICT_CONFIG } from '../config/predict';
@@ -15,10 +15,12 @@ import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
 import { formatPercent, formatTime, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
+import type { TradeQuoteRequest } from '../lib/deepbook/quote';
 import type { KlineInterval } from '../lib/market-data/types';
 
 export function App() {
   const [chartInterval, setChartInterval] = useState<KlineInterval>('1m');
+  const [selectedTradeRequest, setSelectedTradeRequest] = useState<TradeQuoteRequest | null>(null);
   const account = useCurrentAccount();
   const network = useCurrentNetwork();
   const marketOverview = usePredictMarketOverview();
@@ -32,6 +34,9 @@ export function App() {
     chartPrice != null && oracleSpot != null && oracleSpot > 0
       ? (chartPrice - oracleSpot) / oracleSpot
       : null;
+  const tradeOverlay = useMemo(() => {
+    return buildTradeOverlay(selectedTradeRequest);
+  }, [selectedTradeRequest]);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -94,6 +99,7 @@ export function App() {
               onIntervalChange={setChartInterval}
               oracleSpot={oracleSpot}
               provider={btcKlines.data?.provider}
+              tradeOverlay={tradeOverlay}
             />
             <PositionsPanel
               isExpectedNetwork={accountOverview.isExpectedNetwork}
@@ -110,7 +116,11 @@ export function App() {
               overview={marketOverview.data}
             />
             <AccountPanel overview={accountOverview} />
-            <TradePanel accountOverview={accountOverview} overview={marketOverview.data} />
+            <TradePanel
+              accountOverview={accountOverview}
+              onQuoteRequestChange={setSelectedTradeRequest}
+              overview={marketOverview.data}
+            />
             <VaultHealthPanel
               error={marketOverview.error}
               isLoading={marketOverview.isLoading}
@@ -157,4 +167,25 @@ function InfoTile({
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function buildTradeOverlay(request: TradeQuoteRequest | null): ChartTradeOverlay | null {
+  if (!request) return null;
+
+  if (request.kind === 'range') {
+    return {
+      higherStrike: scaleRawOracleStrike(request.higherStrike),
+      kind: 'range',
+      lowerStrike: scaleRawOracleStrike(request.lowerStrike),
+    };
+  }
+
+  return {
+    kind: request.kind,
+    strike: scaleRawOracleStrike(request.strike),
+  };
+}
+
+function scaleRawOracleStrike(value: bigint) {
+  return Number(value) / 1_000_000_000;
 }

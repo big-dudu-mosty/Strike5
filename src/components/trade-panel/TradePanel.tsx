@@ -42,6 +42,7 @@ type TradeMode = 'quick' | 'custom';
 
 interface TradePanelProps {
   accountOverview: PredictAccountOverview;
+  onQuoteRequestChange: (request: TradeQuoteRequest | null) => void;
   overview: PredictMarketOverview | undefined;
 }
 
@@ -49,7 +50,7 @@ const DEFAULT_QUANTITY = '1';
 const RANGE_WIDTH_USD = 100n;
 const ORACLE_PRICE_SCALE = 1_000_000_000n;
 
-export function TradePanel({ accountOverview, overview }: TradePanelProps) {
+export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: TradePanelProps) {
   const { t } = useI18n();
   const now = useNow();
   const [tradeMode, setTradeMode] = useState<TradeMode>('quick');
@@ -121,6 +122,11 @@ export function TradePanel({ accountOverview, overview }: TradePanelProps) {
       tickSize: BigInt(activeOracle.tick_size),
     });
   }, [activeOracle, customQuoteBuild.request, oracleSpot, quantity, selectedKind, tradeMode]);
+  useEffect(() => {
+    onQuoteRequestChange(quoteRequest);
+
+    return () => onQuoteRequestChange(null);
+  }, [onQuoteRequestChange, quoteRequest]);
   const timeLeftMs = activeOracle ? activeOracle.expiry - now : null;
   const isOpeningCutoff =
     timeLeftMs != null && timeLeftMs <= PRODUCT_TIMING.openingCutoffMs;
