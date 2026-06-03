@@ -343,20 +343,26 @@ wallet dUSDC coin balance
 PredictManager internal dUSDC balance
 ```
 
-MVP 可以先做清晰的两步流程：
+底层协议要求 `mint / mint_range` 从 `PredictManager` 内部余额扣款，但 Strike5 的主交易体验不要求用户先手动充值。
+
+当前主流程：
 
 ```text
-Deposit dUSDC into PredictManager
-Then mint position
+用户选择 Above / Below / Range
+-> quote preview
+-> 如果 Manager dUSDC 不足，计算本次 quote cost 缺口
+-> 同一 PTB 先 deposit 缺口金额
+-> 同一 PTB 再 mint / mint_range
 ```
 
-如果开发时间允许，可以做组合 PTB：
+手动 deposit / withdraw 仍保留在 Account panel，用于资金管理和 demo 解释协议账户模型。
 
 ```text
-deposit + mint in one transaction
+wallet dUSDC
+<-> PredictManager internal dUSDC balance
 ```
 
-但组合交易需要更仔细地处理 coin split、amount、failure 和 UX。
+首次没有 PredictManager 的用户仍需要先创建 manager；已有 manager 后，下单不需要手动充值前置步骤。
 
 ## 9. Quote 流程
 
@@ -487,7 +493,7 @@ Trading closed for this expiry. Waiting for settlement.
 - no wallet
 - no dUSDC
 - no PredictManager
-- insufficient manager balance
+- insufficient wallet balance for auto top-up
 - invalid strike
 - invalid range
 - stale oracle

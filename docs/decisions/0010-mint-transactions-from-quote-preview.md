@@ -57,7 +57,7 @@ for range positions.
 5. Require a loaded `PredictManager`.
 6. Require loaded manager balance.
 7. Disable mint near expiry using the existing opening cutoff.
-8. Disable mint when quoted cost exceeds manager dUSDC balance.
+8. Initially disable mint when quoted cost exceeds manager dUSDC balance. This was later updated by `0016-direct-order-auto-top-up.md`.
 9. After success, refresh:
 
 ```text
@@ -90,13 +90,13 @@ Limitations:
 
 - The actual mint cost can still move between quote refresh and transaction execution if oracle / vault state changes.
 - Position list rendering is not complete yet; the next milestone should load open positions from Predict Server.
-- First-trade `deposit + mint` is still not combined into one PTB.
+- Manager top-up and mint are now combined when needed by `0016-direct-order-auto-top-up.md`.
 
 Follow-up work:
 
 - Render minted positions in the Positions panel.
 - Add redeem / redeem_range.
-- Consider combined `deposit + mint` for first-time users after the separated flow is stable.
+- Keep direct-order top-up behavior aligned with `0016-direct-order-auto-top-up.md`.
 
 ## Alternatives Considered
 
@@ -110,7 +110,7 @@ Rejected. The quote preview already defines the active instrument; a single mint
 
 ### Auto-deposit missing dUSDC during mint
 
-Rejected for this milestone. It is a useful UX improvement, but separated deposit and mint are easier to verify first.
+Rejected for this milestone, then accepted later in `0016-direct-order-auto-top-up.md` after the separated deposit and mint flows were verified.
 
 ## Revisit When
 

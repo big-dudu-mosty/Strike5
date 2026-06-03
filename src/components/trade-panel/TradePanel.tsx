@@ -137,10 +137,16 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     accountOverview.managerSummary?.trading_balance == null
       ? null
       : BigInt(Math.max(0, accountOverview.managerSummary.trading_balance));
-  const isManagerBalanceInsufficient =
-    tradeQuote.data?.cost != null &&
-    managerBalanceRaw != null &&
-    tradeQuote.data.cost > managerBalanceRaw;
+  const managerTopUpAmount =
+    tradeQuote.data?.cost != null && managerBalanceRaw != null && tradeQuote.data.cost > managerBalanceRaw
+      ? tradeQuote.data.cost - managerBalanceRaw
+      : 0n;
+  const isWalletBalanceUnavailableForTopUp =
+    managerTopUpAmount > 0n && accountOverview.walletDUsdcBalanceRaw == null;
+  const isWalletBalanceInsufficientForTopUp =
+    managerTopUpAmount > 0n &&
+    accountOverview.walletDUsdcBalanceRaw != null &&
+    managerTopUpAmount > accountOverview.walletDUsdcBalanceRaw;
   const isManagerBalanceUnavailable =
     Boolean(accountOverview.managerId) && managerBalanceRaw == null;
   const isQuantityInvalid = quantityInput.trim() !== '' && quantity == null;
@@ -150,7 +156,8 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     !accountOverview.isExpectedNetwork ||
     !accountOverview.managerId ||
     isManagerBalanceUnavailable ||
-    isManagerBalanceInsufficient ||
+    isWalletBalanceUnavailableForTopUp ||
+    isWalletBalanceInsufficientForTopUp ||
     isOpeningCutoff ||
     isQuantityInvalid ||
     !quoteRequest ||
@@ -328,8 +335,13 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
         {isOpeningCutoff ? (
           <div className="mt-3 text-sm text-amber-200">{t('trade.openingCutoff')}</div>
         ) : null}
-        {isManagerBalanceInsufficient ? (
-          <div className="mt-3 text-sm text-red-300">{t('trade.insufficientManagerBalance')}</div>
+        {managerTopUpAmount > 0n && !isWalletBalanceInsufficientForTopUp ? (
+          <div className="mt-3 text-sm text-emerald-200">
+            {t('trade.autoTopUp')} {formatDUsdcRaw(managerTopUpAmount)}
+          </div>
+        ) : null}
+        {isWalletBalanceInsufficientForTopUp ? (
+          <div className="mt-3 text-sm text-red-300">{t('trade.insufficientWalletBalance')}</div>
         ) : null}
         {!accountOverview.managerId ? (
           <div className="mt-3 text-sm text-amber-200">{t('trade.managerRequired')}</div>
@@ -343,7 +355,10 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
           disabled={isMintDisabled}
           onClick={() => {
             if (!quoteRequest || isMintDisabled) return;
-            void tradeMint.mutateAsync(quoteRequest);
+            void tradeMint.mutateAsync({
+              managerTopUpAmount,
+              request: quoteRequest,
+            });
           }}
           type="button"
         >

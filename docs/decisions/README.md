@@ -103,3 +103,4 @@ Date: YYYY-MM-DD
 - `0013-custom-strike-range-builder.md`
 - `0014-chart-trade-overlays.md`
 - `0015-manager-withdrawal-flow.md`
+- `0016-direct-order-auto-top-up.md`

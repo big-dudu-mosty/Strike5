@@ -305,7 +305,7 @@ suiRpcUrl
 
 完成真实开仓交易。
 
-状态：Quick Picks mint 基础版本已完成。
+状态：直接下单 mint 流程已完成。
 
 预计工作：
 
@@ -319,7 +319,7 @@ suiRpcUrl
 
 需要决策留存：
 
-- deposit + mint 是否合并。
+- deposit + mint 是否合并。已完成：Manager 余额不足时自动补入缺口并 mint。
 - 交易成功后的 optimistic UI 规则。
 - 交易失败重试规则。
 
@@ -335,10 +335,13 @@ suiRpcUrl
 - Above / Below 已接入 `predict::mint<dUSDC>`。
 - Range 已接入 `predict::mint_range<dUSDC>`。
 - mint 交易复用当前 quote preview 的 strike / range / quantity 参数。
+- 如果 Manager dUSDC 低于 quote cost，前端会在同一 PTB 中自动 `deposit<dUSDC>` 缺口金额后再 mint。
+- 手动 deposit 仍保留为 Account panel 的可选资金管理功能，不再是主交易流的前置步骤。
 - 交易成功后刷新 manager summary、market overview 和 quote preview。
 - 交易成功后显示 tx digest。
-- opening cutoff、manager 缺失、manager balance 未加载、余额不足、quote 缺失时禁用 mint。
+- opening cutoff、manager 缺失、manager balance 未加载、钱包 dUSDC 不足以补款、quote 缺失时禁用 mint。
 - Mint transaction 决策已记录在 `docs/decisions/0010-mint-transactions-from-quote-preview.md`。
+- Direct order auto top-up 决策已记录在 `docs/decisions/0016-direct-order-auto-top-up.md`。
 
 待完成内容：
 

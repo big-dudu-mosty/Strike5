@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCurrentClient, useDAppKit } from '@mysten/dapp-kit-react';
+import { useCurrentAccount, useCurrentClient, useDAppKit } from '@mysten/dapp-kit-react';
 import type { SuiClientTypes } from '@mysten/sui/client';
 import { PREDICT_CONFIG } from '../config/predict';
 import type { TradeQuoteRequest } from '../lib/deepbook/quote';
@@ -12,13 +12,19 @@ interface UseTradeMintOptions {
   managerId: string | null;
 }
 
+interface TradeMintInput {
+  managerTopUpAmount?: bigint;
+  request: TradeQuoteRequest;
+}
+
 export function useTradeMint({ managerId }: UseTradeMintOptions) {
+  const account = useCurrentAccount();
   const client = useCurrentClient();
   const dAppKit = useDAppKit();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (request: TradeQuoteRequest) => {
+    mutationFn: async ({ managerTopUpAmount = 0n, request }: TradeMintInput) => {
       if (!managerId) throw new Error('Create or load a PredictManager before minting.');
 
       const transaction =
@@ -26,11 +32,13 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
           ? buildRangeMintTransaction({
               ...request,
               managerId,
+              managerTopUpAmount,
             })
           : buildDirectionalMintTransaction({
               ...request,
               isUp: request.kind === 'above',
               managerId,
+              managerTopUpAmount,
             });
       const result = await dAppKit.signAndExecuteTransaction({ transaction });
       const confirmed = await client.waitForTransaction({
@@ -52,6 +60,7 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['predict-manager-summary', managerId] }),
+        queryClient.invalidateQueries({ queryKey: ['wallet-dusdc-balance', account?.address] }),
         queryClient.invalidateQueries({
           queryKey: ['predict-market-overview', PREDICT_CONFIG.predictObjectId],
         }),

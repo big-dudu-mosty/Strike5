@@ -144,6 +144,7 @@ export function buildDirectionalMintTransaction({
   expiry,
   isUp,
   managerId,
+  managerTopUpAmount = 0n,
   oracleId,
   quantity,
   strike,
@@ -151,11 +152,14 @@ export function buildDirectionalMintTransaction({
   expiry: bigint;
   isUp: boolean;
   managerId: string;
+  managerTopUpAmount?: bigint;
   oracleId: string;
   quantity: bigint;
   strike: bigint;
 }) {
   const tx = new Transaction();
+
+  depositManagerTopUp(tx, managerId, managerTopUpAmount);
 
   const key = tx.moveCall({
     target: `${PREDICT_CONFIG.predictPackageId}::market_key::new`,
@@ -231,6 +235,7 @@ export function buildRangeMintTransaction({
   higherStrike,
   lowerStrike,
   managerId,
+  managerTopUpAmount = 0n,
   oracleId,
   quantity,
 }: {
@@ -238,10 +243,13 @@ export function buildRangeMintTransaction({
   higherStrike: bigint;
   lowerStrike: bigint;
   managerId: string;
+  managerTopUpAmount?: bigint;
   oracleId: string;
   quantity: bigint;
 }) {
   const tx = new Transaction();
+
+  depositManagerTopUp(tx, managerId, managerTopUpAmount);
 
   const key = tx.moveCall({
     target: `${PREDICT_CONFIG.predictPackageId}::range_key::new`,
@@ -267,6 +275,21 @@ export function buildRangeMintTransaction({
   });
 
   return tx;
+}
+
+function depositManagerTopUp(tx: Transaction, managerId: string, amount: bigint) {
+  if (amount <= 0n) return;
+
+  const coin = tx.coin({
+    type: PREDICT_CONFIG.dusdcType,
+    balance: amount,
+  });
+
+  tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::predict_manager::deposit`,
+    typeArguments: [PREDICT_CONFIG.dusdcType],
+    arguments: [tx.object(managerId), coin],
+  });
 }
 
 export function buildRangeRedeemTransaction({

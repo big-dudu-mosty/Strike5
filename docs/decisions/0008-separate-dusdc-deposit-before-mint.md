@@ -1,6 +1,6 @@
 # 0008: Separate dUSDC Deposit Before Mint
 
-Status: Accepted
+Status: Superseded by 0016-direct-order-auto-top-up.md
 Date: 2026-06-02
 
 ## Context
