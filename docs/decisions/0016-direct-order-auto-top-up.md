@@ -23,10 +23,10 @@ For users who already have a `PredictManager`, Strike5 will support direct order
 
 The user decides the order size in the Trade Panel. Strike5 does not choose a fixed trade amount for the user.
 
-When the selected quote cost for that user-entered size is higher than the current Manager dUSDC balance, the frontend computes the deficit:
+When the user-entered size is higher than the current Manager dUSDC balance, the frontend computes the reserve deficit:
 
 ```text
-top_up = quote_cost - manager_dUSDC
+top_up = user_entered_size - manager_dUSDC
 ```
 
 If wallet dUSDC is sufficient, the mint PTB includes both steps:
@@ -47,6 +47,8 @@ choose trade
 
 Manual deposit remains available in the Account panel as an optional funds-management tool, not as a required pre-trade step.
 
+The app reserves up to the user-entered size instead of only the preview quote cost because `predict::mint` calculates the actual mint cost on-chain at execution time after current vault exposure is considered. Any dUSDC that is deposited but not spent by `mint` remains in the `PredictManager` for the next order or withdrawal.
+
 ## Rationale
 
 This aligns the product with the planned Strike5 experience:
@@ -61,7 +63,8 @@ Benefits:
 
 - The primary trading flow now feels like direct order placement.
 - Manager dUSDC no longer blocks mint if wallet dUSDC can cover the deficit.
-- A single wallet signature can fund the missing amount and open the position.
+- A single wallet signature can reserve the missing amount and open the position.
+- Mint transactions are preflighted with `simulateTransaction` before wallet signing so funding failures can be surfaced as product errors instead of raw Move aborts.
 
 Limitations:
 

@@ -319,7 +319,7 @@ suiRpcUrl
 
 需要决策留存：
 
-- deposit + mint 是否合并。已完成：Manager 余额不足时自动补入缺口并 mint。
+- deposit + mint 是否合并。已完成：Manager 余额低于用户输入的仓位大小时，自动预留缺口并 mint。
 - 交易成功后的 optimistic UI 规则。
 - 交易失败重试规则。
 
@@ -335,7 +335,8 @@ suiRpcUrl
 - Above / Below 已接入 `predict::mint<dUSDC>`。
 - Range 已接入 `predict::mint_range<dUSDC>`。
 - mint 交易复用当前 quote preview 的 strike / range / quantity 参数。
-- 如果 Manager dUSDC 低于 quote cost，前端会在同一 PTB 中自动 `deposit<dUSDC>` 缺口金额后再 mint。
+- 如果 Manager dUSDC 低于用户输入的仓位大小，前端会在同一 PTB 中自动 `deposit<dUSDC>` 预留缺口后再 mint。
+- 开仓前会先 `simulateTransaction` 预检，避免资金不足或报价状态变化时直接弹出原始 MoveAbort。
 - 手动 deposit 仍保留为 Account panel 的可选资金管理功能，不再是主交易流的前置步骤。
 - 交易成功后刷新 manager summary、market overview 和 quote preview。
 - 交易成功后显示 tx digest。

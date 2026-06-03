@@ -350,12 +350,14 @@ PredictManager internal dUSDC balance
 ```text
 用户选择 Above / Below / Range
 -> quote preview
--> 如果 Manager dUSDC 不足，计算本次 quote cost 缺口
--> 同一 PTB 先 deposit 缺口金额
+-> 如果 Manager dUSDC 低于用户输入的仓位大小，计算预留缺口
+-> 同一 PTB 先 deposit 预留缺口
 -> 同一 PTB 再 mint / mint_range
 ```
 
 手动 deposit / withdraw 仍保留在 Account panel，用于资金管理和 demo 解释协议账户模型。
+
+这里按用户输入的仓位大小预留，而不是只按 quote preview 的成本预留。原因是 `predict::mint` 会在链上执行时重新计算真实成本，且 Predict Server 的 manager balance 可能存在索引延迟。预留后未被 mint 扣除的 dUSDC 仍留在 PredictManager，可继续交易或提现。
 
 ```text
 wallet dUSDC
@@ -493,7 +495,7 @@ Trading closed for this expiry. Waiting for settlement.
 - no wallet
 - no dUSDC
 - no PredictManager
-- insufficient wallet balance for auto top-up
+- insufficient wallet balance for order-size reserve
 - invalid strike
 - invalid range
 - stale oracle

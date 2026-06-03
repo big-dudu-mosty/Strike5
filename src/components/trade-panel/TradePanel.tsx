@@ -137,9 +137,10 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     accountOverview.managerSummary?.trading_balance == null
       ? null
       : BigInt(Math.max(0, accountOverview.managerSummary.trading_balance));
+  const managerReserveTarget = tradeQuote.data?.maxPayout ?? 0n;
   const managerTopUpAmount =
-    tradeQuote.data?.cost != null && managerBalanceRaw != null && tradeQuote.data.cost > managerBalanceRaw
-      ? tradeQuote.data.cost - managerBalanceRaw
+    managerReserveTarget > 0n && managerBalanceRaw != null && managerReserveTarget > managerBalanceRaw
+      ? managerReserveTarget - managerBalanceRaw
       : 0n;
   const isWalletBalanceUnavailableForTopUp =
     managerTopUpAmount > 0n && accountOverview.walletDUsdcBalanceRaw == null;
@@ -342,8 +343,11 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
           <div className="mt-3 text-sm text-amber-200">{t('trade.openingCutoff')}</div>
         ) : null}
         {managerTopUpAmount > 0n && !isWalletBalanceInsufficientForTopUp ? (
-          <div className="mt-3 text-sm text-emerald-200">
-            {t('trade.autoTopUp')} {formatDUsdcRaw(managerTopUpAmount)}
+          <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+            <div className="text-sm font-medium text-emerald-100">
+              {t('trade.autoTopUp')} {formatDUsdcRaw(managerTopUpAmount)}
+            </div>
+            <div className="mt-1 text-xs text-emerald-100/70">{t('trade.autoTopUpNote')}</div>
           </div>
         ) : null}
         {isWalletBalanceInsufficientForTopUp ? (
@@ -375,7 +379,7 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
 
         {tradeMint.error ? (
           <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {tradeMint.error.message}
+            {formatTradeMintError(tradeMint.error, t)}
           </div>
         ) : null}
         {tradeMint.data ? (
@@ -400,6 +404,18 @@ function QuoteRow({ label, value }: { label: string; value: string }) {
       <span className="font-medium text-zinc-100">{value}</span>
     </div>
   );
+}
+
+function formatTradeMintError(error: Error, t: (key: MessageKey) => string) {
+  if (error.message === 'STRIKE5_MANAGER_FUNDING_PRECHECK_FAILED') {
+    return t('trade.error.managerFunding');
+  }
+
+  if (error.message === 'STRIKE5_MINT_PREFLIGHT_FAILED') {
+    return t('trade.error.preflight');
+  }
+
+  return error.message;
 }
 
 function buildQuickPickQuoteRequest({

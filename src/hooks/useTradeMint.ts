@@ -25,9 +25,10 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
 
   return useMutation({
     mutationFn: async ({ managerTopUpAmount = 0n, request }: TradeMintInput) => {
+      if (!account) throw new Error('Connect a wallet before minting.');
       if (!managerId) throw new Error('Create or load a PredictManager before minting.');
 
-      const transaction =
+      const buildTransaction = () =>
         request.kind === 'range'
           ? buildRangeMintTransaction({
               ...request,
@@ -40,6 +41,25 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
               managerId,
               managerTopUpAmount,
             });
+
+      const preflightTransaction = buildTransaction();
+      preflightTransaction.setSender(account.address);
+      const preflightResult = await client.simulateTransaction({
+        transaction: preflightTransaction,
+        include: { effects: true },
+        checksEnabled: true,
+      });
+      const preflightTx =
+        preflightResult.$kind === 'Transaction'
+          ? preflightResult.Transaction
+          : preflightResult.FailedTransaction;
+
+      if (!preflightTx.status.success) {
+        const message = preflightTx.status.error?.message ?? 'Mint transaction preflight failed.';
+        throw new Error(classifyMintError(message, true));
+      }
+
+      const transaction = buildTransaction();
       const result = await dAppKit.signAndExecuteTransaction({ transaction });
       const confirmed = await client.waitForTransaction({
         result,
@@ -50,7 +70,7 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
 
       if (!tx.status.success) {
         const message = tx.status.error?.message ?? 'Mint transaction failed.';
-        throw new Error(message);
+        throw new Error(classifyMintError(message, false));
       }
 
       return {
@@ -69,6 +89,18 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
       ]);
     },
   });
+}
+
+function classifyMintError(message: string, isPreflight: boolean) {
+  if (
+    message.includes('withdraw_with_proof') ||
+    message.includes('EBalanceManagerBalanceTooLow') ||
+    (message.includes('balance_manager') && message.includes(', 3'))
+  ) {
+    return 'STRIKE5_MANAGER_FUNDING_PRECHECK_FAILED';
+  }
+
+  return isPreflight ? 'STRIKE5_MINT_PREFLIGHT_FAILED' : message;
 }
 
 function getTransaction<Include extends SuiClientTypes.TransactionInclude>(
