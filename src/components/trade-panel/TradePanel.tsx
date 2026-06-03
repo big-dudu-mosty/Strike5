@@ -11,6 +11,7 @@ import { formatDUsdcRaw, formatUsd } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { MessageKey } from '../../lib/i18n/types';
 import type { PredictMarketOverview } from '../../lib/predict-server/types';
+import { TransactionLink } from '../transaction/TransactionLink';
 
 const quickPicks = [
   {
@@ -384,8 +385,7 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
         ) : null}
         {tradeMint.data ? (
           <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-            {t('trade.mintSuccess')}{' '}
-            <span className="font-mono">{truncateDigest(tradeMint.data.digest)}</span>
+            <TransactionLink digest={tradeMint.data.digest} label={t('trade.mintSuccess')} />
           </div>
         ) : null}
       </div>
@@ -564,8 +564,4 @@ function formatRawStrike(value: bigint) {
 
 function formatRawStrikeInput(value: bigint) {
   return (Number(value) / Number(ORACLE_PRICE_SCALE)).toFixed(0);
-}
-
-function truncateDigest(digest: string) {
-  return `${digest.slice(0, 8)}...${digest.slice(-6)}`;
 }

@@ -11,6 +11,7 @@ import {
 } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { MessageKey } from '../../lib/i18n/types';
+import { TransactionLink } from '../transaction/TransactionLink';
 
 interface PositionsPanelProps {
   isExpectedNetwork: boolean;
@@ -152,8 +153,7 @@ function PositionCard({
           </button>
           {lastRedeemDigest ? (
             <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-              {t('positions.redeemSuccess')}{' '}
-              <span className="font-mono">{truncateDigest(lastRedeemDigest)}</span>
+              <TransactionLink digest={lastRedeemDigest} label={t('positions.redeemSuccess')} />
             </div>
           ) : null}
           {redeemError ? (
@@ -285,8 +285,4 @@ function getStatusColorClass(status: string) {
     default:
       return 'border-zinc-700 bg-zinc-800 text-zinc-300';
   }
-}
-
-function truncateDigest(digest: string) {
-  return `${digest.slice(0, 8)}...${digest.slice(-6)}`;
 }

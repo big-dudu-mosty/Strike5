@@ -1,10 +1,11 @@
-import { CheckCircle2, ExternalLink, Loader2, Plus, Wallet } from 'lucide-react';
+import { CheckCircle2, Loader2, Plus, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { PREDICT_CONFIG } from '../../config/predict';
 import { parseDUsdcInput } from '../../lib/dusdc';
 import { formatDUsdc, scaleQuoteAsset } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
+import { TransactionLink } from '../transaction/TransactionLink';
 
 interface AccountPanelProps {
   overview: PredictAccountOverview;
@@ -262,10 +263,26 @@ export function AccountPanel({ overview }: AccountPanelProps) {
             ) : null}
 
             {createdManagerHint ? (
-              <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>{t('account.lastTx')}</span>
-                <span className="font-mono">{truncateAddress(createdManagerHint.digest)}</span>
+              <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+                <TransactionLink digest={createdManagerHint.digest} label={t('account.lastTx')} />
+              </div>
+            ) : null}
+
+            {depositDUsdcMutation.data ? (
+              <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+                <TransactionLink
+                  digest={depositDUsdcMutation.data.digest}
+                  label={t('account.depositSuccess')}
+                />
+              </div>
+            ) : null}
+
+            {withdrawDUsdcMutation.data ? (
+              <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+                <TransactionLink
+                  digest={withdrawDUsdcMutation.data.digest}
+                  label={t('account.withdrawSuccess')}
+                />
               </div>
             ) : null}
 

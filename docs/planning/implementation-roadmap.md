@@ -399,6 +399,11 @@ suiRpcUrl
 - 页面没有明显布局错乱。
 - 核心讲法和文档一致。
 
+当前完成内容：
+
+- create manager、deposit、withdraw、mint、redeem 成功状态已显示可点击 SuiVision testnet 交易链接。
+- SuiVision transaction link 决策已记录在 `docs/decisions/0017-sui-vision-transaction-links.md`。
+
 ## 12. 当前下一步
 
 当前已完成 Milestone 5 / 6 / 7 的主要交易闭环，下一步进入 Milestone 8: Vault Health and Demo Hardening。

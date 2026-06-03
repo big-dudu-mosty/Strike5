@@ -104,3 +104,4 @@ Date: YYYY-MM-DD
 - `0014-chart-trade-overlays.md`
 - `0015-manager-withdrawal-flow.md`
 - `0016-direct-order-auto-top-up.md`
+- `0017-sui-vision-transaction-links.md`
