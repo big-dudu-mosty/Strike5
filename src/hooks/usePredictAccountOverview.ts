@@ -13,6 +13,7 @@ import { recoverLatestPredictManager } from '../lib/deepbook/managerRecovery';
 import {
   buildCreatePredictManagerTransaction,
   buildDepositToPredictManagerTransaction,
+  buildWithdrawFromPredictManagerTransaction,
 } from '../lib/deepbook/transactions';
 import {
   fetchPredictManagers,
@@ -170,6 +171,41 @@ export function usePredictAccountOverview() {
     },
   });
 
+  const withdrawDUsdcMutation = useMutation({
+    mutationFn: async (amount: bigint) => {
+      if (!address) throw new Error('Connect a wallet before withdrawing dUSDC.');
+      if (!managerId) throw new Error('Create or load a PredictManager before withdrawing dUSDC.');
+
+      const transaction = buildWithdrawFromPredictManagerTransaction({
+        amount,
+        managerId,
+        recipient: address,
+      });
+      const result = await dAppKit.signAndExecuteTransaction({ transaction });
+      const confirmed = await client.waitForTransaction({
+        result,
+        include: { effects: true },
+        timeout: 30_000,
+      });
+      const tx = getTransaction(confirmed);
+
+      if (!tx.status.success) {
+        const message = tx.status.error?.message ?? 'dUSDC withdrawal failed.';
+        throw new Error(message);
+      }
+
+      return {
+        digest: tx.digest,
+      };
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['wallet-dusdc-balance', address] }),
+        queryClient.invalidateQueries({ queryKey: ['predict-manager-summary', managerId] }),
+      ]);
+    },
+  });
+
   const walletDUsdcBalance = useMemo(() => {
     return scaleRawQuoteBalance(walletBalanceQuery.data);
   }, [walletBalanceQuery.data]);
@@ -197,6 +233,8 @@ export function usePredictAccountOverview() {
     createManagerMutation,
     depositDUsdc: (amount: bigint) => depositDUsdcMutation.mutateAsync(amount),
     depositDUsdcMutation,
+    withdrawDUsdc: (amount: bigint) => withdrawDUsdcMutation.mutateAsync(amount),
+    withdrawDUsdcMutation,
   };
 }
 

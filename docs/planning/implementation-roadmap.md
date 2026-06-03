@@ -247,9 +247,11 @@ suiRpcUrl
 - 交易确认后解析 `PredictManagerCreated` 事件，并刷新 Predict Server 查询。
 - dUSDC deposit PTB 已接入 `predict_manager::deposit<dUSDC>`。
 - 用户可以把钱包 dUSDC 显式存入当前 PredictManager。
+- dUSDC withdrawal PTB 已接入 `predict_manager::withdraw<dUSDC>`，并在同一 PTB 中转回当前钱包。
 - Manager dUSDC、account value、open positions 已从 manager summary 展示。
 - PredictManager account flow 决策已记录在 `docs/decisions/0007-predict-manager-account-flow.md`。
 - dUSDC deposit 拆分决策已记录在 `docs/decisions/0008-separate-dusdc-deposit-before-mint.md`。
+- Manager withdrawal flow 决策已记录在 `docs/decisions/0015-manager-withdrawal-flow.md`。
 
 ## 8. Milestone 5: Trade Panel and Quote
 
@@ -395,12 +397,11 @@ suiRpcUrl
 
 ## 12. 当前下一步
 
-下一步进入 Milestone 5: Trade Panel and Quote。
+当前已完成 Milestone 5 / 6 / 7 的主要交易闭环，下一步进入 Milestone 8: Vault Health and Demo Hardening。
 
 建议下一轮先做：
 
-1. Quick Picks 生成策略。
-2. Above / Below / Range 参数构造。
-3. strike / range snapping。
-4. devInspect quote preview。
-5. opening cutoff 状态展示。
+1. 完善 loading / empty / error states。
+2. 增加 demo wallet preparation guide。
+3. 增加 fallback flow。
+4. 准备 final pitch 和现场演示脚本。

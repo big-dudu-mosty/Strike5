@@ -34,6 +34,28 @@ export function buildDepositToPredictManagerTransaction({
   return tx;
 }
 
+export function buildWithdrawFromPredictManagerTransaction({
+  amount,
+  managerId,
+  recipient,
+}: {
+  amount: bigint;
+  managerId: string;
+  recipient: string;
+}) {
+  const tx = new Transaction();
+
+  const coin = tx.moveCall({
+    target: `${PREDICT_CONFIG.predictPackageId}::predict_manager::withdraw`,
+    typeArguments: [PREDICT_CONFIG.dusdcType],
+    arguments: [tx.object(managerId), tx.pure.u64(amount)],
+  });
+
+  tx.transferObjects([coin], tx.pure.address(recipient));
+
+  return tx;
+}
+
 export function buildDirectionalQuoteTransaction({
   expiry,
   isUp,
