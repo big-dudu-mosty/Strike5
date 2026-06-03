@@ -46,7 +46,7 @@ interface TradePanelProps {
   overview: PredictMarketOverview | undefined;
 }
 
-const DEFAULT_QUANTITY = '1';
+const DEFAULT_QUANTITY = '';
 const RANGE_WIDTH_USD = 100n;
 const ORACLE_PRICE_SCALE = 1_000_000_000n;
 
@@ -149,6 +149,7 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     managerTopUpAmount > accountOverview.walletDUsdcBalanceRaw;
   const isManagerBalanceUnavailable =
     Boolean(accountOverview.managerId) && managerBalanceRaw == null;
+  const isQuantityEmpty = quantityInput.trim() === '';
   const isQuantityInvalid = quantityInput.trim() !== '' && quantity == null;
   const customValidationMessage =
     tradeMode === 'custom' && customQuoteBuild.errorKey ? t(customQuoteBuild.errorKey) : null;
@@ -238,7 +239,11 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
               {t(selectedPick.typeKey)} {t('trade.preview')}
             </div>
             <div className="mt-1 text-sm text-zinc-500">
-              {quoteRequest ? formatInstrument(quoteRequest) : t('trade.waitingMarket')}
+              {quoteRequest
+                ? formatInstrument(quoteRequest)
+                : isQuantityEmpty
+                  ? t('trade.waitingQuantity')
+                  : t('trade.waitingMarket')}
             </div>
           </div>
         </div>
@@ -255,6 +260,7 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
           type="text"
           value={quantityInput}
         />
+        <div className="mt-2 text-xs text-zinc-500">{t('trade.quantityNote')}</div>
 
         {tradeMode === 'custom' ? (
           <div className="mt-4 grid gap-3">

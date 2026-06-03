@@ -21,7 +21,9 @@ That was useful for validating the protocol account model, but it is not the fin
 
 For users who already have a `PredictManager`, Strike5 will support direct order placement from the Trade Panel.
 
-When the selected quote cost is higher than the current Manager dUSDC balance, the frontend computes the deficit:
+The user decides the order size in the Trade Panel. Strike5 does not choose a fixed trade amount for the user.
+
+When the selected quote cost for that user-entered size is higher than the current Manager dUSDC balance, the frontend computes the deficit:
 
 ```text
 top_up = quote_cost - manager_dUSDC
