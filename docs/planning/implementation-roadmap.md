@@ -255,13 +255,13 @@ suiRpcUrl
 
 完成 Above / Below / Range 的交易预览。
 
-状态：Quick Picks quote preview 基础版本已完成。
+状态：Quick Picks 与 Custom Builder quote preview 已完成。
 
 预计工作：
 
 - 生成 Quick Picks。
-- 实现 Custom Builder。
-- 实现 strike / range snapping。
+- 实现 Custom Builder。已完成。
+- 实现 strike / range snapping。已完成。
 - 构造 MarketKey / RangeKey 参数。
 - 使用 devInspect 获取 quote。
 - 展示 cost / estimated payout / max loss。
@@ -277,20 +277,22 @@ suiRpcUrl
 验收：
 
 - 用户能选择 Above / Below / Range。
-- 用户能输入 custom strike / range。
-- invalid strike / range 会被阻止。
+- 用户能输入 custom strike / range。已完成。
+- invalid strike / range 会被阻止。已完成。
 - quote preview 可显示。
 
 当前完成内容：
 
 - Above / Below / Range 卡片已支持选择状态。
 - Quick Picks 会基于 active Oracle Spot 生成 strike / range。
-- strike / range 已按 oracle strike grid snapping。
+- Quick Picks 和 Custom Builder 都会按 oracle strike grid snapping。
+- Custom Builder 支持用户输入 Above / Below strike，以及 Range lower / higher strikes。
 - 默认仓位大小为 `1 dUSDC`，用户可输入其他 size。
 - quote preview 通过 `simulateTransaction` 调用 `get_trade_amounts` / `get_range_trade_amounts`。
 - preview 已显示 cost、max payout、live redeem 和 max loss。
 - opening cutoff 已在临近到期时阻止 quote。
 - Quick Picks quote preview 决策已记录在 `docs/decisions/0009-quick-picks-and-quote-preview.md`。
+- Custom Builder 决策已记录在 `docs/decisions/0013-custom-strike-range-builder.md`。
 
 ## 9. Milestone 6: Mint Transactions
 
