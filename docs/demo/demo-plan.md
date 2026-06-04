@@ -94,7 +94,8 @@ Positions are not separate wallet objects. Binary and range quantities are store
 - Chart Price。
 - Current Expiry。
 - Countdown。
-- Vault & Oracle Health。
+- Trade Panel。
+- Positions。
 
 讲解：
 
@@ -221,25 +222,7 @@ The frontend builds the PTB, the wallet signs it, and Sui RPC submits it. The Pr
 The position quantity is recorded in PredictManager rather than as a standalone wallet object.
 ```
 
-### Step 9: Vault & Oracle Health
-
-展示：
-
-- vault balance
-- vault value
-- available liquidity
-- utilization
-- total max payout
-- PLP share price
-- oracle freshness
-
-讲解：
-
-```text
-Predict Vault / PLP is the counterparty and liquidity source for these trades. This is why the product is directly useful to DeepBook Predict.
-```
-
-### Step 10: Redeem
+### Step 9: Redeem
 
 如果现场等待时间允许：
 
@@ -276,7 +259,7 @@ Before signing, we show the dUSDC cost, estimated payout, max loss, expiry, and 
 
 When the user confirms, the frontend builds a PTB, the wallet signs it, and the transaction calls DeepBook Predict's Predict shared object. The position quantity is recorded inside PredictManager.
 
-The counterparty and liquidity are handled by Predict Vault / PLP, which we expose in this health panel.
+The counterparty and liquidity are handled by Predict Vault / PLP. We keep that protocol context in the pitch, while the product screen stays focused on chart, order entry, positions, and redeem.
 
 After settlement, the user redeems through DeepBook Predict and receives payout into PredictManager.
 ```

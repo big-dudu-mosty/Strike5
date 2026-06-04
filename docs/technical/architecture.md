@@ -38,10 +38,7 @@ flowchart LR
   EVT --> MP
 
   PS --> OI["Oracle / Expiry / Strike Grid / Market Data"]
-  PS --> VS["Vault Summary / PLP Risk Data"]
-
-  VS --> VH["Vault & Oracle Health Panel"]
-  FE --> VH
+  PS --> VS["Vault Summary / PLP Risk Data<br/>(protocol context / future pro mode)"]
 
   FE --> PTB["Build PTB<br/>(@mysten/sui)"]
   PTB --> U
@@ -74,7 +71,7 @@ flowchart LR
 - active oracle。
 - expiry countdown。
 - oracle spot。
-- vault summary。
+- vault summary, used as protocol context and future professional-mode data.
 - portfolio summary, if the Predict Server endpoint and response shape are confirmed。
 - historical data。
 - transaction refresh。
@@ -233,7 +230,7 @@ position 不一定是独立 object。
 DeepBook Predict 当前设计中，仓位数量存在 PredictManager 内部。
 ```
 
-### 5.5 Vault & Oracle Health 模块
+### 5.5 Vault / PLP 协议数据
 
 职责：
 
@@ -244,7 +241,7 @@ DeepBook Predict 当前设计中，仓位数量存在 PredictManager 内部。
 - 展示 PLP share price。
 - 展示 oracle status / freshness。
 
-这个模块用于增强用户信任，也用于 demo 时向评委说明 DeepBook Predict 的真实流动性和风险池。
+这些数据用于向评委说明 DeepBook Predict 的真实流动性和风险池，也可以作为后续 professional mode 的扩展基础。MVP 主交易界面不再渲染独立 Vault & Oracle Health 面板，避免把 consumer demo 做成协议后台。
 
 ## 6. 数据源边界
 

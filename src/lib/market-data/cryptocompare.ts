@@ -25,9 +25,9 @@ const INTERVAL_AGGREGATE: Record<KlineInterval, number> = {
 };
 
 const INTERVAL_LIMIT: Record<KlineInterval, number> = {
-  '1m': 180,
-  '5m': 180,
-  '15m': 160,
+  '1m': 1440,
+  '5m': 2000,
+  '15m': 2000,
 };
 
 export async function fetchBtcKlines(interval: KlineInterval): Promise<KlineSeries> {

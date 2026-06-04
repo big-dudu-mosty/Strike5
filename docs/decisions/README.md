@@ -106,3 +106,4 @@ Date: YYYY-MM-DD
 - `0016-direct-order-auto-top-up.md`
 - `0017-sui-vision-transaction-links.md`
 - `0018-demo-readiness-panel.md`
+- `0019-consumer-demo-surface-simplification.md`

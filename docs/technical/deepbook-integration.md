@@ -355,7 +355,7 @@ PredictManager internal dUSDC balance
 -> 同一 PTB 再 mint / mint_range
 ```
 
-手动 deposit / withdraw 仍保留在 Account panel，用于资金管理和 demo 解释协议账户模型。
+主界面不再展示手动 deposit / withdraw 表单，避免让用户误以为需要先给平台充值才能交易。底层 deposit / withdraw PTB builder 仍作为账户级能力保留，当前主要由开仓时自动补款流程使用。
 
 这里按用户输入的仓位大小预留，而不是只按 quote preview 的成本预留。原因是 `predict::mint` 会在链上执行时重新计算真实成本，且 Predict Server 的 manager balance 可能存在索引延迟。预留后未被 mint 扣除的 dUSDC 仍留在 PredictManager，可继续交易或提现。
 

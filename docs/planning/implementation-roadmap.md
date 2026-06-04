@@ -121,7 +121,7 @@ src/
 
 建立 DeepBook Predict、Sui 和 market data 的基础配置与客户端。
 
-状态：Predict Server 数据基础已完成，BTC K-line provider 待后续 Milestone 3 决策和实现。
+状态：Predict Server 数据基础和 BTC K-line provider 均已完成。
 
 预计工作：
 
@@ -162,8 +162,8 @@ suiRpcUrl
 - Predict Server response types 已建立。
 - `usePredictMarketOverview` 已建立。
 - Market Pulse 已显示 Oracle Spot、Forward、Freshness、Current Expiry、Next Expiry。
-- Vault & Oracle Health 已显示 vault balance、vault value、available liquidity、total max payout、utilization 和 PLP share price。
-- Chart Price 仍等待 BTC K-line provider 接入。
+- Vault / PLP summary 已可通过 Predict Server 读取，当前不作为主交易界面面板展示。
+- Chart Price 已通过 CryptoCompare BTC K-line provider 接入。
 
 ## 6. Milestone 3: Chart and Market Pulse
 
@@ -292,7 +292,7 @@ suiRpcUrl
 - Quick Picks 和 Custom Builder 都会按 oracle strike grid snapping。
 - Custom Builder 支持用户输入 Above / Below strike，以及 Range lower / higher strikes。
 - 当前选择的 custom strike / range 会同步显示在 BTC chart overlay 上。
-- 默认仓位大小为 `1 dUSDC`，用户可输入其他 size。
+- 仓位大小由用户输入；未输入金额前不请求 quote，也不能 mint。
 - quote preview 通过 `simulateTransaction` 调用 `get_trade_amounts` / `get_range_trade_amounts`。
 - preview 已显示 cost、max payout、live redeem 和 max loss。
 - opening cutoff 已在临近到期时阻止 quote。
@@ -337,7 +337,7 @@ suiRpcUrl
 - mint 交易复用当前 quote preview 的 strike / range / quantity 参数。
 - 如果 Manager dUSDC 低于用户输入的仓位大小，前端会在同一 PTB 中自动 `deposit<dUSDC>` 预留缺口后再 mint。
 - 开仓前会先 `simulateTransaction` 预检，避免资金不足或报价状态变化时直接弹出原始 MoveAbort。
-- 手动 deposit 仍保留为 Account panel 的可选资金管理功能，不再是主交易流的前置步骤。
+- 主界面已移除手动 deposit / withdraw 表单；直接开仓时由 mint PTB 自动补足 Manager 余额缺口。
 - 交易成功后刷新 manager summary、market overview 和 quote preview。
 - 交易成功后显示 tx digest。
 - opening cutoff、manager 缺失、manager balance 未加载、钱包 dUSDC 不足以补款、quote 缺失时禁用 mint。
@@ -377,7 +377,7 @@ suiRpcUrl
 - 用户能执行 redeem / redeem_range，payout 回到 PredictManager。
 - payout 进入 PredictManager。
 
-## 11. Milestone 8: Vault Health and Demo Hardening
+## 11. Milestone 8: Demo Hardening
 
 目标：
 
@@ -385,7 +385,7 @@ suiRpcUrl
 
 预计工作：
 
-- 完成 Vault & Oracle Health panel。
+- 收敛主界面信息架构，避免把 demo 做成协议后台。
 - 增加 loading / empty / error states。
 - 增加 demo wallet preparation guide。
 - 增加 fallback flow。
@@ -405,10 +405,13 @@ suiRpcUrl
 - SuiVision transaction link 决策已记录在 `docs/decisions/0017-sui-vision-transaction-links.md`。
 - Demo Readiness panel 已加入右侧栏，实时检查钱包、网络、dUSDC、PredictManager、active oracle、BTC chart 和可赎回仓位状态。
 - Demo Readiness panel 决策已记录在 `docs/decisions/0018-demo-readiness-panel.md`。
+- 主界面已移除手动 deposit / withdraw 表单、顶部信息卡和 Vault & Oracle Health 面板，直接开仓成为唯一主交易路径。
+- BTC K-line lookback 已扩展：1m 约 24 小时，5m 约 7 天，15m 约 20 天。
+- Consumer demo surface simplification 决策已记录在 `docs/decisions/0019-consumer-demo-surface-simplification.md`。
 
 ## 12. 当前下一步
 
-当前已完成 Milestone 5 / 6 / 7 的主要交易闭环，下一步进入 Milestone 8: Vault Health and Demo Hardening。
+当前已完成 Milestone 5 / 6 / 7 的主要交易闭环，下一步继续 Milestone 8: Demo Hardening。
 
 建议下一轮先做：
 

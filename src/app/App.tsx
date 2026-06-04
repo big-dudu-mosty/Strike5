@@ -1,20 +1,17 @@
-import { Activity, BarChart3, CircleDollarSign, ShieldCheck, Wallet } from 'lucide-react';
+import { Activity, CircleDollarSign, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useCurrentAccount, useCurrentNetwork } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { MarketPulsePanel } from '../components/market-pulse/MarketPulsePanel';
 import { TradePanel } from '../components/trade-panel/TradePanel';
 import { PositionsPanel } from '../components/positions/PositionsPanel';
-import { VaultHealthPanel } from '../components/vault-health/VaultHealthPanel';
 import { ChartPanel, type ChartTradeOverlay } from '../components/chart/ChartPanel';
 import { LanguageToggle } from '../components/language/LanguageToggle';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { DemoReadinessPanel } from '../components/demo-readiness/DemoReadinessPanel';
-import { PREDICT_CONFIG } from '../config/predict';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
-import { formatPercent, formatTime, scaleOracleUsd } from '../lib/formatters';
+import { formatPercent, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
 import type { TradeQuoteRequest } from '../lib/deepbook/quote';
 import type { KlineInterval } from '../lib/market-data/types';
@@ -22,12 +19,9 @@ import type { KlineInterval } from '../lib/market-data/types';
 export function App() {
   const [chartInterval, setChartInterval] = useState<KlineInterval>('1m');
   const [selectedTradeRequest, setSelectedTradeRequest] = useState<TradeQuoteRequest | null>(null);
-  const account = useCurrentAccount();
-  const network = useCurrentNetwork();
   const marketOverview = usePredictMarketOverview();
   const accountOverview = usePredictAccountOverview();
   const btcKlines = useBtcKlines(chartInterval);
-  const activeOracle = marketOverview.data?.activeOracle;
   const { t } = useI18n();
   const chartPrice = btcKlines.data?.latestPrice ?? null;
   const oracleSpot = scaleOracleUsd(marketOverview.data?.oracleState?.latest_price?.spot);
@@ -62,33 +56,6 @@ export function App() {
             <ConnectButton />
           </div>
         </header>
-
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <InfoTile
-            icon={<BarChart3 className="h-5 w-5" />}
-            label={t('tile.productRound.label')}
-            value={t('tile.productRound.value')}
-            detail={t('tile.productRound.detail')}
-          />
-          <InfoTile
-            icon={<Activity className="h-5 w-5" />}
-            label={t('tile.settlement.label')}
-            value={activeOracle ? formatTime(activeOracle.expiry) : t('tile.settlement.fallback')}
-            detail={t('tile.settlement.detail')}
-          />
-          <InfoTile
-            icon={<ShieldCheck className="h-5 w-5" />}
-            label={t('tile.authority.label')}
-            value={t('tile.authority.value')}
-            detail={t('tile.authority.detail')}
-          />
-          <InfoTile
-            icon={<Wallet className="h-5 w-5" />}
-            label={t('tile.wallet.label')}
-            value={account ? truncateAddress(account.address) : t('tile.wallet.notConnected')}
-            detail={network ?? PREDICT_CONFIG.network}
-          />
-        </section>
 
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
           <div className="flex flex-col gap-4">
@@ -129,11 +96,6 @@ export function App() {
               onQuoteRequestChange={setSelectedTradeRequest}
               overview={marketOverview.data}
             />
-            <VaultHealthPanel
-              error={marketOverview.error}
-              isLoading={marketOverview.isLoading}
-              overview={marketOverview.data}
-            />
           </aside>
         </section>
       </div>
@@ -148,33 +110,6 @@ function StatusBadge({ icon, label }: { icon: React.ReactNode; label: string }) 
       {label}
     </div>
   );
-}
-
-function InfoTile({
-  icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-zinc-400">{label}</span>
-        <span className="text-emerald-300">{icon}</span>
-      </div>
-      <div className="mt-3 text-xl font-semibold">{value}</div>
-      <div className="mt-1 text-sm text-zinc-500">{detail}</div>
-    </div>
-  );
-}
-
-function truncateAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 function buildTradeOverlay(request: TradeQuoteRequest | null): ChartTradeOverlay | null {

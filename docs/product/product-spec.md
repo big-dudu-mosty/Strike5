@@ -272,7 +272,6 @@ MVP 采用单页交易终端。
 1. Chart + Market Pulse
 2. Trade Panel
 3. Positions / Portfolio
-4. Vault & Oracle Health
 ```
 
 ### 8.1 Chart + Market Pulse
@@ -381,9 +380,9 @@ REDEEMABLE
 REDEEMED
 ```
 
-### 8.4 Vault & Oracle Health
+### 8.4 Vault / PLP Protocol Context
 
-这个模块既给用户看，也给评委看。
+Vault / PLP 是 DeepBook Predict 的交易对手方和流动性来源。MVP 主交易界面不展示独立 Vault & Oracle Health 面板；这些数据保留在文档、pitch 和未来 professional mode 中。
 
 展示：
 

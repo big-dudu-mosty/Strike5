@@ -45,7 +45,7 @@ choose trade
 -> deposit deficit and mint in the same PTB
 ```
 
-Manual deposit remains available in the Account panel as an optional funds-management tool, not as a required pre-trade step.
+Manual deposit and withdrawal PTB builders remain available as lower-level account primitives, but the visible controls were removed from the primary demo UI in `0019-consumer-demo-surface-simplification.md` so the product does not look like a recharge-first flow.
 
 The app reserves up to the user-entered size instead of only the preview quote cost because `predict::mint` calculates the actual mint cost on-chain at execution time after current vault exposure is considered. Any dUSDC that is deposited but not spent by `mint` remains in the `PredictManager` for the next order or withdrawal.
 

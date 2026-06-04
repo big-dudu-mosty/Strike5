@@ -1,7 +1,5 @@
 import { CheckCircle2, Loader2, Plus, Wallet } from 'lucide-react';
-import { useState } from 'react';
 import { PREDICT_CONFIG } from '../../config/predict';
-import { parseDUsdcInput } from '../../lib/dusdc';
 import { formatDUsdc, scaleQuoteAsset } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
@@ -13,15 +11,12 @@ interface AccountPanelProps {
 
 export function AccountPanel({ overview }: AccountPanelProps) {
   const { t } = useI18n();
-  const [depositAmount, setDepositAmount] = useState('');
-  const [withdrawAmount, setWithdrawAmount] = useState('');
   const {
     address,
     createdManagerHint,
     createManagerMutation,
     currentNetwork,
     currentWallet,
-    depositDUsdcMutation,
     isExpectedNetwork,
     managerId,
     managerSource,
@@ -29,39 +24,7 @@ export function AccountPanel({ overview }: AccountPanelProps) {
     managerSummaryQuery,
     walletBalanceQuery,
     walletDUsdcBalance,
-    walletDUsdcBalanceRaw,
-    withdrawDUsdcMutation,
   } = overview;
-  const depositAmountRaw = parseDUsdcInput(depositAmount);
-  const withdrawAmountRaw = parseDUsdcInput(withdrawAmount);
-  const managerDUsdcBalanceRaw =
-    managerSummary?.trading_balance == null ? null : BigInt(Math.max(0, managerSummary.trading_balance));
-  const isDepositInputEmpty = depositAmount.trim() === '';
-  const isDepositAmountInvalid = !isDepositInputEmpty && depositAmountRaw == null;
-  const isDepositInsufficient =
-    depositAmountRaw != null && walletDUsdcBalanceRaw != null && depositAmountRaw > walletDUsdcBalanceRaw;
-  const isDepositDisabled =
-    !isExpectedNetwork ||
-    !managerId ||
-    walletBalanceQuery.isLoading ||
-    walletDUsdcBalanceRaw == null ||
-    depositDUsdcMutation.isPending ||
-    isDepositInputEmpty ||
-    isDepositAmountInvalid ||
-    isDepositInsufficient;
-  const isWithdrawInputEmpty = withdrawAmount.trim() === '';
-  const isWithdrawAmountInvalid = !isWithdrawInputEmpty && withdrawAmountRaw == null;
-  const isWithdrawInsufficient =
-    withdrawAmountRaw != null && managerDUsdcBalanceRaw != null && withdrawAmountRaw > managerDUsdcBalanceRaw;
-  const isWithdrawDisabled =
-    !isExpectedNetwork ||
-    !managerId ||
-    managerSummaryQuery.isLoading ||
-    managerDUsdcBalanceRaw == null ||
-    withdrawDUsdcMutation.isPending ||
-    isWithdrawInputEmpty ||
-    isWithdrawAmountInvalid ||
-    isWithdrawInsufficient;
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
@@ -164,143 +127,15 @@ export function AccountPanel({ overview }: AccountPanelProps) {
               </button>
             )}
 
-            {managerId ? (
-              <div className="mt-4 grid gap-4 border-t border-zinc-800 pt-3">
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (!depositAmountRaw || isDepositDisabled) return;
-
-                    void overview.depositDUsdc(depositAmountRaw).then(() => {
-                      setDepositAmount('');
-                    });
-                  }}
-                >
-                  <label className="text-sm text-zinc-400" htmlFor="dusdc-deposit-amount">
-                    {t('account.depositAmount')}
-                  </label>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
-                      id="dusdc-deposit-amount"
-                      inputMode="decimal"
-                      onChange={(event) => setDepositAmount(event.target.value)}
-                      placeholder={t('account.depositPlaceholder')}
-                      type="text"
-                      value={depositAmount}
-                    />
-                    <button
-                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-                      disabled={isDepositDisabled}
-                      type="submit"
-                    >
-                      {depositDUsdcMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      ) : null}
-                      {depositDUsdcMutation.isPending
-                        ? t('account.depositing')
-                        : t('account.depositButton')}
-                    </button>
-                  </div>
-                  <div className="mt-2 text-xs text-zinc-500">{t('account.depositNote')}</div>
-                  {isDepositAmountInvalid ? (
-                    <div className="mt-2 text-xs text-red-300">{t('account.depositInvalid')}</div>
-                  ) : null}
-                  {isDepositInsufficient ? (
-                    <div className="mt-2 text-xs text-red-300">
-                      {t('account.depositInsufficient')}
-                    </div>
-                  ) : null}
-                </form>
-
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (!withdrawAmountRaw || isWithdrawDisabled) return;
-
-                    void overview.withdrawDUsdc(withdrawAmountRaw).then(() => {
-                      setWithdrawAmount('');
-                    });
-                  }}
-                >
-                  <label className="text-sm text-zinc-400" htmlFor="dusdc-withdraw-amount">
-                    {t('account.withdrawAmount')}
-                  </label>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
-                      id="dusdc-withdraw-amount"
-                      inputMode="decimal"
-                      onChange={(event) => setWithdrawAmount(event.target.value)}
-                      placeholder={t('account.withdrawPlaceholder')}
-                      type="text"
-                      value={withdrawAmount}
-                    />
-                    <button
-                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-zinc-700 px-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-200 disabled:cursor-not-allowed disabled:border-zinc-800 disabled:text-zinc-600"
-                      disabled={isWithdrawDisabled}
-                      type="submit"
-                    >
-                      {withdrawDUsdcMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      ) : null}
-                      {withdrawDUsdcMutation.isPending
-                        ? t('account.withdrawing')
-                        : t('account.withdrawButton')}
-                    </button>
-                  </div>
-                  <div className="mt-2 text-xs text-zinc-500">{t('account.withdrawNote')}</div>
-                  {isWithdrawAmountInvalid ? (
-                    <div className="mt-2 text-xs text-red-300">{t('account.withdrawInvalid')}</div>
-                  ) : null}
-                  {isWithdrawInsufficient ? (
-                    <div className="mt-2 text-xs text-red-300">
-                      {t('account.withdrawInsufficient')}
-                    </div>
-                  ) : null}
-                </form>
-              </div>
-            ) : null}
-
             {createdManagerHint ? (
               <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
                 <TransactionLink digest={createdManagerHint.digest} label={t('account.lastTx')} />
               </div>
             ) : null}
 
-            {depositDUsdcMutation.data ? (
-              <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
-                <TransactionLink
-                  digest={depositDUsdcMutation.data.digest}
-                  label={t('account.depositSuccess')}
-                />
-              </div>
-            ) : null}
-
-            {withdrawDUsdcMutation.data ? (
-              <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
-                <TransactionLink
-                  digest={withdrawDUsdcMutation.data.digest}
-                  label={t('account.withdrawSuccess')}
-                />
-              </div>
-            ) : null}
-
             {createManagerMutation.error ? (
               <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
                 {createManagerMutation.error.message}
-              </div>
-            ) : null}
-
-            {depositDUsdcMutation.error ? (
-              <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-                {depositDUsdcMutation.error.message}
-              </div>
-            ) : null}
-
-            {withdrawDUsdcMutation.error ? (
-              <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-                {withdrawDUsdcMutation.error.message}
               </div>
             ) : null}
 
