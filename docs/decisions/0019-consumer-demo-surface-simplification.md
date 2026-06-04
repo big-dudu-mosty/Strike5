@@ -32,12 +32,12 @@ Strike5 will simplify the primary demo surface:
 - Keep Vault / PLP data as protocol context for docs, pitch, and possible future professional mode.
 - Expand BTC K-line lookback so users can inspect history before the current day.
 
-The K-line provider remains CryptoCompare. The current client uses:
+The K-line provider remains CryptoCompare. The current client paginates CryptoCompare `histominute` requests as raw 1m candles, then aggregates them client-side for 5m / 15m views. This avoids CryptoCompare's aggregate response cap from shortening the visible history. The current policy is:
 
 ```text
-1m  -> 1440 candles, about 24 hours
-5m  -> 2000 candles, about 7 days
-15m -> 2000 candles, about 20 days
+1m  -> at least 7 days, about 10080 candles
+5m  -> at least 7 days, about 2016 candles, aggregated from 1m
+15m -> at least 7 days, about 672 candles, aggregated from 1m
 ```
 
 ## Rationale
@@ -63,7 +63,7 @@ Limitations:
 
 - Users cannot manually withdraw unused Manager dUSDC from the primary UI, even though the lower-level withdrawal transaction builder still exists.
 - Vault / PLP risk numbers are no longer visible on the main screen.
-- CryptoCompare minute history is bounded by provider response limits, so the chart is a wider short-cycle lookback, not infinite historical data.
+- CryptoCompare minute history is bounded by provider response limits, so Strike5 paginates raw 1m requests to satisfy the required 7-day 1m / 5m lookback instead of treating one aggregated response as enough.
 
 ## Alternatives Considered
 

@@ -232,6 +232,9 @@ export function ChartPanel({
         <span>
           {t('chart.source')}: {provider ?? 'CryptoCompare'}
         </span>
+        {candles.length > 0 ? (
+          <span className="hidden text-zinc-400 sm:inline">{t('chart.lookback7d')}</span>
+        ) : null}
         <span>{tradeOverlay ? formatTradeOverlayLabel(tradeOverlay, t) : t('chart.oracleLine')}</span>
       </div>
     </section>

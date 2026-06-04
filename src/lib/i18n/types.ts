@@ -25,6 +25,7 @@ export type MessageKey =
   | 'chart.loading'
   | 'chart.error'
   | 'chart.source'
+  | 'chart.lookback7d'
   | 'chart.oracleLine'
   | 'chart.aboveLine'
   | 'chart.belowLine'

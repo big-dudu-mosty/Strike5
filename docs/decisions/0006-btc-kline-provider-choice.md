@@ -42,9 +42,9 @@ https://min-api.cryptocompare.com/data/v2/histominute
 Intervals:
 
 ```text
-1m  -> histominute, aggregate=1
-5m  -> histominute, aggregate=5
-15m -> histominute, aggregate=15
+1m  -> paginated histominute, aggregate=1
+5m  -> paginated histominute, aggregate=1, client-side 5m aggregation
+15m -> paginated histominute, aggregate=1, client-side 15m aggregation
 ```
 
 Pair:
@@ -60,7 +60,7 @@ CryptoCompare 满足当前 MVP 需求：
 - Public endpoint 可用。
 - 支持 CORS。
 - 支持分钟级 OHLC。
-- 支持 aggregate 参数生成 5m / 15m candles。
+- 支持分钟级 OHLC；Strike5 可以从完整 1m history 前端聚合出 5m / 15m candles，避免 aggregate response cap 导致历史窗口不足。
 - 不需要先引入 backend proxy。
 
 ## Consequences
