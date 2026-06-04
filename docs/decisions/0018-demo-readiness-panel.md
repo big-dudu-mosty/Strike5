@@ -1,6 +1,6 @@
 # 0018: Demo Readiness Panel
 
-Status: Accepted
+Status: Superseded by 0019-consumer-demo-surface-simplification.md and the later primary UI cleanup
 Date: 2026-06-04
 
 ## Context
@@ -22,6 +22,8 @@ Without a consolidated checklist, it is easy to start a demo while one prerequis
 ## Decision
 
 Add a read-only `Demo Readiness` panel to the right sidebar.
+
+This was later removed from the primary trading UI so Strike5 presents as a user-facing trading terminal rather than an internal demo checklist. The component can remain available for future internal demo tooling, but it is no longer rendered in the main app surface.
 
 The panel checks:
 

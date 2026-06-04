@@ -403,8 +403,8 @@ suiRpcUrl
 
 - create manager、deposit、withdraw、mint、redeem 成功状态已显示可点击 SuiVision testnet 交易链接。
 - SuiVision transaction link 决策已记录在 `docs/decisions/0017-sui-vision-transaction-links.md`。
-- Demo Readiness panel 已加入右侧栏，实时检查钱包、网络、dUSDC、PredictManager、active oracle、BTC chart 和可赎回仓位状态。
-- Demo Readiness panel 决策已记录在 `docs/decisions/0018-demo-readiness-panel.md`。
+- Demo Readiness panel 曾用于右侧栏实时检查钱包、网络、dUSDC、PredictManager、active oracle、BTC chart 和可赎回仓位状态；当前已从主交易界面移除，避免 demo 页面显得像内部检查台。
+- Demo Readiness panel 原始决策记录在 `docs/decisions/0018-demo-readiness-panel.md`。
 - 主界面已移除手动 deposit / withdraw 表单、顶部信息卡和 Vault & Oracle Health 面板，直接开仓成为唯一主交易路径。
 - BTC K-line lookback 已扩展并分页拉取：1m 至少 7 天，5m 至少 7 天，15m 至少 7 天；5m / 15m 由 1m 原始 candles 前端聚合。
 - Consumer demo surface simplification 决策已记录在 `docs/decisions/0019-consumer-demo-surface-simplification.md`。
