@@ -403,6 +403,8 @@ suiRpcUrl
 
 - create manager、deposit、withdraw、mint、redeem 成功状态已显示可点击 SuiVision testnet 交易链接。
 - SuiVision transaction link 决策已记录在 `docs/decisions/0017-sui-vision-transaction-links.md`。
+- Demo Readiness panel 已加入右侧栏，实时检查钱包、网络、dUSDC、PredictManager、active oracle、BTC chart 和可赎回仓位状态。
+- Demo Readiness panel 决策已记录在 `docs/decisions/0018-demo-readiness-panel.md`。
 
 ## 12. 当前下一步
 

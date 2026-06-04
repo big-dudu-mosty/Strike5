@@ -9,6 +9,7 @@ import { VaultHealthPanel } from '../components/vault-health/VaultHealthPanel';
 import { ChartPanel, type ChartTradeOverlay } from '../components/chart/ChartPanel';
 import { LanguageToggle } from '../components/language/LanguageToggle';
 import { AccountPanel } from '../components/account/AccountPanel';
+import { DemoReadinessPanel } from '../components/demo-readiness/DemoReadinessPanel';
 import { PREDICT_CONFIG } from '../config/predict';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
@@ -108,6 +109,13 @@ export function App() {
           </div>
 
           <aside className="flex flex-col gap-4">
+            <DemoReadinessPanel
+              accountOverview={accountOverview}
+              hasChartPrice={chartPrice != null}
+              isMarketLoading={marketOverview.isLoading}
+              marketError={marketOverview.error}
+              overview={marketOverview.data}
+            />
             <MarketPulsePanel
               error={marketOverview.error}
               chartOracleDiff={oracleDiff == null ? null : formatPercent(oracleDiff)}
