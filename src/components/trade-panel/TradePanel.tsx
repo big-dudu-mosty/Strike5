@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ScanLine } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock3, ScanLine, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PRODUCT_TIMING } from '../../config/predict';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
@@ -7,13 +7,13 @@ import { useTradeQuote } from '../../hooks/useTradeQuote';
 import { useNow } from '../../hooks/useNow';
 import { parseDUsdcInput } from '../../lib/dusdc';
 import type { TradeKind, TradeQuoteRequest } from '../../lib/deepbook/quote';
-import { formatDUsdcRaw, formatUsd } from '../../lib/formatters';
+import { formatDUsdcRaw, formatDuration, formatTime, formatUsd } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { MessageKey } from '../../lib/i18n/types';
 import type { PredictMarketOverview } from '../../lib/predict-server/types';
 import { TransactionLink } from '../transaction/TransactionLink';
 
-const quickPicks = [
+const challengeCards = [
   {
     kind: 'above',
     typeKey: 'trade.above',
@@ -133,7 +133,8 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     timeLeftMs != null && timeLeftMs <= PRODUCT_TIMING.openingCutoffMs;
   const tradeQuote = useTradeQuote(isOpeningCutoff ? null : quoteRequest);
   const tradeMint = useTradeMint({ managerId: accountOverview.managerId });
-  const selectedPick = quickPicks.find((pick) => pick.kind === selectedKind) ?? quickPicks[0];
+  const selectedPick =
+    challengeCards.find((pick) => pick.kind === selectedKind) ?? challengeCards[0];
   const managerBalanceRaw =
     accountOverview.managerSummary?.trading_balance == null
       ? null
@@ -168,12 +169,59 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     tradeQuote.isLoading ||
     tradeQuote.isError ||
     tradeMint.isPending;
+  const roundStatus = !activeOracle
+    ? t('trade.round.noOracle')
+    : isOpeningCutoff
+      ? t('trade.round.closed')
+      : t('trade.round.open');
+  const roundTimeLeft = activeOracle ? formatDuration(activeOracle.expiry - now) : t('marketPulse.pending');
+  const roundExpiry = activeOracle ? formatTime(activeOracle.expiry) : t('marketPulse.pending');
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
-      <div>
-        <h2 className="text-base font-semibold">{t('trade.title')}</h2>
-        <p className="text-sm text-zinc-500">{t('trade.subtitle')}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold">{t('trade.title')}</h2>
+          <p className="text-sm text-zinc-500">{t('trade.subtitle')}</p>
+        </div>
+        <Trophy className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden="true" />
+      </div>
+
+      <div className="mt-4 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-400 text-zinc-950">
+              <Clock3 className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-medium uppercase tracking-normal text-emerald-100/70">
+                {t('trade.round.label')}
+              </div>
+              <div className="mt-1 truncate text-sm font-semibold text-emerald-50">
+                {activeOracle ? `BTC ${roundExpiry}` : t('trade.round.noOracle')}
+              </div>
+            </div>
+          </div>
+          <span
+            className={`shrink-0 rounded px-2 py-1 text-xs font-semibold ${
+              activeOracle && !isOpeningCutoff
+                ? 'bg-emerald-400 text-zinc-950'
+                : 'bg-zinc-800 text-zinc-300'
+            }`}
+          >
+            {roundStatus}
+          </span>
+        </div>
+        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <dt className="text-xs text-emerald-100/60">{t('trade.round.timeLeft')}</dt>
+            <dd className="mt-1 font-medium text-emerald-50">{roundTimeLeft}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-emerald-100/60">{t('trade.round.expiry')}</dt>
+            <dd className="mt-1 font-medium text-emerald-50">{roundExpiry}</dd>
+          </div>
+        </dl>
       </div>
 
       <div className="mt-4 grid grid-cols-2 rounded-md border border-zinc-800 bg-zinc-950 p-1">
@@ -202,7 +250,7 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
       </div>
 
       <div className="mt-4 grid gap-3">
-        {quickPicks.map((pick) => {
+        {challengeCards.map((pick) => {
           const Icon = pick.icon;
           const isSelected = pick.kind === selectedKind;
           return (
