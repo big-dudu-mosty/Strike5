@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-06-04
 
+Supersession note: Product positioning in this record is superseded by `0020-arena-privacy-social-loop.md`. The surface simplification decisions remain accepted unless a later Arena UI decision changes them.
+
 ## Context
 
 Strike5's primary hackathon demo is a consumer-facing BTC fixed-risk trading terminal:

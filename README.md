@@ -1,20 +1,20 @@
 # Strike5
 
-Strike5 是一个基于 **DeepBook Predict** 的 BTC 短周期固定风险交易终端。
+Strike5 Arena 是一个基于 **DeepBook Predict** 的 BTC 短周期预测竞技场。
 
-用户在产品里看 BTC K 线，用 5 分钟的节奏判断短期方向或价格区间，然后用 dUSDC 买入 DeepBook Predict 原生的 Above / Below / Range 仓位。真实报价、仓位记录、流动性、风险暴露和到期结算都由 DeepBook Predict on Sui 负责。
+用户在产品里看 BTC K 线和 DeepBook Predict Oracle Spot，每个 active BTC expiry 都是一轮 Arena。用户用 dUSDC 参与 Above / Below / Range 挑战，真实报价、仓位记录、流动性、风险暴露和到期结算都由 DeepBook Predict on Sui 负责。
 
 ## 一句话定位
 
-> Strike5 is a chart-first BTC micro-options terminal powered by DeepBook Predict.
+> Strike5 Arena is a privacy-aware BTC prediction arena powered by DeepBook Predict.
 
 更具体地说：
 
-> 用户从 BTC K 线出发，选择 Above / Below / Range 固定风险仓位，通过 Sui 钱包签名 PTB，调用 DeepBook Predict 的 Predict shared object 完成 mint / mint_range / redeem，最终以 OracleSVI settlement price 结算。
+> 用户加入短周期 BTC Arena rounds，通过 Sui 钱包签名 PTB，调用 DeepBook Predict 的 Predict shared object 完成 mint / mint_range / redeem；到期后基于 OracleSVI settlement price 结算，并通过 opt-in leaderboard、verified showcase、Sealed Calls 和 Combo score 形成竞技和社交循环。
 
 ## 核心定位
 
-Strike5 不是泛预测市场，也不是体育博彩或新闻竞猜产品。
+Strike5 不是泛预测市场，也不是体育、政治或新闻事件投注平台。
 
 它的核心是：
 
@@ -24,9 +24,13 @@ BTC 短周期价格判断
 + dUSDC 固定风险交易
 + Predict Vault / PLP 做流动性和对手方
 + OracleSVI 到期结算
++ opt-in leaderboard
++ verified social feed
++ sealed calls
++ combo score multiplier
 ```
 
-产品形态应该更接近轻量交易终端，而不是社交投注平台。
+当前 MVP 不伪造 ETH / SUI / SOL oracle，也不伪造任意事件结算。
 
 ## 为什么贴合 DeepBook Predict 赛道
 
@@ -39,30 +43,31 @@ DeepBook Predict 的价值不只是列出几个二元事件，而是提供：
 - dUSDC quote asset。
 - 可被 Sui DeFi 组合的链上账户与仓位状态。
 
-Strike5 直接使用这些能力，把它包装成一个用户能理解的 BTC 短周期交易产品。
+Strike5 Arena 直接使用这些能力，把它包装成一个用户能反复参与、能公开战绩、能晒单、能做 sealed prediction calls 的产品。
 
 ## 关键产品规则
 
-当前 DeepBook Predict testnet 已确认的最短 active BTC oracle expiry 间隔是 **15 分钟**。
+当前 DeepBook Predict testnet 可真实测试的主线是 BTC oracle market。
 
-因此 Strike5 不声称提供原生 5 分钟链上结算。产品采用：
+Strike5 不声称提供不存在的链上市场，也不声称隐藏底层链上交易。产品采用：
 
 ```text
-5 分钟产品交易轮次
-15 分钟 DeepBook Predict oracle settlement
+DeepBook Predict BTC expiry = 实际链上 settlement
+Strike5 Round = 产品竞技轮次
+Leaderboard = opt-in 展示
+Sealed Calls = 隐藏赛前观点内容，不隐藏 mint / redeem 交易
+Combo = 乘倍 Arena score，不乘倍链上 payout
 ```
 
 示例：
 
-| 时间窗口 | Strike5 行为 | DeepBook Predict 结算 |
+| 阶段 | Strike5 行为 | DeepBook Predict 行为 |
 |---|---|---|
-| 14:45 - 14:50 | 第 1 轮交易卡片 | 15:00 expiry |
-| 14:50 - 14:55 | 第 2 轮交易卡片 | 15:00 expiry |
-| 14:55 - 14:58:30 | 第 3 轮交易卡片 | 15:00 expiry |
-| 14:58:30 - 15:00 | 停止开仓 | 等待 settlement |
-| 15:00 之后 | 用户 redeem | 进入下一轮 expiry |
-
-这保证了产品体验足够短周期，同时不偏离 DeepBook Predict 当前 testnet 的真实能力。
+| Round open | 展示 challenge cards | active BTC OracleSVI 可 quote |
+| User joins | 钱包签名 PTB | `mint` / `mint_range` |
+| Round closed | 停止新开仓 | 等待 oracle settlement |
+| Settled | reveal result / update stats | `redeem` / `redeem_range` |
+| Post-round | showcase / leaderboard / combo | Predict events 可索引 |
 
 ## 文档目录
 
@@ -110,7 +115,8 @@ pnpm lint
 - PredictManager 查找 / 创建。
 - BTC K 线。
 - DeepBook Predict oracle spot、expiry、countdown。
-- Above / Below / Range Quick Picks。
+- Round Arena。
+- Above / Below / Range challenge cards。
 - Custom strike / range builder。
 - Strike grid snapping 和校验。
 - Quote preview。
@@ -118,15 +124,26 @@ pnpm lint
 - mint / mint_range。
 - Position panel。
 - redeem / redeem_range。
-- Vault & Oracle Health panel。
+- opt-in leaderboard。
+- verified call / showcase feed。
+
+P1 / Stretch：
+
+- Sealed Calls with Sui Seal。
+- Combo score multiplier。
+- Settlement reveal polish。
+- Nautilus verified scoring spike。
 
 暂不进入 MVP：
 
+- ETH / SUI / SOL 预测，除非官方 Predict oracle 可用。
+- 任意新闻 / 体育 / 政治事件市场。
+- 真钱串关乘法赔付。
 - DeepBook Margin。
 - Iron Bank。
 - Telegram bot。
 - Cross-venue arbitrage。
-- 复杂 AI 新闻分析。
+- 主网资产路由到 testnet dUSDC。
 - 自动 keeper network。
 - 自动 vault strategy product。
 
@@ -150,8 +167,11 @@ predict-testnet-4-16
 - `deepbookv3-predict/scripts/config/constants.ts`
 - `deepbookv3-predict/scripts/services/oracle-feed/config.ts`
 
-官方文档：
+官方文档和参考：
 
 - https://docs.sui.io/onchain-finance/deepbook-predict/
 - https://docs.sui.io/onchain-finance/deepbook-predict/design
 - https://docs.sui.io/onchain-finance/deepbook-predict/contract-information/predict-manager
+- https://www.sui.io/privacy
+- https://blog.sui.io/introducing-decentralized-seal-key-server-testnet/
+- https://www.sui.io/nautilus

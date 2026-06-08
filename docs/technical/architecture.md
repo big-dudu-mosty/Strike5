@@ -1,14 +1,14 @@
 # Strike5 Technical Architecture
 
-本文档定义 Strike5 的系统架构、数据分层、前端模块、交易路径和技术选型。
+本文档定义 Strike5 Arena 的系统架构、数据分层、前端模块、交易路径和技术选型。
 
 ## 1. 架构原则
 
-Strike5 的技术架构要满足三个目标：
+Strike5 Arena 的技术架构要满足三个目标：
 
 1. 真实接入 DeepBook Predict。
 2. 交易路径清晰，不把展示数据当成权威状态。
-3. MVP 足够简单，能在黑客松周期内跑通端到端流程。
+3. Arena / leaderboard / feed 玩法不能破坏真实 mint / redeem 闭环。
 
 核心原则：
 
@@ -41,6 +41,7 @@ flowchart LR
   PS --> VS["Vault Summary / PLP Risk Data<br/>(protocol context / future pro mode)"]
 
   FE --> PTB["Build PTB<br/>(@mysten/sui)"]
+  FE --> Arena["Arena Layer<br/>(round / leaderboard / feed / combo)"]
   PTB --> U
   U --> RPC
 
@@ -138,7 +139,7 @@ RPC 不负责构造 PTB。
 
 | 模块 | 技术 | 用途 |
 |---|---|---|
-| Frontend | React + TypeScript | 主交易界面 |
+| Frontend | React + TypeScript | Arena UI |
 | Wallet | `@mysten/dapp-kit` | Sui wallet connect |
 | Sui SDK | `@mysten/sui` | PTB、RPC reads、devInspect、tx submit |
 | Data Fetching | TanStack Query | oracle、vault、portfolio、quote 缓存 |
@@ -147,6 +148,8 @@ RPC 不负责构造 PTB。
 | Market Data | DeepBook Predict Server API | market、oracle、vault、history 展示 |
 | Protocol | DeepBook Predict | mint、mint_range、redeem、settlement |
 | Quote Asset | dUSDC | Predict testnet quote asset |
+| Privacy Stretch | Sui Seal | Sealed Calls 的观点内容加密与 reveal |
+| Verified Compute Stretch | Nautilus | leaderboard scoring / attestable computation spike |
 
 MVP 可以先做纯前端 dApp。只有在 K 线 provider 有 CORS、rate limit 或 API key 问题时，再增加一个很薄的 Node API 代理。
 
@@ -158,14 +161,17 @@ MVP 可以先做纯前端 dApp。只有在 K 线 provider 有 CORS、rate limit 
 src/
   app/
   components/
+    arena/
     chart/
+    leaderboard/
     market-pulse/
+    social-feed/
     trade-panel/
     positions/
-    vault-health/
   hooks/
   lib/
     deepbook/
+    arena/
     sui/
     market-data/
   config/
@@ -197,12 +203,27 @@ Chart price 只用于参考，不用于最终结算。
 
 如果价格偏差过大，显示警告。
 
-### 5.3 Trade Panel 模块
+### 5.3 Arena / Challenge 模块
 
-包含两个 tab：
+职责：
+
+- 将当前 active BTC oracle expiry 映射为 current round。
+- 生成 challenge cards。
+- 将 challenge 映射到 MarketKey / RangeKey。
+- 显示 round countdown / closed / settlement / reveal 状态。
+- 显示 joined 状态。
+- 触发 quote、mint 或 mint_range。
+
+Challenge cards 可以复用现有 Trade Panel 的 quote 和 transaction builders。
+
+### 5.4 Trade Builder 模块
+
+Custom Builder 保留为高级入口。
+
+包含：
 
 ```text
-Quick Picks
+Challenge Cards
 Custom
 ```
 
@@ -215,13 +236,14 @@ Custom
 - 展示 cost / payout / max loss。
 - 触发 PTB 构造和钱包签名。
 
-### 5.4 Positions 模块
+### 5.5 Positions 模块
 
 职责：
 
 - 根据 PredictManager 和 indexer 数据展示持仓。
 - 区分 open / pending settlement / redeemable / redeemed。
 - 触发 redeem / redeem_range。
+- 支持 settlement reveal 和 showcase 生成。
 
 注意：
 
@@ -230,7 +252,39 @@ position 不一定是独立 object。
 DeepBook Predict 当前设计中，仓位数量存在 PredictManager 内部。
 ```
 
-### 5.5 Vault / PLP 协议数据
+### 5.6 Leaderboard 模块
+
+职责：
+
+- 管理用户 opt-in 状态。
+- 展示 Top 10。
+- 统计 completed rounds、win rate、streak 和 PnL。
+- 默认不展示未 opt-in 用户。
+
+MVP 可以先用应用层存储 opt-in 和 alias；战绩应尽量由 Predict Server events / PredictManager state 派生。
+
+### 5.7 Social Feed / Sealed Calls 模块
+
+职责：
+
+- 发布 public call。
+- 发布 verified showcase。
+- 绑定 round、market key、tx digest 和 settlement result。
+- 支持 sealed call 的 locked / revealed 状态。
+
+如果接入 Sui Seal，模块负责 client-side encryption 和 policy-gated reveal。否则 UI 必须标注 demo-only，不得声称已完成真实加密。
+
+### 5.8 Combo 模块
+
+职责：
+
+- 选择连续多个 round 的 challenge。
+- 跟踪每个 leg 对应的真实 Predict position。
+- 在全部 settlement 后计算 score multiplier。
+
+Combo 不改变 DeepBook Predict 原生 payout。
+
+### 5.9 Vault / PLP 协议数据
 
 职责：
 
@@ -316,9 +370,9 @@ sequenceDiagram
   User->>FE: Connect Wallet
   FE->>PS: Fetch active oracles / vault summary
   FE->>RPC: Read PredictManager / coins / oracle when needed
-  FE->>FE: Generate Quick Picks and Custom Preview
+  FE->>FE: Generate current round challenges
 
-  User->>FE: Select Above / Below / Range
+  User->>FE: Select Arena challenge or custom builder
   FE->>FE: Validate and snap strike / range
   FE->>RPC: DevInspect quote
   RPC->>C: get directional/range trade amounts
@@ -333,6 +387,7 @@ sequenceDiagram
 
   FE->>PS: Refresh indexed data
   FE->>RPC: Confirm critical onchain state
+  FE->>FE: Update round / leaderboard / feed state
 
   User->>FE: Redeem after settlement
   FE->>User: Request wallet signature

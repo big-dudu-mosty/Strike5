@@ -3,6 +3,8 @@
 Status: Accepted
 Date: 2026-06-02
 
+Supersession note: Product positioning in this record is superseded by `0020-arena-privacy-social-loop.md`. The DeepBook Predict technical baseline remains accepted.
+
 ## Context
 
 Strike5 要参加 DeepBook Predict 赛道。项目需要贴合 DeepBook Predict，而不是做一个泛预测市场或技术堆叠 demo。

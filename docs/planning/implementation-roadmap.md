@@ -1,53 +1,62 @@
 # Strike5 Implementation Roadmap
 
-本文档用于指导 Strike5 从文档阶段进入代码实现阶段。
+本文档用于指导 Strike5 Arena 从当前交易闭环进入 Arena、排行榜、晒单、Sealed Calls 和 Combo 的实现阶段。
 
-目标不是一次性把所有功能写完，而是按可验证的里程碑逐步推进，保证每一步都符合项目逻辑、DeepBook Predict 技术边界和黑客松 demo 需求。
+目标不是一次性把所有功能写完，而是按可验证的里程碑推进，保证每一步都符合 DeepBook Predict 技术边界和黑客松 demo 需求。
 
 ## 1. 当前基线
 
-项目已经确定的核心逻辑：
+项目已经完成或确认的真实链路：
 
 ```text
 BTC K-line
 -> DeepBook Predict active oracle
--> 5-minute product round
--> nearest 15-minute oracle expiry settlement
--> Above / Below / Range trade
--> dUSDC fixed-risk mint
--> PredictManager position accounting
+-> Arena round based on current BTC expiry
+-> Above / Below / Range challenge
+-> dUSDC fixed-risk quote
+-> PredictManager account
+-> mint / mint_range
+-> position display
 -> OracleSVI settlement
 -> redeem / redeem_range
 ```
 
+新的产品主线：
+
+```text
+Round Arena
+-> opt-in leaderboard
+-> verified calls / showcases
+-> sealed calls
+-> combo score multiplier
+```
+
 项目不做：
 
-- 泛预测市场。
-- 新闻竞猜。
+- ETH / SUI / SOL 等非 BTC oracle 预测，除非 DeepBook Predict testnet 官方提供对应 oracle。
+- 任意新闻 / 体育 / 政治事件预测。
+- 自建事件 oracle。
+- 真钱串关乘法赔付。
+- 主网资产路由到 testnet dUSDC。
 - DeepBook Margin / Iron Bank 组合策略。
-- Telegram bot。
 - Cross-venue arbitrage。
-- 复杂 AI 投资建议。
 - 自动 vault strategy。
 
 ## 2. 实现原则
 
-1. 先打通真实交易闭环，再做增强体验。
-2. 前端构造 PTB，钱包签名，Sui RPC 提交。
-3. Predict Server 用于展示和索引，关键交易状态通过 Sui RPC 确认。
-4. Chart Price 和 Oracle Spot 必须明确区分。
-5. Position Panel 围绕 PredictManager 和事件数据设计。
-6. 所有会影响架构、依赖、数据源、交易语义或 UX 规则的选择，都要写入 `docs/decisions/`。
+1. 真实 mint / redeem 闭环优先级高于任何玩法层。
+2. 所有 Arena challenge 必须能映射到 DeepBook Predict `MarketKey` 或 `RangeKey`。
+3. 前端构造 PTB，钱包签名，Sui RPC 提交。
+4. Predict Server 用于展示和索引，关键交易状态通过 Sui RPC 确认。
+5. Chart Price 和 Oracle Spot 必须明确区分。
+6. 排行榜默认 opt-out；只有用户主动 opt-in 才展示。
+7. Sealed Calls 只能承诺隐藏社交观点内容，不能承诺隐藏底层链上交易。
+8. Combo MVP 只乘倍 Arena score，不改变 DeepBook Predict 原生 payout。
+9. 所有影响产品主线、交易语义、隐私边界或 demo 讲法的选择，都要写入 `docs/decisions/`。
 
 ## 3. Milestone 0: Planning Baseline
 
-状态：已开始。
-
-目标：
-
-- 补齐产品、架构、DeepBook 接入和 demo 文档。
-- 建立 implementation roadmap。
-- 建立 ADR / decision record 机制。
+状态：已完成，现由 `0020-arena-privacy-social-loop.md` 更新产品主线。
 
 验收：
 
@@ -61,48 +70,7 @@ BTC K-line
 
 ## 4. Milestone 1: App Scaffold
 
-目标：
-
-建立最小可运行前端项目。
-
-状态：基础 scaffold 已完成。
-
-预计工作：
-
-- 选择前端构建方案。
-- 初始化 React + TypeScript app。
-- 配置 package manager。
-- 配置基础 lint / format / typecheck。
-- 建立基础目录结构。
-- 建立 config layer。
-
-建议目录：
-
-```text
-src/
-  app/
-  components/
-  hooks/
-  lib/
-    deepbook/
-    sui/
-    market-data/
-  config/
-  types/
-```
-
-需要决策留存：
-
-- 前端构建工具选择。
-- 包管理器选择。
-- UI 样式方案选择。
-
-验收：
-
-- 本地 dev server 可启动。
-- 首页可渲染基础 Strike5 shell。
-- TypeScript 编译通过。
-- README 或文档中记录启动命令。
+状态：已完成。
 
 当前完成内容：
 
@@ -111,53 +79,17 @@ src/
 - Tailwind CSS v4 已接入。
 - Sui dApp Kit provider 已接入。
 - 基础页面 shell 已建立。
-- Chart / Market Pulse / Trade Panel / Positions / Vault Health 面板占位已建立。
+- Chart / Market Pulse / Trade Panel / Positions 面板已建立。
 - `pnpm build` 已通过。
 - `pnpm lint` 已通过。
 
 ## 5. Milestone 2: Config and Data Foundation
 
-目标：
-
-建立 DeepBook Predict、Sui 和 market data 的基础配置与客户端。
-
-状态：Predict Server 数据基础和 BTC K-line provider 均已完成。
-
-预计工作：
-
-- 建立 `PREDICT_CONFIG`。
-- 建立 Sui RPC client。
-- 建立 Predict Server API client。
-- 建立 oracle / vault summary fetcher。
-- 建立基础类型定义。
-- 建立 TanStack Query provider。
-
-关键配置：
-
-```text
-network
-predictServerUrl
-predictPackageId
-predictObjectId
-dusdcType
-suiRpcUrl
-```
-
-需要决策留存：
-
-- 是否先使用 public Sui RPC。
-- Predict Server 数据缓存策略。
-- BTC K-line provider 选择。
-
-验收：
-
-- 能 fetch active oracles。
-- 能 fetch vault summary。
-- 能展示当前 active oracle expiry。
-- 能展示 oracle spot / freshness。
+状态：已完成。
 
 当前完成内容：
 
+- `PREDICT_CONFIG` 已建立。
 - Predict Server client 已建立。
 - Predict Server response types 已建立。
 - `usePredictMarketOverview` 已建立。
@@ -167,37 +99,10 @@ suiRpcUrl
 
 ## 6. Milestone 3: Chart and Market Pulse
 
-目标：
-
-完成用户决策所需的视觉基础。
-
-状态：BTC K-line 和 Chart / Oracle price comparison 已完成基础版本。
-
-预计工作：
-
-- 接入 BTC K-line provider。
-- 展示 1m / 5m / 15m K 线。
-- 展示 Chart Price。
-- 展示 Oracle Spot。
-- 展示 Chart / Oracle Diff。
-- 展示 Oracle Freshness。
-- 展示 expiry countdown。
-
-需要决策留存：
-
-- K-line provider。
-- Chart library 配置方式。
-- Oracle / chart price divergence threshold。
-
-验收：
-
-- 页面能同时看到 Chart Price 和 Oracle Spot。
-- 两者偏差能显示。
-- Countdown 正确指向 nearest active 15m expiry。
+状态：已完成基础版本。
 
 当前完成内容：
 
-- BTC K-line provider 决策已记录。
 - CryptoCompare K-line client 已接入。
 - 支持 1m / 5m / 15m candles。
 - `lightweight-charts` 已渲染真实 BTC candles。
@@ -209,34 +114,7 @@ suiRpcUrl
 
 ## 7. Milestone 4: Wallet and PredictManager
 
-目标：
-
-完成用户账户入口。
-
-状态：基础账户入口已完成。
-
-预计工作：
-
-- 接入 Sui wallet。
-- 检查当前网络。
-- 展示 wallet address。
-- 展示 wallet dUSDC balance。
-- 查找用户 PredictManager。
-- 支持创建 PredictManager。
-- 展示 manager dUSDC balance。
-
-需要决策留存：
-
-- PredictManager discovery 方法。
-- 是否做本地 manager id cache。
-- deposit 是否与 mint 拆开。
-
-验收：
-
-- 用户能连接 wallet。
-- 用户能看到 dUSDC 状态。
-- 用户能创建 / 加载 PredictManager。
-- 关键状态通过 Sui RPC 确认。
+状态：已完成基础账户入口。
 
 当前完成内容：
 
@@ -245,47 +123,21 @@ suiRpcUrl
 - `GET /managers?owner=<wallet_address>` 已用于发现用户 PredictManager。
 - `predict::create_manager` PTB 已由前端构造并通过钱包签名提交。
 - 交易确认后解析 `PredictManagerCreated` 事件，并刷新 Predict Server 查询。
-- dUSDC deposit PTB 已接入 `predict_manager::deposit<dUSDC>`。
-- 用户可以把钱包 dUSDC 显式存入当前 PredictManager。
-- dUSDC withdrawal PTB 已接入 `predict_manager::withdraw<dUSDC>`，并在同一 PTB 中转回当前钱包。
+- dUSDC deposit / withdrawal PTB 已建立，当前主界面以直接开仓自动补款为主。
 - Manager dUSDC、account value、open positions 已从 manager summary 展示。
-- PredictManager account flow 决策已记录在 `docs/decisions/0007-predict-manager-account-flow.md`。
-- dUSDC deposit 拆分决策已记录在 `docs/decisions/0008-separate-dusdc-deposit-before-mint.md`。
-- Manager withdrawal flow 决策已记录在 `docs/decisions/0015-manager-withdrawal-flow.md`。
 
-## 8. Milestone 5: Trade Panel and Quote
+相关决策：
 
-目标：
+- `0007-predict-manager-account-flow.md`
+- `0008-separate-dusdc-deposit-before-mint.md`
+- `0015-manager-withdrawal-flow.md`
+- `0016-direct-order-auto-top-up.md`
 
-完成 Above / Below / Range 的交易预览。
+## 8. Milestone 5: Quote and Challenge Cards
 
-状态：Quick Picks 与 Custom Builder quote preview 已完成。
+状态：Quick Picks 与 Custom Builder quote preview 已完成；下一步要把交易卡片改造成 Arena Challenge Cards。
 
-预计工作：
-
-- 生成 Quick Picks。
-- 实现 Custom Builder。已完成。
-- 实现 strike / range snapping。已完成。
-- 构造 MarketKey / RangeKey 参数。
-- 使用 devInspect 获取 quote。
-- 展示 cost / estimated payout / max loss。
-- 展示 opening cutoff 状态。
-
-需要决策留存：
-
-- Quick Picks 生成策略。
-- 默认 amount。
-- opening cutoff 具体秒数。
-- quote 失败时的 UX。
-
-验收：
-
-- 用户能选择 Above / Below / Range。
-- 用户能输入 custom strike / range。已完成。
-- invalid strike / range 会被阻止。已完成。
-- quote preview 可显示。
-
-当前完成内容：
+已完成：
 
 - Above / Below / Range 卡片已支持选择状态。
 - Quick Picks 会基于 active Oracle Spot 生成 strike / range。
@@ -296,39 +148,17 @@ suiRpcUrl
 - quote preview 通过 `simulateTransaction` 调用 `get_trade_amounts` / `get_range_trade_amounts`。
 - preview 已显示 cost、max payout、live redeem 和 max loss。
 - opening cutoff 已在临近到期时阻止 quote。
-- Quick Picks quote preview 决策已记录在 `docs/decisions/0009-quick-picks-and-quote-preview.md`。
-- Custom Builder 决策已记录在 `docs/decisions/0013-custom-strike-range-builder.md`。
+
+待改造：
+
+- 把 Quick Picks 语言改成 Round Challenge。
+- 增加 Round id / expiry header。
+- 增加 challenge status：available / joined / closed / settled。
+- Custom Builder 保留为高级入口。
 
 ## 9. Milestone 6: Mint Transactions
 
-目标：
-
-完成真实开仓交易。
-
 状态：直接下单 mint 流程已完成。
-
-预计工作：
-
-- 构造 mint PTB。
-- 支持 Above / Below mint。
-- 支持 Range mint。
-- 处理 wallet signing。
-- 提交交易。
-- 读取 tx effects / events。
-- 刷新 manager balance 和 positions。
-
-需要决策留存：
-
-- deposit + mint 是否合并。已完成：Manager 余额低于用户输入的仓位大小时，自动预留缺口并 mint。
-- 交易成功后的 optimistic UI 规则。
-- 交易失败重试规则。
-
-验收：
-
-- 用户能真实 mint Above / Below。
-- 用户能真实 mint Range。
-- minted position 能出现在 Positions panel。
-- tx digest 可查看。
 
 当前完成内容：
 
@@ -336,86 +166,205 @@ suiRpcUrl
 - Range 已接入 `predict::mint_range<dUSDC>`。
 - mint 交易复用当前 quote preview 的 strike / range / quantity 参数。
 - 如果 Manager dUSDC 低于用户输入的仓位大小，前端会在同一 PTB 中自动 `deposit<dUSDC>` 预留缺口后再 mint。
-- 开仓前会先 `simulateTransaction` 预检，避免资金不足或报价状态变化时直接弹出原始 MoveAbort。
+- 开仓前会先 `simulateTransaction` 预检。
 - 主界面已移除手动 deposit / withdraw 表单；直接开仓时由 mint PTB 自动补足 Manager 余额缺口。
 - 交易成功后刷新 manager summary、market overview 和 quote preview。
 - 交易成功后显示 tx digest。
-- opening cutoff、manager 缺失、manager balance 未加载、钱包 dUSDC 不足以补款、quote 缺失时禁用 mint。
-- Mint transaction 决策已记录在 `docs/decisions/0010-mint-transactions-from-quote-preview.md`。
-- Direct order auto top-up 决策已记录在 `docs/decisions/0016-direct-order-auto-top-up.md`。
 
-待完成内容：
+待完成：
 
+- 把按钮文案和成功状态从交易语境改成 Join Round / Joined Challenge。
 - active position early exit 暂未接入。
 - partial redeem 暂未接入。
 
 ## 10. Milestone 7: Positions and Redeem
 
+状态：仓位展示和到期 redeem 已完成主要闭环。
+
+当前完成内容：
+
+- 方向仓位使用 Predict Server position summary。
+- Range 仓位使用 mint/redeem 事件聚合。
+- 已展示 market / expiry 状态。
+- 已展示 redeemable positions。
+- 已构造 redeem PTB。
+- 已支持 `redeem<dUSDC>`。
+- 已支持 `redeem_range<dUSDC>`。
+- payout 回到 PredictManager。
+
+待改造：
+
+- 增加 Round result reveal 视图。
+- 结算后支持生成 verified showcase。
+- 结算后更新 leaderboard / streak / combo 状态。
+
+## 11. Milestone 8: Arena Layer
+
+状态：新方向，待实现。
+
 目标：
 
-完成仓位展示和到期 redeem。
+把当前交易终端转成 Arena 体验。
 
 预计工作：
 
-- 展示 open positions。已完成：方向仓位使用 Predict Server position summary，Range 仓位使用 mint/redeem 事件聚合。
-- 展示 market / expiry 状态。
-- 展示 redeemable positions。已完成。
-- 构造 redeem PTB。已完成：settled winner redeem 与 settled loser clear。
-- 支持 `redeem<dUSDC>`。已完成。
-- 支持 `redeem_range<dUSDC>`。已完成。
-- 刷新 payout 和 manager balance。
-
-需要决策留存：
-
-- Position 数据来源优先级。
-- settled position demo 准备方式。
-- 是否显示历史 redeemed positions。
+- 新增 Round Arena section。
+- 将 active oracle expiry 映射为 current round。
+- 为每个 round 生成 challenge cards。
+- 显示 round countdown / closed / settlement / revealed 状态。
+- 用户已参与的 challenge 显示 joined 状态。
+- 结算后显示 settlement price 和 win/loss。
 
 验收：
 
-- 到期后仓位能进入 redeemable / lost 状态。
-- 用户能执行 redeem / redeem_range，payout 回到 PredictManager。
-- payout 进入 PredictManager。
+- 用户能理解“当前一轮”。
+- 每张 challenge 都能真实 quote / mint。
+- 到期后能展示开奖感，而不是只看仓位表。
 
-## 11. Milestone 8: Demo Hardening
+## 12. Milestone 9: Opt-in Leaderboard
+
+状态：待实现。
 
 目标：
 
-让项目适合黑客松演示。
+实现隐私感知排行榜。
 
 预计工作：
 
-- 收敛主界面信息架构，避免把 demo 做成协议后台。
+- 设计 opt-in 状态。
+- 支持用户加入 / 隐藏 leaderboard。
+- 统计 completed rounds。
+- 统计 win rate。
+- 统计 streak。
+- 至少 5 局才进入主榜。
+- Top 10 展示。
+- 胜率相同按 PnL，再按参与局数排序。
+
+实现选择：
+
+- MVP 可以先用应用层存储 opt-in 记录和 alias。
+- 战绩数据从 Predict Server 和用户 PredictManager 事件聚合。
+- 如果没有后端，demo data 必须明确标注，不得冒充链上统计。
+
+验收：
+
+- 未 opt-in 用户不展示。
+- opt-in 用户可以看到自己的公开状态。
+- Top 10 排序规则清楚。
+
+## 13. Milestone 10: Social Feed and Showcase
+
+状态：待实现。
+
+目标：
+
+让用户可以发表观点和赛后晒单。
+
+预计工作：
+
+- Public Call composer。
+- Showcase composer。
+- Post 列表。
+- tx digest link。
+- round / expiry 绑定。
+- settlement result 绑定。
+- verified badge。
+
+验收：
+
+- 用户能发表 Call。
+- 用户能基于 settled position 生成 Showcase。
+- Showcase 能链接到真实 tx digest 或 position result。
+
+## 14. Milestone 11: Sealed Calls
+
+状态：待实现。
+
+目标：
+
+接入或模拟清晰的 Sealed Calls 产品流，优先保证隐私边界表达准确。
+
+预计工作：
+
+- Sealed Call composer。
+- locked 状态。
+- reveal-after-settlement 状态。
+- 如果接入 Sui Seal：实现 client-side encryption、policy-gated decryption、reveal 流程。
+- 如果暂未接入 Seal：UI 必须标注 demo-only，不说成真实加密。
+
+隐私边界：
+
+```text
+Sealed Calls 隐藏的是社交观点内容。
+不隐藏 mint / redeem 链上交易。
+```
+
+验收：
+
+- 用户能看懂 sealed -> reveal 的流程。
+- 文案不夸大链上隐私。
+- 如果接入 Seal，能展示加密对象和 reveal。
+
+## 15. Milestone 12: Combo Score Multiplier
+
+状态：待实现。
+
+目标：
+
+实现 3-round combo 的积分乘倍玩法。
+
+预计工作：
+
+- Combo builder。
+- 支持选择 3 个连续 round / challenge。
+- 每个 leg 对应真实 Predict position。
+- 结算后检查全中。
+- 全中后乘倍 Arena score。
+- 展示 combo result。
+
+边界：
+
+```text
+Predict payouts settle normally.
+Combo multiplies Arena score and reputation only.
+```
+
+验收：
+
+- Combo 不改变链上 payout。
+- 用户能看到每个 leg 的真实 Predict 仓位状态。
+- 全中 / 未全中结果清楚。
+
+## 16. Milestone 13: Demo Hardening
+
+状态：持续进行。
+
+预计工作：
+
+- 收敛主界面信息架构。
 - 增加 loading / empty / error states。
 - 增加 demo wallet preparation guide。
 - 增加 fallback flow。
 - 增加 screenshot / browser QA。
 - 准备 final pitch。
 
-验收：
-
-- Demo 能展示真实交易闭环。
-- 现场网络 / indexer 延迟有备用方案。
-- 页面没有明显布局错乱。
-- 核心讲法和文档一致。
-
 当前完成内容：
 
 - create manager、deposit、withdraw、mint、redeem 成功状态已显示可点击 SuiVision testnet 交易链接。
 - SuiVision transaction link 决策已记录在 `docs/decisions/0017-sui-vision-transaction-links.md`。
-- Demo Readiness panel 曾用于右侧栏实时检查钱包、网络、dUSDC、PredictManager、active oracle、BTC chart 和可赎回仓位状态；当前已从主交易界面移除，避免 demo 页面显得像内部检查台。
-- Demo Readiness panel 原始决策记录在 `docs/decisions/0018-demo-readiness-panel.md`。
+- Demo Readiness panel 已从主交易界面移除。
 - 主界面已移除手动 deposit / withdraw 表单、顶部信息卡和 Vault & Oracle Health 面板，直接开仓成为唯一主交易路径。
-- BTC K-line lookback 已扩展并分页拉取：1m 至少 7 天，5m 至少 7 天，15m 至少 7 天；5m / 15m 由 1m 原始 candles 前端聚合。
+- BTC K-line lookback 已扩展并分页拉取。
 - Consumer demo surface simplification 决策已记录在 `docs/decisions/0019-consumer-demo-surface-simplification.md`。
 
-## 12. 当前下一步
+## 17. 当前下一步
 
-当前已完成 Milestone 5 / 6 / 7 的主要交易闭环，下一步继续 Milestone 8: Demo Hardening。
+当前真实交易闭环已基本完成，下一步进入 Arena 产品层。
 
 建议下一轮先做：
 
-1. 完善 loading / empty / error states。
-2. 增加 demo wallet preparation guide。
-3. 增加 fallback flow。
-4. 准备 final pitch 和现场演示脚本。
+1. Round Arena section 和 challenge card 文案改造。
+2. Settlement reveal 视图。
+3. Opt-in leaderboard 的数据模型和 UI。
+4. Social Feed / Showcase 的最小版本。
+5. Sealed Calls 的 UI 状态和技术 spike。

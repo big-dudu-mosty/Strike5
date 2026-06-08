@@ -107,3 +107,4 @@ Date: YYYY-MM-DD
 - `0017-sui-vision-transaction-links.md`
 - `0018-demo-readiness-panel.md`
 - `0019-consumer-demo-surface-simplification.md`
+- `0020-arena-privacy-social-loop.md`
