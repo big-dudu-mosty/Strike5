@@ -7,6 +7,7 @@ import { PositionsPanel } from '../components/positions/PositionsPanel';
 import { ChartPanel, type ChartTradeOverlay } from '../components/chart/ChartPanel';
 import { LanguageToggle } from '../components/language/LanguageToggle';
 import { AccountPanel } from '../components/account/AccountPanel';
+import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
@@ -88,6 +89,7 @@ export function App() {
               onQuoteRequestChange={setSelectedTradeRequest}
               overview={marketOverview.data}
             />
+            <LeaderboardPanel accountOverview={accountOverview} />
           </aside>
         </section>
       </div>
