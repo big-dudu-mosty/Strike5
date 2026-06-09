@@ -9,9 +9,15 @@ import { LanguageToggle } from '../components/language/LanguageToggle';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
 import { ArenaFeedPanel } from '../components/social-feed/ArenaFeedPanel';
+import { ComboPanel } from '../components/combo/ComboPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
+import {
+  COMBO_LEG_TARGET,
+  getComboLegKey,
+  type ArenaComboLeg,
+} from '../lib/combo';
 import { formatPercent, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
 import type { TradeQuoteRequest } from '../lib/deepbook/quote';
@@ -19,6 +25,7 @@ import type { KlineInterval } from '../lib/market-data/types';
 
 export function App() {
   const [chartInterval, setChartInterval] = useState<KlineInterval>('1m');
+  const [comboDraftLegs, setComboDraftLegs] = useState<ArenaComboLeg[]>([]);
   const [selectedTradeRequest, setSelectedTradeRequest] = useState<TradeQuoteRequest | null>(null);
   const marketOverview = usePredictMarketOverview();
   const accountOverview = usePredictAccountOverview();
@@ -33,6 +40,18 @@ export function App() {
   const tradeOverlay = useMemo(() => {
     return buildTradeOverlay(selectedTradeRequest);
   }, [selectedTradeRequest]);
+
+  function addComboLeg(leg: ArenaComboLeg) {
+    setComboDraftLegs((current) => {
+      const next = current.filter((item) => getComboLegKey(item) !== getComboLegKey(leg));
+      if (next.length >= COMBO_LEG_TARGET) return current;
+      return [...next, leg];
+    });
+  }
+
+  function removeComboLeg(id: string) {
+    setComboDraftLegs((current) => current.filter((leg) => leg.id !== id));
+  }
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -87,8 +106,16 @@ export function App() {
             <AccountPanel overview={accountOverview} />
             <TradePanel
               accountOverview={accountOverview}
+              comboLegCount={comboDraftLegs.length}
+              onAddComboLeg={addComboLeg}
               onQuoteRequestChange={setSelectedTradeRequest}
               overview={marketOverview.data}
+            />
+            <ComboPanel
+              draftLegs={comboDraftLegs}
+              managerId={accountOverview.managerId}
+              onClearDraft={() => setComboDraftLegs([])}
+              onRemoveDraftLeg={removeComboLeg}
             />
             <LeaderboardPanel accountOverview={accountOverview} />
             <ArenaFeedPanel accountOverview={accountOverview} />

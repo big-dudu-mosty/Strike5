@@ -1,10 +1,15 @@
-import { ArrowDown, ArrowUp, Clock3, ScanLine, Trophy } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock3, Plus, ScanLine, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PRODUCT_TIMING } from '../../config/predict';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
 import { useTradeMint } from '../../hooks/useTradeMint';
 import { useTradeQuote } from '../../hooks/useTradeQuote';
 import { useNow } from '../../hooks/useNow';
+import {
+  COMBO_LEG_TARGET,
+  createArenaComboLeg,
+  type ArenaComboLeg,
+} from '../../lib/combo';
 import { parseDUsdcInput } from '../../lib/dusdc';
 import type { TradeKind, TradeQuoteRequest } from '../../lib/deepbook/quote';
 import { formatDUsdcRaw, formatDuration, formatTime, formatUsd } from '../../lib/formatters';
@@ -43,6 +48,8 @@ type TradeMode = 'quick' | 'custom';
 
 interface TradePanelProps {
   accountOverview: PredictAccountOverview;
+  comboLegCount: number;
+  onAddComboLeg: (leg: ArenaComboLeg) => void;
   onQuoteRequestChange: (request: TradeQuoteRequest | null) => void;
   overview: PredictMarketOverview | undefined;
 }
@@ -51,7 +58,13 @@ const DEFAULT_QUANTITY = '';
 const RANGE_WIDTH_USD = 100n;
 const ORACLE_PRICE_SCALE = 1_000_000_000n;
 
-export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: TradePanelProps) {
+export function TradePanel({
+  accountOverview,
+  comboLegCount,
+  onAddComboLeg,
+  onQuoteRequestChange,
+  overview,
+}: TradePanelProps) {
   const { t } = useI18n();
   const now = useNow();
   const [tradeMode, setTradeMode] = useState<TradeMode>('quick');
@@ -169,6 +182,12 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
     tradeQuote.isLoading ||
     tradeQuote.isError ||
     tradeMint.isPending;
+  const isComboAddDisabled =
+    !quoteRequest ||
+    !tradeQuote.data ||
+    tradeQuote.isLoading ||
+    tradeQuote.isError ||
+    comboLegCount >= COMBO_LEG_TARGET;
   const roundStatus = !activeOracle
     ? t('trade.round.noOracle')
     : isOpeningCutoff
@@ -424,6 +443,19 @@ export function TradePanel({ accountOverview, onQuoteRequestChange, overview }: 
           {tradeMint.isPending
             ? t('trade.minting')
             : `${t('trade.mintButton')} ${t(selectedPick.typeKey)}`}
+        </button>
+
+        <button
+          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-zinc-700 px-3 text-sm font-semibold text-zinc-200 transition hover:border-emerald-400 hover:text-emerald-100 disabled:cursor-not-allowed disabled:border-zinc-800 disabled:text-zinc-600"
+          disabled={isComboAddDisabled}
+          onClick={() => {
+            if (!quoteRequest || !tradeQuote.data || isComboAddDisabled) return;
+            onAddComboLeg(createArenaComboLeg(quoteRequest, tradeQuote.data));
+          }}
+          type="button"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {comboLegCount >= COMBO_LEG_TARGET ? t('trade.combo.full') : t('trade.combo.add')}
         </button>
 
         {tradeMint.error ? (
