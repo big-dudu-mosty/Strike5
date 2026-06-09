@@ -23,6 +23,7 @@ interface BasePositionDisplayRow {
   redeemedQuantity: number;
   openQuantity: number;
   costBasis: number;
+  settlementPrice: number | null;
   totalPayout: number;
   realizedPnl: number;
   lastActivityAt: number;
@@ -81,6 +82,7 @@ export function usePredictPositions(managerId: string | null) {
           redeemedQuantity: row.redeemed_quantity,
           openQuantity: row.open_quantity,
           costBasis: row.open_cost_basis,
+          settlementPrice: oracleById.get(row.oracle_id)?.settlement_price ?? null,
           totalPayout: row.total_payout,
           realizedPnl: row.realized_pnl,
           markValue: row.mark_value,
@@ -138,6 +140,7 @@ function aggregateRangeRows(
   }
 
   return Array.from(aggregates.values()).map<RangePositionDisplayRow>((aggregate) => {
+    const oracle = oracleById.get(aggregate.oracleId);
     const openQuantity = Math.max(0, aggregate.mintedQuantity - aggregate.redeemedQuantity);
     const closedCostBasis =
       aggregate.mintedQuantity > 0
@@ -147,7 +150,7 @@ function aggregateRangeRows(
     return {
       id: aggregate.id,
       kind: 'range',
-      status: getRangeStatus(aggregate, openQuantity, oracleById.get(aggregate.oracleId)),
+      status: getRangeStatus(aggregate, openQuantity, oracle),
       oracleId: aggregate.oracleId,
       expiry: aggregate.expiry,
       lowerStrike: aggregate.lowerStrike,
@@ -156,6 +159,7 @@ function aggregateRangeRows(
       redeemedQuantity: aggregate.redeemedQuantity,
       openQuantity,
       costBasis: aggregate.totalCost - closedCostBasis,
+      settlementPrice: oracle?.settlement_price ?? null,
       totalPayout: aggregate.totalPayout,
       realizedPnl: aggregate.totalPayout - closedCostBasis,
       lastActivityAt: aggregate.lastActivityAt,
@@ -210,7 +214,7 @@ function getRangeStatus(
     const settlementPrice = oracle.settlement_price;
     if (
       settlementPrice != null &&
-      settlementPrice >= aggregate.lowerStrike &&
+      settlementPrice > aggregate.lowerStrike &&
       settlementPrice <= aggregate.higherStrike
     ) {
       return 'redeemable';

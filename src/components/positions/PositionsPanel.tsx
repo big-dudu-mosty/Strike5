@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Layers, ScanLine } from 'lucide-react';
+import { ArrowDown, ArrowUp, CheckCircle2, Layers, ScanLine, Sparkles, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { usePositionRedeem } from '../../hooks/usePositionRedeem';
 import { usePredictPositions, type PredictPositionDisplayRow } from '../../hooks/usePredictPositions';
@@ -25,6 +25,16 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
   const [redeemFeedbackPositionId, setRedeemFeedbackPositionId] = useState<string | null>(null);
   const [redeemingPositionId, setRedeemingPositionId] = useState<string | null>(null);
   const rows = positions.data?.rows ?? [];
+  const revealRow = getLatestRevealRow(rows);
+  const positionRows = revealRow ? rows.filter((row) => row.id !== revealRow.id) : rows;
+
+  function handleRedeem(row: PredictPositionDisplayRow) {
+    setRedeemFeedbackPositionId(row.id);
+    setRedeemingPositionId(row.id);
+    void positionRedeem.mutateAsync(row).finally(() => {
+      setRedeemingPositionId(null);
+    });
+  }
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
@@ -48,7 +58,23 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
         <EmptyPositions message={t('positions.empty')} />
       ) : (
         <div className="mt-4 grid gap-3">
-          {rows.map((row) => (
+          {revealRow ? (
+            <SettlementRevealPanel
+              isExpectedNetwork={isExpectedNetwork}
+              isRedeeming={redeemingPositionId === revealRow.id && positionRedeem.isPending}
+              lastRedeemDigest={
+                positionRedeem.data?.positionId === revealRow.id ? positionRedeem.data.digest : null
+              }
+              onRedeem={() => handleRedeem(revealRow)}
+              redeemError={
+                redeemFeedbackPositionId === revealRow.id
+                  ? getRedeemErrorMessage(positionRedeem.error?.message, t)
+                  : null
+              }
+              row={revealRow}
+            />
+          ) : null}
+          {positionRows.map((row) => (
             <PositionCard
               isExpectedNetwork={isExpectedNetwork}
               isRedeeming={redeemingPositionId === row.id && positionRedeem.isPending}
@@ -56,13 +82,7 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
               lastRedeemDigest={
                 positionRedeem.data?.positionId === row.id ? positionRedeem.data.digest : null
               }
-              onRedeem={() => {
-                setRedeemFeedbackPositionId(row.id);
-                setRedeemingPositionId(row.id);
-                void positionRedeem.mutateAsync(row).finally(() => {
-                  setRedeemingPositionId(null);
-                });
-              }}
+              onRedeem={() => handleRedeem(row)}
               redeemError={
                 redeemFeedbackPositionId === row.id
                   ? getRedeemErrorMessage(positionRedeem.error?.message, t)
@@ -74,6 +94,108 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
         </div>
       )}
     </section>
+  );
+}
+
+function SettlementRevealPanel({
+  isExpectedNetwork,
+  isRedeeming,
+  lastRedeemDigest,
+  onRedeem,
+  redeemError,
+  row,
+}: {
+  isExpectedNetwork: boolean;
+  isRedeeming: boolean;
+  lastRedeemDigest: string | null;
+  onRedeem: () => void;
+  redeemError: string | null;
+  row: PredictPositionDisplayRow;
+}) {
+  const { t } = useI18n();
+  const didWin = row.status === 'redeemable';
+  const markOrPayout = getMarkOrPayout(row);
+  const pnl = getPositionPnl(row, markOrPayout);
+  const canRedeem = canRedeemPosition(row);
+  const ResultIcon = didWin ? CheckCircle2 : XCircle;
+
+  return (
+    <article
+      className={`rounded-md border p-4 ${
+        didWin
+          ? 'border-emerald-400/40 bg-emerald-400/10'
+          : 'border-red-400/40 bg-red-400/10'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${
+              didWin ? 'bg-emerald-400 text-zinc-950' : 'bg-red-400 text-zinc-950'
+            }`}
+          >
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-xs font-medium uppercase tracking-normal text-zinc-400">
+              {t('positions.reveal.title')}
+            </div>
+            <h3 className="mt-1 text-base font-semibold text-zinc-100">
+              {didWin ? t('positions.reveal.winTitle') : t('positions.reveal.lossTitle')}
+            </h3>
+            <p className="mt-1 truncate text-sm text-zinc-400">{formatInstrument(row)}</p>
+          </div>
+        </div>
+        <span
+          className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${
+            didWin ? 'bg-emerald-400 text-zinc-950' : 'bg-red-400 text-zinc-950'
+          }`}
+        >
+          <ResultIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          {didWin ? t('positions.reveal.win') : t('positions.reveal.loss')}
+        </span>
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+        <Metric
+          label={t('positions.reveal.settlementPrice')}
+          value={formatUsd(scaleOracleUsd(row.settlementPrice), { integer: true })}
+        />
+        <Metric
+          label={t('positions.reveal.payout')}
+          value={formatDUsdc(scaleQuoteAsset(markOrPayout))}
+        />
+        <Metric label={t('positions.pnl')} value={formatDUsdc(scaleQuoteAsset(pnl))} />
+      </dl>
+
+      {canRedeem ? (
+        <div className="mt-4">
+          <button
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+            disabled={!isExpectedNetwork || isRedeeming}
+            onClick={onRedeem}
+            type="button"
+          >
+            {isRedeeming ? t('positions.redeeming') : getRedeemLabel(row, t)}
+          </button>
+          {lastRedeemDigest ? (
+            <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+              <TransactionLink digest={lastRedeemDigest} label={t('positions.redeemSuccess')} />
+            </div>
+          ) : null}
+          {redeemError ? (
+            <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              {redeemError}
+            </div>
+          ) : null}
+          {!isExpectedNetwork ? (
+            <div className="mt-2 text-xs text-amber-200">
+              {t('positions.networkRequired')}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -226,6 +348,12 @@ function getPositionPnl(row: PredictPositionDisplayRow, markOrPayout: number | n
 
 function canRedeemPosition(row: PredictPositionDisplayRow) {
   return row.openQuantity > 0 && (row.status === 'redeemable' || row.status === 'lost');
+}
+
+function getLatestRevealRow(rows: PredictPositionDisplayRow[]) {
+  return rows
+    .filter((row) => row.status === 'redeemable' || row.status === 'lost')
+    .sort((a, b) => b.expiry - a.expiry || b.lastActivityAt - a.lastActivityAt)[0] ?? null;
 }
 
 function getRedeemLabel(row: PredictPositionDisplayRow, t: (key: MessageKey) => string) {

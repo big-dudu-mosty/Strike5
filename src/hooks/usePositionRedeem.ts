@@ -58,6 +58,7 @@ export function usePositionRedeem({ managerId }: UsePositionRedeemOptions) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['predict-manager-summary', managerId] }),
         queryClient.invalidateQueries({ queryKey: ['predict-manager-positions', managerId] }),
+        queryClient.invalidateQueries({ queryKey: ['arena-leaderboard-stats', managerId] }),
         queryClient.invalidateQueries({
           queryKey: ['predict-market-overview', PREDICT_CONFIG.predictObjectId],
         }),
