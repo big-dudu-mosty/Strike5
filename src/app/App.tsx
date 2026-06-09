@@ -10,6 +10,7 @@ import { AccountPanel } from '../components/account/AccountPanel';
 import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
 import { ArenaFeedPanel } from '../components/social-feed/ArenaFeedPanel';
 import { ComboPanel } from '../components/combo/ComboPanel';
+import { SealedCallsPanel } from '../components/sealed-calls/SealedCallsPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
@@ -116,6 +117,11 @@ export function App() {
               managerId={accountOverview.managerId}
               onClearDraft={() => setComboDraftLegs([])}
               onRemoveDraftLeg={removeComboLeg}
+            />
+            <SealedCallsPanel
+              accountOverview={accountOverview}
+              activeOracle={marketOverview.data?.activeOracle ?? null}
+              oracleSpotRaw={marketOverview.data?.oracleState?.latest_price?.spot ?? null}
             />
             <LeaderboardPanel accountOverview={accountOverview} />
             <ArenaFeedPanel accountOverview={accountOverview} />
