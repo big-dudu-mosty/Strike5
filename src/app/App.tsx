@@ -1,4 +1,4 @@
-import { Activity, CircleDollarSign, ShieldCheck } from 'lucide-react';
+import { Activity, CircleDollarSign, ListChecks, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { MarketPulsePanel } from '../components/market-pulse/MarketPulsePanel';
@@ -23,8 +23,34 @@ import { formatPercent, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
 import type { TradeQuoteRequest } from '../lib/deepbook/quote';
 import type { KlineInterval } from '../lib/market-data/types';
+import type { MessageKey } from '../lib/i18n/types';
+
+type AppPage = 'arena' | 'playbook' | 'community';
+
+const appPages = [
+  {
+    icon: Activity,
+    key: 'arena',
+    labelKey: 'nav.arena',
+  },
+  {
+    icon: ListChecks,
+    key: 'playbook',
+    labelKey: 'nav.playbook',
+  },
+  {
+    icon: MessageSquare,
+    key: 'community',
+    labelKey: 'nav.community',
+  },
+] satisfies Array<{
+  icon: typeof Activity;
+  key: AppPage;
+  labelKey: MessageKey;
+}>;
 
 export function App() {
+  const [activePage, setActivePage] = useState<AppPage>('arena');
   const [chartInterval, setChartInterval] = useState<KlineInterval>('1m');
   const [comboDraftLegs, setComboDraftLegs] = useState<ArenaComboLeg[]>([]);
   const [selectedTradeRequest, setSelectedTradeRequest] = useState<TradeQuoteRequest | null>(null);
@@ -78,40 +104,70 @@ export function App() {
           </div>
         </header>
 
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
-          <div className="flex flex-col gap-4">
-            <ChartPanel
-              candles={btcKlines.data?.candles ?? []}
-              error={btcKlines.error}
-              interval={chartInterval}
-              isLoading={btcKlines.isLoading}
-              onIntervalChange={setChartInterval}
-              oracleSpot={oracleSpot}
-              provider={btcKlines.data?.provider}
-              tradeOverlay={tradeOverlay}
-            />
-            <PositionsPanel
-              isExpectedNetwork={accountOverview.isExpectedNetwork}
-              managerId={accountOverview.managerId}
-            />
-          </div>
+        <nav className="flex gap-2 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-900 p-1">
+          {appPages.map((page) => {
+            const Icon = page.icon;
+            const isActive = activePage === page.key;
 
-          <aside className="flex flex-col gap-4">
-            <MarketPulsePanel
-              error={marketOverview.error}
-              chartOracleDiff={oracleDiff == null ? null : formatPercent(oracleDiff)}
-              chartPrice={chartPrice}
-              isLoading={marketOverview.isLoading}
-              overview={marketOverview.data}
-            />
-            <AccountPanel overview={accountOverview} />
-            <TradePanel
-              accountOverview={accountOverview}
-              comboLegCount={comboDraftLegs.length}
-              onAddComboLeg={addComboLeg}
-              onQuoteRequestChange={setSelectedTradeRequest}
-              overview={marketOverview.data}
-            />
+            return (
+              <button
+                className={`inline-flex h-10 min-w-fit items-center gap-2 rounded-md px-3 text-sm font-medium transition ${
+                  isActive
+                    ? 'bg-emerald-400 text-zinc-950'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
+                }`}
+                key={page.key}
+                onClick={() => setActivePage(page.key)}
+                type="button"
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {t(page.labelKey)}
+              </button>
+            );
+          })}
+        </nav>
+
+        {activePage === 'arena' ? (
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
+            <div className="flex flex-col gap-4">
+              <ChartPanel
+                candles={btcKlines.data?.candles ?? []}
+                error={btcKlines.error}
+                interval={chartInterval}
+                isLoading={btcKlines.isLoading}
+                onIntervalChange={setChartInterval}
+                oracleSpot={oracleSpot}
+                provider={btcKlines.data?.provider}
+                tradeOverlay={tradeOverlay}
+              />
+              <PositionsPanel
+                isExpectedNetwork={accountOverview.isExpectedNetwork}
+                managerId={accountOverview.managerId}
+              />
+            </div>
+
+            <aside className="flex flex-col gap-4">
+              <MarketPulsePanel
+                error={marketOverview.error}
+                chartOracleDiff={oracleDiff == null ? null : formatPercent(oracleDiff)}
+                chartPrice={chartPrice}
+                isLoading={marketOverview.isLoading}
+                overview={marketOverview.data}
+              />
+              <AccountPanel overview={accountOverview} />
+              <TradePanel
+                accountOverview={accountOverview}
+                comboLegCount={comboDraftLegs.length}
+                onAddComboLeg={addComboLeg}
+                onQuoteRequestChange={setSelectedTradeRequest}
+                overview={marketOverview.data}
+              />
+            </aside>
+          </section>
+        ) : null}
+
+        {activePage === 'playbook' ? (
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <ComboPanel
               draftLegs={comboDraftLegs}
               managerId={accountOverview.managerId}
@@ -123,10 +179,15 @@ export function App() {
               activeOracle={marketOverview.data?.activeOracle ?? null}
               oracleSpotRaw={marketOverview.data?.oracleState?.latest_price?.spot ?? null}
             />
+          </section>
+        ) : null}
+
+        {activePage === 'community' ? (
+          <section className="grid gap-4 xl:grid-cols-[minmax(360px,0.8fr)_minmax(0,1.2fr)]">
             <LeaderboardPanel accountOverview={accountOverview} />
             <ArenaFeedPanel accountOverview={accountOverview} />
-          </aside>
-        </section>
+          </section>
+        ) : null}
       </div>
     </main>
   );
