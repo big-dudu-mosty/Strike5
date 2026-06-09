@@ -8,6 +8,7 @@ import { ChartPanel, type ChartTradeOverlay } from '../components/chart/ChartPan
 import { LanguageToggle } from '../components/language/LanguageToggle';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
+import { ArenaFeedPanel } from '../components/social-feed/ArenaFeedPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
@@ -90,6 +91,7 @@ export function App() {
               overview={marketOverview.data}
             />
             <LeaderboardPanel accountOverview={accountOverview} />
+            <ArenaFeedPanel accountOverview={accountOverview} />
           </aside>
         </section>
       </div>
