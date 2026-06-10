@@ -10,6 +10,7 @@ import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
 import { ArenaFeedPanel } from '../components/social-feed/ArenaFeedPanel';
 import { ComboPanel } from '../components/combo/ComboPanel';
 import { StreakMeter } from '../components/combo/StreakMeter';
+import { ArenaOverviewPanel } from '../components/arena-overview/ArenaOverviewPanel';
 import { PredictStatusStrip } from '../components/predict-status/PredictStatusStrip';
 import { SealedCallsPanel } from '../components/sealed-calls/SealedCallsPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
@@ -185,6 +186,12 @@ export function App() {
 
         {activePage === 'arena' ? (
           <section className="flex flex-col gap-4">
+            <ArenaOverviewPanel
+              managerId={managerId}
+              overview={marketOverview.data}
+              streak={managerCurrentStreak}
+            />
+
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
               <div className="flex flex-col gap-4">
                 <ChartPanel
