@@ -100,18 +100,18 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
   }
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 bg-ink-900/70 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('feed.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('feed.subtitle')}</p>
+          <h2 className="text-[17px] font-semibold text-cream-100">{t('feed.title')}</h2>
+          <p className="text-sm text-cream-600">{t('feed.subtitle')}</p>
         </div>
-        <MessageSquare className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <MessageSquare className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-md border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400">
+      <div className="mt-4 rounded-2xl bg-ink-950/45 p-3 text-sm text-cream-500">
         <div className="flex gap-2">
-          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
+          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss-300" aria-hidden="true" />
           <p>{t('feed.privacy')}</p>
         </div>
       </div>
@@ -122,11 +122,11 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
         <div className="mt-4 text-sm text-amber-200">{t('feed.managerRequired')}</div>
       ) : (
         <div className="mt-4 grid gap-3">
-          <label className="text-sm font-medium text-zinc-200" htmlFor="arena-feed-draft">
+          <label className="text-sm font-medium text-cream-200" htmlFor="arena-feed-draft">
             {t('feed.composerLabel')}
           </label>
           <textarea
-            className="min-h-24 resize-none rounded-md border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
+            className="min-h-24 resize-none rounded-2xl border border-ink-700 bg-ink-950/60 p-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
             id="arena-feed-draft"
             maxLength={MAX_POST_LENGTH}
             onChange={(event) => setDraft(event.target.value)}
@@ -134,17 +134,17 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
             value={draft}
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-zinc-400">
+            <label className="inline-flex items-center gap-2 text-sm text-cream-500">
               <input
                 checked={attachPosition}
-                className="h-4 w-4 accent-emerald-400"
+                className="h-4 w-4 accent-brass-400"
                 disabled={!latestPosition}
                 onChange={(event) => setAttachPosition(event.target.checked)}
                 type="checkbox"
               />
               {t('feed.attachPosition')}
             </label>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-cream-600">
               {draft.length}/{MAX_POST_LENGTH}
             </span>
           </div>
@@ -152,7 +152,7 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
           <PositionPreview row={attachPosition ? latestPosition : null} />
 
           <button
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
             disabled={!canPublish}
             onClick={publishPost}
             type="button"
@@ -165,8 +165,8 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
 
       <div className="mt-5">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-zinc-100">{t('feed.latest')}</h3>
-          <span className="text-xs text-zinc-500">{visiblePosts.length}</span>
+          <h3 className="text-sm font-semibold text-cream-100">{t('feed.latest')}</h3>
+          <span className="text-xs text-cream-600">{visiblePosts.length}</span>
         </div>
 
         <div className="mt-3 grid gap-3">
@@ -182,7 +182,7 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
               />
             ))
           ) : (
-            <div className="rounded-md border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
+            <div className="rounded-2xl border border-dashed border-ink-600 p-4 text-sm leading-6 text-cream-500">
               {t('feed.empty')}
             </div>
           )}
@@ -197,19 +197,19 @@ function PositionPreview({ row }: { row: PredictPositionDisplayRow | null }) {
 
   if (!row) {
     return (
-      <div className="rounded-md border border-dashed border-zinc-800 p-3 text-sm text-zinc-500">
+      <div className="rounded-2xl border border-dashed border-ink-700 p-3 text-sm leading-6 text-cream-500">
         {t('feed.noPosition')}
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-      <div className="text-xs font-medium uppercase tracking-normal text-emerald-200">
+    <div className="rounded-2xl border border-moss-400/30 bg-moss-400/10 p-3">
+      <div className="text-xs font-medium uppercase tracking-normal text-moss-200">
         {t('feed.positionSnapshot')}
       </div>
-      <div className="mt-1 truncate text-sm font-semibold text-zinc-100">{formatInstrument(row)}</div>
-      <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-zinc-400">
+      <div className="mt-1 truncate text-sm font-semibold text-cream-100">{formatInstrument(row)}</div>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-cream-500">
         <span>{getPositionTypeLabel(row.kind, t)}</span>
         <span className="text-right">{getStatusLabel(row.status, t)}</span>
         <span>{formatDUsdc(scaleQuoteAsset(row.openQuantity))}</span>
@@ -235,18 +235,18 @@ function FeedPostRow({
   const { t } = useI18n();
 
   return (
-    <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
+    <article className="rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-            <span className="font-medium text-zinc-200">{post.alias}</span>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-cream-600">
+            <span className="font-medium text-cream-200">{post.alias}</span>
             <span>{formatTime(post.createdAt)}</span>
           </div>
-          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-zinc-100">{post.body}</p>
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-cream-100">{post.body}</p>
         </div>
         <div className="flex shrink-0 gap-1">
           <button
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-100"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-700 text-cream-500 transition hover:border-ink-500 hover:text-cream-100"
             onClick={onCopy}
             title={t('feed.copy')}
             type="button"
@@ -255,7 +255,7 @@ function FeedPostRow({
           </button>
           {canDelete ? (
             <button
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 text-zinc-400 transition hover:border-red-400/50 hover:text-red-200"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-700 text-cream-500 transition hover:border-clay-400/50 hover:text-clay-200"
               onClick={onDelete}
               title={t('feed.delete')}
               type="button"
@@ -267,9 +267,9 @@ function FeedPostRow({
       </div>
 
       {post.position ? (
-        <div className="mt-3 rounded-md border border-zinc-800 p-3 text-xs text-zinc-400">
+        <div className="mt-3 rounded-xl border border-ink-700/60 p-3 text-xs text-cream-500">
           <div className="flex items-center justify-between gap-3">
-            <span className="font-medium text-emerald-200">{t('feed.verifiedPosition')}</span>
+            <span className="font-medium text-moss-200">{t('feed.verifiedPosition')}</span>
             <span>{getStatusLabel(post.position.status, t)}</span>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -281,11 +281,11 @@ function FeedPostRow({
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-cream-600">
         <span className="truncate">
           {t('feed.manager')} {formatAlias(post.managerId)}
         </span>
-        {isCopied ? <span className="text-emerald-200">{t('feed.copied')}</span> : null}
+        {isCopied ? <span className="text-moss-200">{t('feed.copied')}</span> : null}
       </div>
     </article>
   );

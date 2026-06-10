@@ -187,9 +187,8 @@ export function App() {
         {activePage === 'arena' ? (
           <section className="flex flex-col gap-4">
             <ArenaOverviewPanel
-              managerId={managerId}
+              accountOverview={accountOverview}
               overview={marketOverview.data}
-              streak={managerCurrentStreak}
             />
 
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">

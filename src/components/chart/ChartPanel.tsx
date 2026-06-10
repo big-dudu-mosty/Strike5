@@ -73,31 +73,31 @@ export function ChartPanel({
         textColor: '#8388b6',
       },
       grid: {
-        vertLines: { color: '#1d2147' },
-        horzLines: { color: '#1d2147' },
+        vertLines: { color: 'rgba(53, 67, 92, 0.42)' },
+        horzLines: { color: 'rgba(53, 67, 92, 0.42)' },
       },
       rightPriceScale: {
-        borderColor: '#2b3060',
+        borderColor: '#263248',
       },
       timeScale: {
-        borderColor: '#2b3060',
+        borderColor: '#263248',
         timeVisible: true,
         secondsVisible: false,
       },
       crosshair: {
-        vertLine: { color: '#555b96' },
-        horzLine: { color: '#555b96' },
+        vertLine: { color: '#536279' },
+        horzLine: { color: '#536279' },
       },
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: '#f0c24b',
-      downColor: '#ef64a3',
-      borderUpColor: '#f0c24b',
-      borderDownColor: '#ef64a3',
-      wickUpColor: '#f0c24b',
-      wickDownColor: '#ef64a3',
-      priceLineColor: '#555b96',
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderUpColor: '#22c55e',
+      borderDownColor: '#ef4444',
+      wickUpColor: '#22c55e',
+      wickDownColor: '#ef4444',
+      priceLineColor: '#536279',
     });
 
     chartRef.current = chart;
@@ -135,8 +135,8 @@ export function ChartPanel({
 
     oracleLineRef.current = series.createPriceLine({
       price: oracleSpot,
-      color: '#c8cbe8',
-      lineWidth: 2,
+      color: '#9fa3cc',
+      lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
       title: t('chart.oracleLine'),
@@ -160,8 +160,8 @@ export function ChartPanel({
       if (tradeOverlay.lowerStrike != null) {
         rangeLowerLineRef.current = series.createPriceLine({
           price: tradeOverlay.lowerStrike,
-          color: '#f5d36e',
-          lineWidth: 2,
+          color: '#f0c24b',
+          lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
           title: t('chart.rangeLowerLine'),
@@ -170,8 +170,8 @@ export function ChartPanel({
       if (tradeOverlay.higherStrike != null) {
         rangeHigherLineRef.current = series.createPriceLine({
           price: tradeOverlay.higherStrike,
-          color: '#f5d36e',
-          lineWidth: 2,
+          color: '#f0c24b',
+          lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
           title: t('chart.rangeHigherLine'),
@@ -184,8 +184,8 @@ export function ChartPanel({
 
     selectedStrikeLineRef.current = series.createPriceLine({
       price: tradeOverlay.strike,
-      color: tradeOverlay.kind === 'above' ? '#53d99a' : '#ef64a3',
-      lineWidth: 2,
+      color: '#f0c24b',
+      lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
       title: tradeOverlay.kind === 'above' ? t('chart.aboveLine') : t('chart.belowLine'),
@@ -200,7 +200,7 @@ export function ChartPanel({
             BTC / USD
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-3">
-            <span className="text-4xl font-bold tracking-tight text-cream-100">
+            <span className="text-4xl font-bold tracking-tight text-cream-100 tabular-nums">
               {chartPrice == null ? '—' : formatUsd(chartPrice)}
             </span>
             {chartOracleDiff != null ? (

@@ -128,18 +128,18 @@ export function SealedCallsPanel({
   }
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 bg-ink-900/70 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('sealed.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('sealed.subtitle')}</p>
+          <h2 className="text-[17px] font-semibold text-cream-100">{t('sealed.title')}</h2>
+          <p className="text-sm text-cream-600">{t('sealed.subtitle')}</p>
         </div>
-        <ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <ShieldCheck className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-md border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400">
+      <div className="mt-4 rounded-2xl bg-ink-950/45 p-3 text-sm text-cream-500">
         <div className="flex gap-2">
-          <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
+          <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-brass-300" aria-hidden="true" />
           <p>{t('sealed.note')}</p>
         </div>
       </div>
@@ -147,20 +147,20 @@ export function SealedCallsPanel({
       <RoundStatus activeOracle={activeOracle} now={now} />
 
       {!address ? (
-        <div className="mt-4 text-sm text-amber-200">{t('sealed.connectWallet')}</div>
+        <div className="mt-4 text-sm text-brass-200">{t('sealed.connectWallet')}</div>
       ) : !managerId ? (
-        <div className="mt-4 text-sm text-amber-200">{t('sealed.managerRequired')}</div>
+        <div className="mt-4 text-sm text-brass-200">{t('sealed.managerRequired')}</div>
       ) : !activeOracle ? (
-        <div className="mt-4 text-sm text-amber-200">{t('sealed.oracleRequired')}</div>
+        <div className="mt-4 text-sm text-brass-200">{t('sealed.oracleRequired')}</div>
       ) : (
         <div className="mt-4 grid gap-3">
-          <div className="grid grid-cols-3 rounded-md border border-zinc-800 bg-zinc-950 p-1">
+          <div className="grid grid-cols-3 rounded-2xl border border-ink-700 bg-ink-950/60 p-1">
             {(['above', 'below', 'range'] satisfies SealedCallKind[]).map((option) => (
               <button
                 className={`h-9 rounded px-2 text-sm font-medium transition ${
                   option === kind
-                    ? 'bg-emerald-400 text-zinc-950'
-                    : 'text-zinc-400 hover:text-zinc-100'
+                    ? 'bg-brass-400 text-ink-950'
+                    : 'text-cream-500 hover:text-cream-100'
                 }`}
                 key={option}
                 onClick={() => setKind(option)}
@@ -171,25 +171,25 @@ export function SealedCallsPanel({
             ))}
           </div>
 
-          <label className="text-sm font-medium text-zinc-200" htmlFor="sealed-call-body">
+          <label className="text-sm font-medium text-cream-200" htmlFor="sealed-call-body">
             {t('sealed.composerLabel')}
           </label>
           <textarea
-            className="min-h-20 resize-none rounded-md border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
+            className="min-h-20 resize-none rounded-2xl border border-ink-700 bg-ink-950/60 p-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
             id="sealed-call-body"
             maxLength={MAX_CALL_LENGTH}
             onChange={(event) => setBody(event.target.value)}
             placeholder={t('sealed.placeholder')}
             value={body}
           />
-          <div className="flex items-center justify-between gap-3 text-xs text-zinc-500">
+          <div className="flex items-center justify-between gap-3 text-xs text-cream-600">
             <span>{getStrikeLabel(activeOracle, kind, oracleSpotRaw)}</span>
             <span>
               {body.length}/{MAX_CALL_LENGTH}
             </span>
           </div>
           <button
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
             disabled={!canLock || isLocking}
             onClick={() => void lockCall()}
             type="button"
@@ -202,8 +202,8 @@ export function SealedCallsPanel({
 
       <div className="mt-5">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-zinc-100">{t('sealed.lockedCalls')}</h3>
-          <span className="text-xs text-zinc-500">{currentRoundCalls.length}</span>
+          <h3 className="text-sm font-semibold text-cream-100">{t('sealed.lockedCalls')}</h3>
+          <span className="text-xs text-cream-600">{currentRoundCalls.length}</span>
         </div>
 
         <div className="mt-3 grid gap-3">
@@ -218,7 +218,7 @@ export function SealedCallsPanel({
               />
             ))
           ) : (
-            <div className="rounded-md border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
+            <div className="rounded-2xl border border-dashed border-ink-600 p-4 text-sm leading-6 text-cream-500">
               {t('sealed.empty')}
             </div>
           )}
@@ -232,7 +232,7 @@ function RoundStatus({ activeOracle, now }: { activeOracle: PredictOracle | null
   const { t } = useI18n();
 
   return (
-    <div className="mt-4 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-3">
+    <div className="mt-4 rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <Metric
           label={t('sealed.round')}
@@ -263,18 +263,18 @@ function SealedCallRow({
   const isRevealed = Boolean(call.revealedAt);
 
   return (
-    <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
+    <article className="rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-            <span className="font-medium text-zinc-200">{call.alias}</span>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-cream-600">
+            <span className="font-medium text-cream-200">{call.alias}</span>
             <span>{formatTime(call.createdAt)}</span>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+            <span className="rounded-xl bg-ink-800 px-2 py-1 text-xs text-cream-300">
               {getKindLabel(call.kind, t)}
             </span>
-            <span className="rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+            <span className="rounded-xl bg-ink-800 px-2 py-1 text-xs text-cream-300">
               {call.strikeLabel}
             </span>
           </div>
@@ -282,7 +282,7 @@ function SealedCallRow({
         <div className="flex shrink-0 gap-1">
           {canReveal && !isRevealed ? (
             <button
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 text-zinc-400 transition hover:border-emerald-400/50 hover:text-emerald-200"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-700 text-cream-500 transition hover:border-moss-400/50 hover:text-moss-200"
               onClick={onReveal}
               title={t('sealed.reveal')}
               type="button"
@@ -291,7 +291,7 @@ function SealedCallRow({
             </button>
           ) : null}
           <button
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 text-zinc-400 transition hover:border-red-400/50 hover:text-red-200"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-700 text-cream-500 transition hover:border-clay-400/50 hover:text-clay-200"
             onClick={onDelete}
             title={t('sealed.delete')}
             type="button"
@@ -301,23 +301,23 @@ function SealedCallRow({
         </div>
       </div>
 
-      <div className="mt-3 rounded-md border border-zinc-800 p-3">
+      <div className="mt-3 rounded-xl border border-ink-700/60 p-3">
         <div className="flex items-start gap-2">
           {isRevealed ? (
-            <Eye className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
+            <Eye className="mt-0.5 h-4 w-4 shrink-0 text-moss-300" aria-hidden="true" />
           ) : (
-            <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden="true" />
+            <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-cream-600" aria-hidden="true" />
           )}
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium uppercase tracking-normal text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-normal text-cream-600">
               {isRevealed ? t('sealed.revealed') : t('sealed.sealed')}
             </div>
             {isRevealed ? (
-              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-100">
+              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-cream-100">
                 {call.body}
               </p>
             ) : (
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-cream-600">
                 {canReveal ? t('sealed.readyToReveal') : t('sealed.hiddenUntilExpiry')}
               </p>
             )}
@@ -336,8 +336,8 @@ function SealedCallRow({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="truncate text-zinc-500">{label}</dt>
-      <dd className="mt-1 truncate font-medium text-zinc-100">{value}</dd>
+      <dt className="truncate text-cream-600">{label}</dt>
+      <dd className="mt-1 truncate font-medium text-cream-100 tabular-nums">{value}</dd>
     </div>
   );
 }

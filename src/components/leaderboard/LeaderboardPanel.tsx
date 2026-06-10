@@ -71,18 +71,18 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
   }
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 bg-ink-900/70 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('leaderboard.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('leaderboard.subtitle')}</p>
+          <h2 className="text-[17px] font-semibold text-cream-100">{t('leaderboard.title')}</h2>
+          <p className="text-sm text-cream-600">{t('leaderboard.subtitle')}</p>
         </div>
-        <Medal className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <Medal className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-md border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400">
+      <div className="mt-4 rounded-2xl bg-ink-950/45 p-3 text-sm text-cream-500">
         <div className="flex gap-2">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss-300" aria-hidden="true" />
           <p>{t('leaderboard.privacy')}</p>
         </div>
       </div>
@@ -92,13 +92,13 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
       ) : !accountOverview.managerId ? (
         <div className="mt-4 text-sm text-amber-200">{t('leaderboard.managerRequired')}</div>
       ) : optIn ? (
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-moss-400/30 bg-moss-400/10 p-3">
           <div>
-            <div className="text-sm font-semibold text-emerald-100">{optIn.alias}</div>
-            <div className="mt-1 text-xs text-emerald-100/70">{t('leaderboard.public')}</div>
+            <div className="text-sm font-semibold text-moss-200">{optIn.alias}</div>
+            <div className="mt-1 text-xs text-moss-200/70">{t('leaderboard.public')}</div>
           </div>
           <button
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-700 px-3 text-sm text-zinc-200 transition hover:border-zinc-500"
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-ink-600 px-3 text-sm text-cream-200 transition hover:border-ink-500"
             onClick={hideFromLeaderboard}
             type="button"
           >
@@ -108,7 +108,7 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
         </div>
       ) : (
         <button
-          className="mt-4 h-10 w-full rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300"
+          className="mt-4 h-10 w-full rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300"
           onClick={joinLeaderboard}
           type="button"
         >
@@ -124,37 +124,37 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
       </div>
 
       {statsQuery.isLoading ? (
-        <div className="mt-4 text-sm text-zinc-500">{t('leaderboard.loading')}</div>
+        <div className="mt-4 text-sm text-cream-600">{t('leaderboard.loading')}</div>
       ) : null}
       {statsQuery.error ? (
-        <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+        <div className="mt-4 rounded-xl border border-clay-400/30 bg-clay-400/10 p-3 text-sm text-clay-200">
           {t('leaderboard.error')}
         </div>
       ) : null}
 
       <div className="mt-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-zinc-100">{t('leaderboard.top10')}</h3>
-          <span className="text-xs text-zinc-500">
+          <h3 className="text-sm font-semibold text-cream-100">{t('leaderboard.top10')}</h3>
+          <span className="text-xs text-cream-600">
             {t('leaderboard.minRounds')} {MIN_COMPLETED_ROUNDS}
           </span>
         </div>
 
-        <div className="mt-3 overflow-hidden rounded-md border border-zinc-800">
+        <div className="mt-3 overflow-hidden rounded-2xl border border-ink-700/60">
           {boardRows.length > 0 ? (
             boardRows.map((row, index) => (
               <div
-                className="grid grid-cols-[44px_minmax(0,1fr)_76px_64px] items-center gap-3 bg-zinc-950 p-3 text-sm"
+                className="grid grid-cols-[44px_minmax(0,1fr)_76px_64px] items-center gap-3 border-b border-ink-700/50 bg-ink-950/45 p-3 text-sm last:border-b-0"
                 key={row.address}
               >
-                <span className="text-zinc-500">#{index + 1}</span>
-                <span className="truncate font-medium text-zinc-100">{row.alias}</span>
-                <span className="text-right text-emerald-200">{formatWinRate(row.stats)}</span>
-                <span className="text-right text-zinc-400">{row.stats.completedRounds}</span>
+                <span className="text-cream-600">#{index + 1}</span>
+                <span className="truncate font-medium text-cream-100">{row.alias}</span>
+                <span className="text-right text-moss-200">{formatWinRate(row.stats)}</span>
+                <span className="text-right text-cream-500">{row.stats.completedRounds}</span>
               </div>
             ))
           ) : (
-            <div className="bg-zinc-950 p-3 text-sm text-zinc-500">
+            <div className="bg-ink-950/35 p-4 text-sm leading-6 text-cream-500">
               {optIn ? t('leaderboard.notEligible') : t('leaderboard.empty')}
             </div>
           )}
@@ -166,9 +166,9 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
 
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-zinc-100">{value}</div>
+    <div className="rounded-2xl bg-ink-950/45 p-3">
+      <div className="text-xs text-cream-600">{label}</div>
+      <div className="mt-1 text-base font-semibold text-cream-100 tabular-nums">{value}</div>
     </div>
   );
 }

@@ -1,6 +1,16 @@
-import { ArrowDown, ArrowUp, CheckCircle2, Clock3, Plus, ScanLine, Trophy } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { PRODUCT_TIMING } from '../../config/predict';
+import {
+  ArrowDown,
+  ArrowUp,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  Plus,
+  ScanLine,
+  ShieldCheck,
+  Trophy,
+} from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { PREDICT_CONFIG, PRODUCT_TIMING } from '../../config/predict';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
 import { usePredictPositions } from '../../hooks/usePredictPositions';
 import { useTradeMint } from '../../hooks/useTradeMint';
@@ -211,69 +221,101 @@ export function TradePanel({
     : isOpeningCutoff
       ? t('trade.round.closed')
       : t('trade.round.open');
-  const roundTimeLeft = activeOracle ? formatDuration(activeOracle.expiry - now) : t('marketPulse.pending');
-  const roundExpiry = activeOracle ? formatTime(activeOracle.expiry) : t('marketPulse.pending');
+  const roundTimeLeft = activeOracle ? formatDuration(activeOracle.expiry - now) : '—';
+  const roundExpiry = activeOracle ? formatTime(activeOracle.expiry) : '—';
+  const quoteFallback = isQuantityEmpty
+    ? t('trade.estimateAfterStake')
+    : tradeQuote.isLoading
+      ? t('trade.estimating')
+      : '—';
+  const mintDisabledReason = isMintDisabled
+    ? getMintDisabledReason({
+        accountOverview,
+        isManagerBalanceUnavailable,
+        isOpeningCutoff,
+        isQuantityEmpty,
+        isQuantityInvalid,
+        isWalletBalanceInsufficientForTopUp,
+        isWalletBalanceUnavailableForTopUp,
+        quoteRequest,
+        t,
+        tradeMintPending: tradeMint.isPending,
+        tradeQuoteHasData: Boolean(tradeQuote.data),
+        tradeQuoteIsError: tradeQuote.isError,
+        tradeQuoteIsLoading: tradeQuote.isLoading,
+      })
+    : null;
+  const comboDisabledReason = isComboAddDisabled
+    ? getComboDisabledReason({
+        isQuantityEmpty,
+        isStreakFull,
+        quoteRequest,
+        streakAppendError,
+        t,
+        tradeQuoteHasData: Boolean(tradeQuote.data),
+        tradeQuoteIsError: tradeQuote.isError,
+        tradeQuoteIsLoading: tradeQuote.isLoading,
+      })
+    : null;
 
   return (
-    <section className="rounded-3xl border border-ink-700/60 glass p-5">
-      <div className="flex items-start justify-between gap-3">
+    <section className="overflow-hidden rounded-3xl border border-ink-700/70 bg-ink-900/90 shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
+      <div className="flex items-start justify-between gap-3 border-b border-ink-700/60 px-5 py-4">
         <div>
-          <h2 className="font-display text-lg font-semibold text-cream-100">{t('trade.title')}</h2>
-          <p className="text-sm text-cream-600">{t('trade.subtitle')}</p>
+          <h2 className="font-display text-[17px] font-semibold text-cream-100">
+            {t('trade.title')}
+          </h2>
+          <p className="mt-0.5 text-sm text-cream-600">{t('trade.subtitle')}</p>
         </div>
         <Trophy className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-xl border border-brass-400/25 bg-brass-400/10 p-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brass-400 text-ink-950">
-              <Clock3 className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-xs font-medium uppercase tracking-normal text-brass-200/70">
-                {t('trade.round.label')}
-              </div>
-              <div className="mt-1 truncate text-sm font-semibold text-cream-100">
-                {activeOracle ? `BTC ${roundExpiry}` : t('trade.round.noOracle')}
+      <TradePanelSection title={t('trade.section.round')}>
+        <div className="rounded-2xl border border-ink-700/60 bg-ink-950/55 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brass-400 text-ink-950">
+                <Clock3 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cream-700">
+                  {t('trade.round.label')}
+                </div>
+                <div className="mt-1 truncate text-base font-semibold text-cream-100">
+                  {activeOracle ? `BTC ${roundExpiry}` : t('trade.round.noOracle')}
+                </div>
               </div>
             </div>
-          </div>
-          <span className="flex shrink-0 items-center gap-1.5">
-            {hasJoinedCurrentRound ? (
-              <span className="inline-flex items-center gap-1 rounded bg-brass-400/15 px-2 py-1 text-xs font-semibold text-brass-200">
-                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                {t('trade.round.joined')}
+            <span className="flex shrink-0 flex-col items-end gap-1.5">
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  activeOracle && !isOpeningCutoff
+                    ? 'bg-moss-400/15 text-moss-300'
+                    : 'bg-ink-800 text-cream-400'
+                }`}
+              >
+                {roundStatus}
               </span>
-            ) : null}
-            <span
-              className={`rounded px-2 py-1 text-xs font-semibold ${
-                activeOracle && !isOpeningCutoff
-                  ? 'bg-brass-400 text-ink-950'
-                  : 'bg-ink-800 text-cream-300'
-              }`}
-            >
-              {roundStatus}
+              {hasJoinedCurrentRound ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-moss-300">
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t('trade.round.joined')}
+                </span>
+              ) : null}
             </span>
-          </span>
+          </div>
+          <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-ink-700/50 pt-3">
+            <MiniMetric label={t('trade.round.timeLeft')} value={roundTimeLeft} />
+            <MiniMetric label={t('trade.round.expiry')} value={roundExpiry} />
+          </dl>
         </div>
-        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-xs text-brass-200/60">{t('trade.round.timeLeft')}</dt>
-            <dd className="mt-1 font-medium text-cream-100">{roundTimeLeft}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-brass-200/60">{t('trade.round.expiry')}</dt>
-            <dd className="mt-1 font-medium text-cream-100">{roundExpiry}</dd>
-          </div>
-        </dl>
-      </div>
+      </TradePanelSection>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <TradePanelSection title={t('trade.section.direction')}>
         <div className="flex rounded-full border border-ink-700/60 bg-ink-950/60 p-1 text-xs font-semibold">
           {(['quick', 'custom'] as const).map((mode) => (
             <button
-              className={`h-8 rounded-full px-3.5 transition ${
+              className={`h-8 flex-1 rounded-full px-3.5 transition ${
                 tradeMode === mode
                   ? 'bg-cream-100 text-ink-950'
                   : 'text-cream-500 hover:text-cream-100'
@@ -286,85 +328,38 @@ export function TradePanel({
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl border border-ink-700/60 bg-ink-950/60 p-1">
-        {challengeCards.map((pick) => {
-          const Icon = pick.icon;
-          const isSelected = pick.kind === selectedKind;
-          return (
-            <button
-              className={`inline-flex h-11 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition ${
-                isSelected
-                  ? pick.kind === 'above'
-                    ? 'bg-moss-400 text-ink-950'
-                    : pick.kind === 'below'
-                      ? 'bg-clay-400 text-ink-950'
-                      : 'bg-brass-400 text-ink-950'
-                  : 'text-cream-500 hover:text-cream-100'
-              }`}
-              key={pick.kind}
-              onClick={() => setSelectedKind(pick.kind)}
-              type="button"
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {t(pick.typeKey)}
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-2 px-1 text-xs text-cream-600">{t(selectedPick.labelKey)}</div>
-
-      <div className="mt-3">
-        <div className="rounded-2xl border border-ink-700/60 bg-ink-950/60 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-cream-600" htmlFor="trade-quantity">
-              {t('trade.quantity')}
-            </label>
-            <span className="text-xs font-semibold text-cream-500">dUSDC</span>
-          </div>
-          <input
-            className="mt-1 w-full bg-transparent text-3xl font-bold tracking-tight text-cream-100 outline-none placeholder:text-cream-700"
-            id="trade-quantity"
-            inputMode="decimal"
-            onChange={(event) => setQuantityInput(event.target.value)}
-            placeholder="0.00"
-            type="text"
-            value={quantityInput}
-          />
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {['1', '5', '10', '25', '50'].map((preset) => (
+        <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl border border-ink-700/60 bg-ink-950/60 p-1">
+          {challengeCards.map((pick) => {
+            const Icon = pick.icon;
+            const isSelected = pick.kind === selectedKind;
+            return (
               <button
-                className={`h-7 rounded-full px-3 text-xs font-semibold transition ${
-                  quantityInput === preset
-                    ? 'bg-cream-100 text-ink-950'
-                    : 'bg-ink-800 text-cream-500 hover:text-cream-100'
+                className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-bold transition ${
+                  isSelected
+                    ? 'bg-brass-400 text-ink-950 shadow-[0_0_0_1px_rgba(240,194,75,0.28)]'
+                    : 'text-cream-500 hover:bg-ink-800/70 hover:text-cream-100'
                 }`}
-                key={preset}
-                onClick={() => setQuantityInput(preset)}
+                key={pick.kind}
+                onClick={() => setSelectedKind(pick.kind)}
                 type="button"
               >
-                {preset}
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {t(pick.typeKey)}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-        <div className="mt-2 px-1 text-xs text-cream-600">
-          {quoteRequest
-            ? `${t(selectedPick.typeKey)} · ${formatInstrument(quoteRequest)}`
-            : isQuantityEmpty
-              ? t('trade.waitingQuantity')
-              : t('trade.waitingMarket')}
-        </div>
+        <div className="mt-2 px-1 text-xs leading-5 text-cream-600">{t(selectedPick.labelKey)}</div>
 
         {tradeMode === 'custom' ? (
-          <div className="mt-4 grid gap-3">
+          <div className="mt-4 grid gap-3 border-t border-ink-700/50 pt-4">
             {selectedKind === 'range' ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm text-cream-500" htmlFor="trade-lower-strike">
                   {t('trade.lowerStrike')}
                   <input
-                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-900 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
+                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
                     id="trade-lower-strike"
                     inputMode="decimal"
                     onChange={(event) => setCustomLowerStrikeInput(event.target.value)}
@@ -376,7 +371,7 @@ export function TradePanel({
                 <label className="block text-sm text-cream-500" htmlFor="trade-higher-strike">
                   {t('trade.higherStrike')}
                   <input
-                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-900 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
+                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
                     id="trade-higher-strike"
                     inputMode="decimal"
                     onChange={(event) => setCustomHigherStrikeInput(event.target.value)}
@@ -390,7 +385,7 @@ export function TradePanel({
               <label className="block text-sm text-cream-500" htmlFor="trade-custom-strike">
                 {t('trade.strike')}
                 <input
-                  className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-900 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
+                  className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
                   id="trade-custom-strike"
                   inputMode="decimal"
                   onChange={(event) => setCustomStrikeInput(event.target.value)}
@@ -400,62 +395,114 @@ export function TradePanel({
                 />
               </label>
             )}
-            <div className="rounded-xl border border-dashed border-ink-600 p-3 text-xs text-cream-600">
+            <div className="rounded-xl bg-ink-950/45 p-3 text-xs leading-5 text-cream-600">
               {t('trade.customSnapNote')}
             </div>
           </div>
         ) : null}
+      </TradePanelSection>
 
-        <div className="mt-4 grid gap-2 text-sm">
-          <QuoteRow label={t('trade.cost')} value={formatDUsdcRaw(tradeQuote.data?.cost)} />
-          <QuoteRow
-            label={t('trade.maxPayout')}
-            value={formatDUsdcRaw(tradeQuote.data?.maxPayout)}
+      <TradePanelSection title={t('trade.section.stake')}>
+        <div className="rounded-2xl border border-ink-700/60 bg-ink-950/60 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <label
+              className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cream-700"
+              htmlFor="trade-quantity"
+            >
+              {t('trade.quantity')}
+            </label>
+            <span className="text-xs font-semibold text-cream-500">dUSDC</span>
+          </div>
+          <input
+            className="mt-1 w-full bg-transparent text-4xl font-bold tracking-tight text-cream-100 outline-none placeholder:text-cream-700 tabular-nums"
+            id="trade-quantity"
+            inputMode="decimal"
+            onChange={(event) => setQuantityInput(event.target.value)}
+            placeholder="0.00"
+            type="text"
+            value={quantityInput}
           />
-          <QuoteRow
-            label={t('trade.liveRedeem')}
-            value={formatDUsdcRaw(tradeQuote.data?.liveRedeem)}
-          />
-          <QuoteRow label={t('trade.maxLoss')} value={formatDUsdcRaw(tradeQuote.data?.cost)} />
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {['1', '5', '10', '25', '50'].map((preset) => (
+              <button
+                className={`h-7 rounded-full px-3 text-xs font-semibold transition ${
+                  quantityInput === preset
+                    ? 'bg-brass-400 text-ink-950'
+                    : 'bg-ink-800 text-cream-500 hover:text-cream-100'
+                }`}
+                key={preset}
+                onClick={() => setQuantityInput(preset)}
+                type="button"
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
         </div>
+        <div className="mt-2 px-1 text-xs leading-5 text-cream-600">
+          {quoteRequest
+            ? `${t(selectedPick.typeKey)} · ${formatInstrument(quoteRequest)}`
+            : isQuantityEmpty
+              ? t('trade.estimateAfterStake')
+              : t('trade.waitingMarket')}
+        </div>
+      </TradePanelSection>
+
+      <TradePanelSection title={t('trade.section.preview')}>
+        {isQuantityEmpty ? (
+          <div className="rounded-2xl bg-ink-950/45 p-4 text-sm leading-6 text-cream-500">
+            {t('trade.estimateAfterStake')}
+          </div>
+        ) : (
+          <div className="grid gap-2 rounded-2xl bg-ink-950/45 p-4 text-sm">
+            <QuoteRow
+              label={t('trade.cost')}
+              value={formatQuoteValue(tradeQuote.data?.cost, quoteFallback)}
+            />
+            <QuoteRow
+              label={t('trade.maxPayout')}
+              value={formatQuoteValue(tradeQuote.data?.maxPayout, quoteFallback)}
+            />
+            <QuoteRow
+              label={t('trade.liveRedeem')}
+              value={formatQuoteValue(tradeQuote.data?.liveRedeem, quoteFallback)}
+            />
+            <QuoteRow
+              label={t('trade.maxLoss')}
+              value={formatQuoteValue(tradeQuote.data?.cost, quoteFallback)}
+              tone="risk"
+            />
+          </div>
+        )}
 
         {tradeQuote.isLoading ? (
-          <div className="mt-3 text-sm text-cream-600">{t('trade.quoteLoading')}</div>
+          <InlineStatus tone="info">{t('trade.quoteLoading')}</InlineStatus>
         ) : null}
         {tradeQuote.error ? (
-          <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
-            {tradeQuote.error.message}
-          </div>
+          <InlineStatus tone="risk">{tradeQuote.error.message}</InlineStatus>
         ) : null}
         {isQuantityInvalid ? (
-          <div className="mt-3 text-sm text-clay-300">{t('trade.quantityInvalid')}</div>
+          <InlineStatus tone="risk">{t('trade.quantityInvalid')}</InlineStatus>
         ) : null}
         {customValidationMessage ? (
-          <div className="mt-3 text-sm text-clay-300">{customValidationMessage}</div>
+          <InlineStatus tone="risk">{customValidationMessage}</InlineStatus>
         ) : null}
         {isOpeningCutoff ? (
-          <div className="mt-3 text-sm text-amber-200">{t('trade.openingCutoff')}</div>
+          <InlineStatus tone="warn">{t('trade.openingCutoff')}</InlineStatus>
         ) : null}
         {managerTopUpAmount > 0n && !isWalletBalanceInsufficientForTopUp ? (
-          <div className="mt-3 rounded-xl border border-brass-400/30 bg-brass-400/10 p-3">
-            <div className="text-sm font-medium text-brass-200">
+          <InlineStatus tone="brand">
+            <span className="font-semibold">
               {t('trade.autoTopUp')} {formatDUsdcRaw(managerTopUpAmount)}
-            </div>
-            <div className="mt-1 text-xs text-brass-200/70">{t('trade.autoTopUpNote')}</div>
-          </div>
+            </span>
+            <span className="mt-1 block text-xs opacity-75">{t('trade.autoTopUpNote')}</span>
+          </InlineStatus>
         ) : null}
-        {isWalletBalanceInsufficientForTopUp ? (
-          <div className="mt-3 text-sm text-clay-300">{t('trade.insufficientWalletBalance')}</div>
-        ) : null}
-        {!accountOverview.managerId ? (
-          <div className="mt-3 text-sm text-amber-200">{t('trade.managerRequired')}</div>
-        ) : null}
-        {isManagerBalanceUnavailable ? (
-          <div className="mt-3 text-sm text-amber-200">{t('trade.managerBalanceLoading')}</div>
-        ) : null}
+      </TradePanelSection>
 
+      <TradePanelSection title={t('trade.section.action')}>
         <button
-          className="mt-4 h-12 w-full rounded-2xl bg-cream-100 px-3 text-sm font-bold text-ink-950 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-brass-400 px-3 text-sm font-bold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
           disabled={isMintDisabled}
           onClick={() => {
             if (!quoteRequest || isMintDisabled) return;
@@ -466,10 +513,18 @@ export function TradePanel({
           }}
           type="button"
         >
+          {tradeMint.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : null}
           {tradeMint.isPending
             ? t('trade.minting')
             : `${t('trade.mintButton')} ${t(selectedPick.typeKey)}`}
         </button>
+        {mintDisabledReason ? (
+          <div className="mt-2 rounded-xl bg-ink-950/45 px-3 py-2 text-xs leading-5 text-cream-600">
+            {mintDisabledReason}
+          </div>
+        ) : null}
 
         <button
           className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-ink-600 px-3 text-sm font-semibold text-cream-200 transition hover:border-brass-400 hover:text-brass-200 disabled:cursor-not-allowed disabled:border-ink-700 disabled:text-cream-700"
@@ -483,37 +538,95 @@ export function TradePanel({
           <Plus className="h-4 w-4" aria-hidden="true" />
           {isStreakFull ? t('trade.combo.full') : t('trade.combo.add')}
         </button>
-
-        {streakAppendError === 'order' ? (
-          <div className="mt-2 text-xs text-amber-200">{t('trade.combo.order')}</div>
+        {comboDisabledReason ? (
+          <div className="mt-2 text-xs leading-5 text-cream-700">{comboDisabledReason}</div>
         ) : null}
 
+        {tradeMint.isPending ? (
+          <InlineStatus tone="info">{t('trade.txConfirming')}</InlineStatus>
+        ) : null}
         {tradeMint.error ? (
-          <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
-            {formatTradeMintError(tradeMint.error, t)}
-          </div>
+          <InlineStatus tone="risk">{formatTradeMintError(tradeMint.error, t)}</InlineStatus>
         ) : null}
         {tradeMint.data ? (
-          <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm text-moss-200">
+          <InlineStatus tone="success">
             <TransactionLink digest={tradeMint.data.digest} label={t('trade.mintSuccess')} />
-          </div>
+          </InlineStatus>
         ) : null}
-      </div>
 
-      <div className="mt-4 rounded-xl border border-dashed border-ink-600 p-3 text-sm text-cream-600">
-        {t('trade.quoteNote')}
-      </div>
+        <div className="mt-4 grid gap-2 border-t border-ink-700/50 pt-4 text-xs leading-5 text-cream-600">
+          <div className="flex items-center gap-2 text-cream-500">
+            <ShieldCheck className="h-4 w-4 text-moss-300" aria-hidden="true" />
+            {t('trade.contractVerified')} {truncateAddress(PREDICT_CONFIG.predictPackageId)}
+          </div>
+          <div>{t('trade.quoteNote')}</div>
+        </div>
+      </TradePanelSection>
     </section>
   );
 }
 
-function QuoteRow({ label, value }: { label: string; value: string }) {
+function TradePanelSection({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-cream-600">{label}</span>
-      <span className="font-medium text-cream-100">{value}</span>
+    <div className="border-b border-ink-700/45 px-5 py-4 last:border-b-0">
+      <h3 className="mb-3 text-[15px] font-semibold text-cream-200">{title}</h3>
+      {children}
     </div>
   );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] uppercase tracking-[0.12em] text-cream-700">{label}</dt>
+      <dd className="mt-1 truncate text-sm font-semibold text-cream-100 tabular-nums">{value}</dd>
+    </div>
+  );
+}
+
+function QuoteRow({
+  label,
+  tone = 'default',
+  value,
+}: {
+  label: string;
+  tone?: 'default' | 'risk';
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-xs text-cream-600">{label}</span>
+      <span
+        className={`text-right text-sm font-semibold tabular-nums ${
+          tone === 'risk' && value.includes('dUSDC') ? 'text-clay-300' : 'text-cream-100'
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function InlineStatus({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: 'brand' | 'info' | 'risk' | 'success' | 'warn';
+}) {
+  const cls = {
+    brand: 'border-brass-400/25 bg-brass-400/10 text-brass-200',
+    info: 'border-ink-600 bg-ink-950/55 text-cream-500',
+    risk: 'border-clay-400/35 bg-clay-400/10 text-clay-200',
+    success: 'border-moss-400/30 bg-moss-400/10 text-moss-200',
+    warn: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
+  }[tone];
+
+  return <div className={`mt-3 rounded-xl border p-3 text-sm ${cls}`}>{children}</div>;
+}
+
+function formatQuoteValue(value: bigint | null | undefined, fallback: string) {
+  return value == null ? fallback : formatDUsdcRaw(value);
 }
 
 function formatTradeMintError(error: Error, t: (key: MessageKey) => string) {
@@ -526,6 +639,81 @@ function formatTradeMintError(error: Error, t: (key: MessageKey) => string) {
   }
 
   return error.message;
+}
+
+function truncateAddress(value: string) {
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
+function getMintDisabledReason({
+  accountOverview,
+  isManagerBalanceUnavailable,
+  isOpeningCutoff,
+  isQuantityEmpty,
+  isQuantityInvalid,
+  isWalletBalanceInsufficientForTopUp,
+  isWalletBalanceUnavailableForTopUp,
+  quoteRequest,
+  t,
+  tradeMintPending,
+  tradeQuoteHasData,
+  tradeQuoteIsError,
+  tradeQuoteIsLoading,
+}: {
+  accountOverview: PredictAccountOverview;
+  isManagerBalanceUnavailable: boolean;
+  isOpeningCutoff: boolean;
+  isQuantityEmpty: boolean;
+  isQuantityInvalid: boolean;
+  isWalletBalanceInsufficientForTopUp: boolean;
+  isWalletBalanceUnavailableForTopUp: boolean;
+  quoteRequest: TradeQuoteRequest | null;
+  t: (key: MessageKey) => string;
+  tradeMintPending: boolean;
+  tradeQuoteHasData: boolean;
+  tradeQuoteIsError: boolean;
+  tradeQuoteIsLoading: boolean;
+}) {
+  if (!accountOverview.isExpectedNetwork) return t('trade.disabled.network');
+  if (!accountOverview.managerId) return t('trade.managerRequired');
+  if (isManagerBalanceUnavailable) return t('trade.managerBalanceLoading');
+  if (isWalletBalanceUnavailableForTopUp) return t('trade.disabled.walletBalanceLoading');
+  if (isWalletBalanceInsufficientForTopUp) return t('trade.insufficientWalletBalance');
+  if (isOpeningCutoff) return t('trade.openingCutoff');
+  if (isQuantityInvalid) return t('trade.quantityInvalid');
+  if (isQuantityEmpty) return t('trade.estimateAfterStake');
+  if (!quoteRequest) return t('trade.waitingMarket');
+  if (tradeQuoteIsLoading) return t('trade.quoteLoading');
+  if (tradeQuoteIsError || !tradeQuoteHasData) return t('trade.disabled.quoteUnavailable');
+  if (tradeMintPending) return t('trade.txConfirming');
+  return null;
+}
+
+function getComboDisabledReason({
+  isQuantityEmpty,
+  isStreakFull,
+  quoteRequest,
+  streakAppendError,
+  t,
+  tradeQuoteHasData,
+  tradeQuoteIsError,
+  tradeQuoteIsLoading,
+}: {
+  isQuantityEmpty: boolean;
+  isStreakFull: boolean;
+  quoteRequest: TradeQuoteRequest | null;
+  streakAppendError: 'full' | 'order' | null;
+  t: (key: MessageKey) => string;
+  tradeQuoteHasData: boolean;
+  tradeQuoteIsError: boolean;
+  tradeQuoteIsLoading: boolean;
+}) {
+  if (isStreakFull) return t('trade.combo.full');
+  if (streakAppendError === 'order') return t('trade.combo.order');
+  if (isQuantityEmpty || !quoteRequest) return t('trade.combo.needQuote');
+  if (tradeQuoteIsLoading) return t('trade.quoteLoading');
+  if (tradeQuoteIsError || !tradeQuoteHasData) return t('trade.disabled.quoteUnavailable');
+  return null;
 }
 
 function buildQuickPickQuoteRequest({

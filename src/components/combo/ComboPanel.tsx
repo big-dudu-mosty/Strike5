@@ -56,24 +56,24 @@ export function ComboPanel({
   }, [resolution, onLegResult]);
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 bg-ink-900/70 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('combo.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('combo.subtitle')}</p>
+          <h2 className="text-[17px] font-semibold text-cream-100">{t('combo.title')}</h2>
+          <p className="text-sm text-cream-600">{t('combo.subtitle')}</p>
         </div>
-        <ListChecks className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <ListChecks className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-md border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-400">
+      <div className="mt-4 rounded-2xl bg-ink-950/45 p-3 text-sm text-cream-500">
         <div className="flex gap-2">
-          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
+          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss-300" aria-hidden="true" />
           <p>{t('combo.note')}</p>
         </div>
       </div>
 
       {!managerId ? (
-        <div className="mt-4 text-sm text-amber-200">{t('combo.managerRequired')}</div>
+        <div className="mt-4 text-sm text-brass-200">{t('combo.managerRequired')}</div>
       ) : (
         <CurrentStreakBlock
           currentStreak={currentStreak}
@@ -84,8 +84,8 @@ export function ComboPanel({
 
       <div className="mt-5">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-zinc-100">{t('combo.history')}</h3>
-          <span className="text-xs text-zinc-500">{archivedStreaks.length}</span>
+          <h3 className="text-sm font-semibold text-cream-100">{t('combo.history')}</h3>
+          <span className="text-xs text-cream-600">{archivedStreaks.length}</span>
         </div>
 
         <div className="mt-3 grid gap-3">
@@ -94,7 +94,7 @@ export function ComboPanel({
               <ArchivedStreakRow key={streak.id} streak={streak} />
             ))
           ) : (
-            <div className="rounded-md border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
+            <div className="rounded-2xl border border-dashed border-ink-600 p-4 text-sm leading-6 text-cream-500">
               {t('combo.emptyHistory')}
             </div>
           )}
@@ -117,7 +117,7 @@ function CurrentStreakBlock({
 
   if (!currentStreak || !resolution || currentStreak.legs.length === 0) {
     return (
-      <div className="mt-4 rounded-md border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
+      <div className="mt-4 rounded-2xl border border-dashed border-ink-600 p-4 text-sm leading-6 text-cream-500">
         {t('combo.empty')}
       </div>
     );
@@ -126,16 +126,16 @@ function CurrentStreakBlock({
   const totalCost = getComboTotalCost(currentStreak.legs);
 
   return (
-    <div className="mt-4 rounded-md border border-zinc-800 bg-zinc-950 p-3">
+    <div className="mt-4 rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-100">{t('combo.current')}</h3>
-          <p className="mt-1 text-xs text-zinc-500">
+          <h3 className="text-sm font-semibold text-cream-100">{t('combo.current')}</h3>
+          <p className="mt-1 text-xs text-cream-600">
             {currentStreak.legs.length}/{STREAK_TARGET} {t('combo.legs')}
           </p>
         </div>
         <Flame
-          className={`h-5 w-5 ${resolution.busted ? 'text-red-300' : 'text-amber-300'}`}
+          className={`h-5 w-5 ${resolution.busted ? 'text-clay-300' : 'text-brass-300'}`}
           aria-hidden="true"
         />
       </div>
@@ -163,7 +163,7 @@ function CurrentStreakBlock({
       </div>
 
       <button
-        className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-zinc-700 px-3 text-sm font-semibold text-zinc-200 transition hover:border-emerald-400 hover:text-emerald-100"
+        className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-ink-600 px-3 text-sm font-semibold text-cream-200 transition hover:border-brass-400 hover:text-brass-200"
         onClick={onClearStreak}
         type="button"
       >
@@ -179,7 +179,7 @@ function StreakBanner({ resolution }: { resolution: ReturnType<typeof resolveStr
 
   if (resolution.completed) {
     return (
-      <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-100">
+      <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm font-medium text-moss-100">
         {t('combo.completedBanner')}
       </div>
     );
@@ -187,7 +187,7 @@ function StreakBanner({ resolution }: { resolution: ReturnType<typeof resolveStr
 
   if (resolution.busted) {
     return (
-      <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm font-medium text-red-200">
+      <div className="mt-3 rounded-xl border border-clay-400/30 bg-clay-400/10 p-3 text-sm font-medium text-clay-200">
         {t('combo.bustedBanner')}
       </div>
     );
@@ -195,7 +195,7 @@ function StreakBanner({ resolution }: { resolution: ReturnType<typeof resolveStr
 
   if (resolution.surrendered) {
     return (
-      <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm font-medium text-amber-100">
+      <div className="mt-3 rounded-xl border border-brass-400/30 bg-brass-400/10 p-3 text-sm font-medium text-brass-200">
         {t('combo.surrenderedBanner')}
       </div>
     );
@@ -203,14 +203,14 @@ function StreakBanner({ resolution }: { resolution: ReturnType<typeof resolveStr
 
   if (resolution.canAdvance) {
     return (
-      <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+      <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm text-moss-100">
         {t('combo.advanceHint')}
       </div>
     );
   }
 
   return (
-    <div className="mt-3 rounded-md border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-400">
+    <div className="mt-3 rounded-xl bg-ink-950/45 p-3 text-sm text-cream-500">
       {t('combo.inProgress')}
     </div>
   );
@@ -231,45 +231,45 @@ function StreakSlot({
   const failed = status === 'lost';
   const surrendered = status === 'surrendered';
   const containerClass = lit
-    ? 'border-emerald-400/40 bg-emerald-400/10'
+    ? 'border-moss-400/40 bg-moss-400/10'
     : failed
-      ? 'border-red-400/40 bg-red-400/10'
+      ? 'border-clay-400/40 bg-clay-400/10'
       : surrendered
-        ? 'border-amber-400/40 bg-amber-400/10'
-        : 'border-zinc-800 bg-zinc-900';
+        ? 'border-brass-400/40 bg-brass-400/10'
+        : 'border-ink-700 bg-ink-950/35';
   const badgeClass = lit
-    ? 'bg-emerald-400 text-zinc-950'
+    ? 'bg-moss-400 text-ink-950'
     : failed
-      ? 'bg-red-400 text-zinc-950'
+      ? 'bg-clay-400 text-ink-950'
       : surrendered
-        ? 'bg-amber-400 text-zinc-950'
-        : 'bg-zinc-800 text-zinc-300';
+        ? 'bg-brass-400 text-ink-950'
+        : 'bg-ink-800 text-cream-400';
 
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-md border p-3 ${containerClass}`}>
+    <div className={`flex items-center justify-between gap-3 rounded-2xl border p-3 ${containerClass}`}>
       <div className="flex min-w-0 items-center gap-3">
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-xs font-bold ${badgeClass}`}>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${badgeClass}`}>
           {multiplier}x
         </span>
         <div className="min-w-0">
-          <div className="text-xs text-zinc-500">
+          <div className="text-xs text-cream-600">
             {t('combo.leg')} {index + 1}
           </div>
           {leg ? (
             <>
-              <div className="mt-0.5 truncate text-sm font-semibold text-zinc-100">
+              <div className="mt-0.5 truncate text-sm font-semibold text-cream-100">
                 {formatLegInstrument(leg)}
               </div>
-              <div className="mt-0.5 text-xs text-zinc-500">
+              <div className="mt-0.5 text-xs text-cream-600">
                 {getLegTypeLabel(leg.kind, t)} · {formatTime(Number(leg.expiry))}
               </div>
             </>
           ) : (
-            <div className="mt-0.5 text-sm text-zinc-600">—</div>
+            <div className="mt-0.5 text-sm text-cream-700">—</div>
           )}
         </div>
       </div>
-      <span className="shrink-0 text-xs font-medium text-zinc-400">
+      <span className="shrink-0 text-xs font-medium text-cream-500">
         {leg ? getLegStatusLabel(status, t) : ''}
       </span>
     </div>
@@ -287,23 +287,23 @@ function ArchivedStreakRow({ streak }: { streak: ArenaStreak }) {
         ? t('combo.surrendered')
         : t('combo.pending');
   const resultClass = resolution.completed
-    ? 'bg-emerald-400 text-zinc-950'
+    ? 'bg-moss-400 text-ink-950'
     : resolution.busted
-      ? 'bg-red-400/15 text-red-200'
+      ? 'bg-clay-400/15 text-clay-200'
       : resolution.surrendered
-        ? 'bg-amber-400/15 text-amber-200'
-        : 'bg-zinc-800 text-zinc-300';
+        ? 'bg-brass-400/15 text-brass-200'
+        : 'bg-ink-800 text-cream-400';
 
   return (
-    <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
+    <article className="rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-zinc-100">
+          <div className="text-sm font-semibold text-cream-100">
             {formatMultiplier(resolution.litMultiplier)}
           </div>
-          <div className="mt-1 text-xs text-zinc-500">{formatTime(streak.createdAt)}</div>
+          <div className="mt-1 text-xs text-cream-600">{formatTime(streak.createdAt)}</div>
         </div>
-        <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${resultClass}`}>
+        <span className={`shrink-0 rounded-xl px-2 py-1 text-xs font-semibold ${resultClass}`}>
           {resultLabel}
         </span>
       </div>
@@ -314,9 +314,9 @@ function ArchivedStreakRow({ streak }: { streak: ArenaStreak }) {
             className="grid grid-cols-[28px_minmax(0,1fr)_72px] items-center gap-2 text-xs"
             key={leg.id}
           >
-            <span className="text-zinc-600">#{index + 1}</span>
-            <span className="truncate text-zinc-300">{formatLegInstrument(leg)}</span>
-            <span className="text-right text-zinc-500">{getLegStatusLabel(resolution.legs[index]?.status ?? null, t)}</span>
+            <span className="text-cream-700">#{index + 1}</span>
+            <span className="truncate text-cream-300">{formatLegInstrument(leg)}</span>
+            <span className="text-right text-cream-600">{getLegStatusLabel(resolution.legs[index]?.status ?? null, t)}</span>
           </div>
         ))}
       </div>
@@ -327,8 +327,8 @@ function ArchivedStreakRow({ streak }: { streak: ArenaStreak }) {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="truncate text-zinc-500">{label}</dt>
-      <dd className="mt-1 truncate font-medium text-zinc-100">{value}</dd>
+      <dt className="truncate text-cream-600">{label}</dt>
+      <dd className="mt-1 truncate font-medium text-cream-100 tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -342,12 +342,12 @@ function formatLegInstrument(leg: ArenaComboLeg) {
 }
 
 function formatRawStrike(value: string | undefined) {
-  if (!value) return 'Pending';
+  if (!value) return '—';
   return formatUsd(scaleOracleUsd(Number(BigInt(value))), { integer: true });
 }
 
 function formatMultiplier(value: number | null) {
-  if (value == null || !Number.isFinite(value)) return 'Pending';
+  if (value == null || !Number.isFinite(value)) return '—';
   return `${value.toFixed(value % 1 === 0 ? 0 : 2)}x`;
 }
 
