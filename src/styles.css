@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 /*
- * Strike5 trading desk theme: neutral dark surfaces with restrained exchange
- * accents. Token names stay semantic so components survive theme swaps:
- * ink   = navy surface scale (page / cards / borders)
+ * Strike5 trading desk theme: graphite / steel surfaces with restrained
+ * exchange accents. Token names stay semantic so components survive theme swaps:
+ * ink   = graphite surface scale (page / cards / borders)
  * cream = cool near-white text scale
  * brass = warm yellow accent (brand, selection, highlights)
  * moss  = positive / win / profit (mint green)
  * clay  = negative / loss / drawdown (red)
  */
 @theme {
-  --color-ink-950: #070914;
-  --color-ink-900: #0d111d;
-  --color-ink-800: #161d2c;
-  --color-ink-700: #263248;
-  --color-ink-600: #35435c;
-  --color-ink-500: #536279;
+  --color-ink-950: #263142;
+  --color-ink-900: #303b4e;
+  --color-ink-800: #3d4b61;
+  --color-ink-700: #55677e;
+  --color-ink-600: #738196;
+  --color-ink-500: #99a5b6;
 
-  --color-cream-100: #f4f5ff;
-  --color-cream-200: #e2e4f8;
-  --color-cream-300: #c8cbe8;
-  --color-cream-500: #9fa3cc;
-  --color-cream-600: #8388b6;
-  --color-cream-700: #666b97;
+  --color-cream-100: #f7f9fc;
+  --color-cream-200: #edf2f8;
+  --color-cream-300: #d8e2ef;
+  --color-cream-500: #c1cad8;
+  --color-cream-600: #a7b2c2;
+  --color-cream-700: #8a96aa;
 
   --color-brass-200: #f8e7ae;
   --color-brass-300: #f5d36e;
@@ -58,13 +58,13 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  color: #f4f5ff;
-  background-color: #070914;
+  color: #f7f9fc;
+  background-color: #263142;
   background-image:
-    radial-gradient(at 16% 0%, rgba(42, 57, 103, 0.42) 0, transparent 44%),
-    radial-gradient(at 84% 8%, rgba(24, 62, 76, 0.28) 0, transparent 40%),
-    radial-gradient(at 78% 96%, rgba(93, 74, 39, 0.22) 0, transparent 42%),
-    linear-gradient(180deg, #070914 0%, #0b1020 52%, #070914 100%);
+    radial-gradient(at 12% 0%, rgba(139, 154, 174, 0.24) 0, transparent 38%),
+    radial-gradient(at 86% 8%, rgba(63, 128, 112, 0.14) 0, transparent 36%),
+    radial-gradient(at 78% 96%, rgba(160, 132, 72, 0.1) 0, transparent 40%),
+    linear-gradient(180deg, #344052 0%, #263142 50%, #212b3a 100%);
   background-attachment: fixed;
 }
 
@@ -74,12 +74,12 @@ button {
 
 ::selection {
   background: #f0c24b;
-  color: #0d0f26;
+  color: #263142;
 }
 
-/* Glassy card body: navy with slight translucency over the gradient. */
+/* Glassy card body: graphite with slight translucency over the page wash. */
 .glass {
-  background-color: rgba(16, 18, 44, 0.88);
+  background-color: rgba(48, 59, 78, 0.92);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
