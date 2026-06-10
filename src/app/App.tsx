@@ -10,6 +10,7 @@ import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
 import { ArenaFeedPanel } from '../components/social-feed/ArenaFeedPanel';
 import { ComboPanel } from '../components/combo/ComboPanel';
 import { StreakMeter } from '../components/combo/StreakMeter';
+import { ArenaDashboardPanel } from '../components/arena-dashboard/ArenaDashboardPanel';
 import { PredictStatusStrip } from '../components/predict-status/PredictStatusStrip';
 import { SealedCallsPanel } from '../components/sealed-calls/SealedCallsPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
@@ -224,6 +225,12 @@ export function App() {
                 <AccountPanel overview={accountOverview} />
               </aside>
             </div>
+
+            <ArenaDashboardPanel
+              managerId={managerId}
+              overview={marketOverview.data}
+              streak={managerCurrentStreak}
+            />
 
             <PredictStatusStrip managerId={managerId} overview={marketOverview.data} />
           </section>
