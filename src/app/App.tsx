@@ -1,5 +1,5 @@
 import { Activity, CircleDollarSign, ListChecks, MessageSquare, ShieldCheck } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { MarketPulsePanel } from '../components/market-pulse/MarketPulsePanel';
 import { TradePanel } from '../components/trade-panel/TradePanel';
@@ -15,9 +15,11 @@ import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
 import {
-  COMBO_LEG_TARGET,
-  getComboLegKey,
+  getStreakAppendError,
+  isStreakTerminal,
   type ArenaComboLeg,
+  type ArenaStreak,
+  type StreakLegResult,
 } from '../lib/combo';
 import { formatPercent, scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
@@ -52,7 +54,8 @@ const appPages = [
 export function App() {
   const [activePage, setActivePage] = useState<AppPage>('arena');
   const [chartInterval, setChartInterval] = useState<KlineInterval>('1m');
-  const [comboDraftLegs, setComboDraftLegs] = useState<ArenaComboLeg[]>([]);
+  const [currentStreak, setCurrentStreak] = useState<ArenaStreak | null>(() => readCurrentStreak());
+  const [archivedStreaks, setArchivedStreaks] = useState<ArenaStreak[]>(() => readArchivedStreaks());
   const [selectedTradeRequest, setSelectedTradeRequest] = useState<TradeQuoteRequest | null>(null);
   const marketOverview = usePredictMarketOverview();
   const accountOverview = usePredictAccountOverview();
@@ -68,16 +71,73 @@ export function App() {
     return buildTradeOverlay(selectedTradeRequest);
   }, [selectedTradeRequest]);
 
+  useEffect(() => {
+    window.localStorage.setItem(STREAK_CURRENT_KEY, JSON.stringify(currentStreak));
+  }, [currentStreak]);
+
+  useEffect(() => {
+    window.localStorage.setItem(STREAK_ARCHIVE_KEY, JSON.stringify(archivedStreaks));
+  }, [archivedStreaks]);
+
+  const managerId = accountOverview.managerId;
+  const managerCurrentStreak =
+    currentStreak && currentStreak.managerId === managerId ? currentStreak : null;
+  const managerArchivedStreaks = useMemo(
+    () => archivedStreaks.filter((streak) => streak.managerId === managerId),
+    [archivedStreaks, managerId],
+  );
+  const streakLegsForPanel = managerCurrentStreak?.legs ?? [];
+
   function addComboLeg(leg: ArenaComboLeg) {
-    setComboDraftLegs((current) => {
-      const next = current.filter((item) => getComboLegKey(item) !== getComboLegKey(leg));
-      if (next.length >= COMBO_LEG_TARGET) return current;
-      return [...next, leg];
+    if (!managerId) return;
+
+    const startsFresh =
+      !currentStreak ||
+      currentStreak.managerId !== managerId ||
+      isStreakTerminal(currentStreak.legs);
+
+    if (startsFresh) {
+      if (currentStreak && currentStreak.legs.length > 0) {
+        setArchivedStreaks((archive) => [currentStreak, ...archive].slice(0, 20));
+      }
+      setCurrentStreak({
+        createdAt: Date.now(),
+        id: createStreakId(),
+        legs: [leg],
+        managerId,
+      });
+      return;
+    }
+
+    const appendError = getStreakAppendError(currentStreak.legs, {
+      expiry: BigInt(leg.expiry),
+      oracleId: leg.oracleId,
     });
+    if (appendError) return;
+
+    setCurrentStreak({ ...currentStreak, legs: [...currentStreak.legs, leg] });
   }
 
-  function removeComboLeg(id: string) {
-    setComboDraftLegs((current) => current.filter((leg) => leg.id !== id));
+  function clearCurrentStreak() {
+    if (currentStreak && currentStreak.legs.length > 0) {
+      setArchivedStreaks((archive) => [currentStreak, ...archive].slice(0, 20));
+    }
+    setCurrentStreak(null);
+  }
+
+  function setStreakLegResult(legId: string, result: StreakLegResult) {
+    setCurrentStreak((current) => {
+      if (!current) return current;
+      let changed = false;
+      const legs = current.legs.map((leg) => {
+        if (leg.id === legId && leg.result !== result) {
+          changed = true;
+          return { ...leg, result };
+        }
+        return leg;
+      });
+      return changed ? { ...current, legs } : current;
+    });
   }
 
   return (
@@ -143,6 +203,8 @@ export function App() {
               <PositionsPanel
                 isExpectedNetwork={accountOverview.isExpectedNetwork}
                 managerId={accountOverview.managerId}
+                onStreakSurrender={(legId) => setStreakLegResult(legId, 'surrendered')}
+                streakLegs={streakLegsForPanel}
               />
             </div>
 
@@ -155,13 +217,13 @@ export function App() {
                 overview={marketOverview.data}
               />
               <AccountPanel overview={accountOverview} />
-              <TradePanel
-                accountOverview={accountOverview}
-                comboLegCount={comboDraftLegs.length}
-                onAddComboLeg={addComboLeg}
-                onQuoteRequestChange={setSelectedTradeRequest}
-                overview={marketOverview.data}
-              />
+            <TradePanel
+              accountOverview={accountOverview}
+              onAddComboLeg={addComboLeg}
+              onQuoteRequestChange={setSelectedTradeRequest}
+              overview={marketOverview.data}
+              streakLegs={streakLegsForPanel}
+            />
             </aside>
           </section>
         ) : null}
@@ -169,10 +231,11 @@ export function App() {
         {activePage === 'playbook' ? (
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <ComboPanel
-              draftLegs={comboDraftLegs}
+              archivedStreaks={managerArchivedStreaks}
+              currentStreak={managerCurrentStreak}
               managerId={accountOverview.managerId}
-              onClearDraft={() => setComboDraftLegs([])}
-              onRemoveDraftLeg={removeComboLeg}
+              onClearStreak={clearCurrentStreak}
+              onLegResult={setStreakLegResult}
             />
             <SealedCallsPanel
               accountOverview={accountOverview}
@@ -221,4 +284,39 @@ function buildTradeOverlay(request: TradeQuoteRequest | null): ChartTradeOverlay
 
 function scaleRawOracleStrike(value: bigint) {
   return Number(value) / 1_000_000_000;
+}
+
+const STREAK_CURRENT_KEY = 'strike5.combo.streak.current.v2';
+const STREAK_ARCHIVE_KEY = 'strike5.combo.streak.archive.v2';
+
+function readCurrentStreak(): ArenaStreak | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(STREAK_CURRENT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as ArenaStreak) : null;
+  } catch {
+    return null;
+  }
+}
+
+function readArchivedStreaks(): ArenaStreak[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(STREAK_ARCHIVE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as ArenaStreak[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function createStreakId() {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }

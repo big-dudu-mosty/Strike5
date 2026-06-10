@@ -193,15 +193,17 @@ manager interval: 5 min
 ```text
 manager interval 是当前 oracle feed service 的 operational config。
 它不是 Strike5 的 settlement 来源，也不代表 DeepBook Predict 支持 5-minute onchain settlement。
-Strike5 的 5-minute round 是产品层交易节奏。
-真实 settlement 仍指向 nearest 15-minute oracle expiry。
+enabled tiers 表示协议支持的 expiry 档位，不保证每一档随时都有 active oracle。
 ```
 
-当前产品设计采用：
+实测（2026-06-09，predict-server）：15m 档的 BTC oracle feed 已停产数日，当前 active 的只有每日 16:00 到期的日档与更长档位。因此**不能假设任何时刻都存在近端 15m oracle**。
+
+当前产品设计采用（见 decision 0022）：
 
 ```text
-5-minute UI round
-15-minute nearest oracle expiry
+连续交易：oracle 存活期间随时 mint / Cash Out
+oracle expiry 仅作为结算锚点（串关判定、reveal、redeem）
+没有固定的产品轮次节奏，不再使用 5-minute UI round
 ```
 
 不要写成：
@@ -213,10 +215,10 @@ DeepBook oracle 15 分钟才更新一次价格
 更准确是：
 
 ```text
-15 分钟是最短 expiry 间隔；oracle price updates 是高频更新。
+15 分钟是协议最短 expiry 档位；oracle price updates 是高频更新（约 1s tick）。
 ```
 
-Oracle freshness 当前代码阈值为 30 秒。UI 应展示 freshness，并在 stale 时禁止新交易或提示风险。
+Oracle freshness 当前代码阈值为 30 秒。UI 应展示 freshness；stale 时 mint 和未结算 redeem（Cash Out）都会被合约拒绝（`EOracleStale`），需禁用并提示。
 
 ## 4. Strike Grid
 
@@ -424,23 +426,45 @@ Build RangeKey
 -> vault accepts payment and records bounded range exposure
 ```
 
-## 11. Redeem 流程
+## 11. Redeem 流程（结算赎回 + 提前 Cash Out）
 
-到期后 oracle settles。
+`predict::redeem` / `redeem_range` 有两条路径（合约 `redeem_internal` / `redeem_range` 的 settled / unsettled 分支）：
 
-用户 redeem：
+### 11.1 结算后赎回
 
 ```text
-load redeemable position
+oracle settled
+-> load redeemable position
 -> build redeem PTB
 -> wallet signs
 -> submit tx
--> Predict.redeem / redeem_range
+-> Predict.redeem / redeem_range（settled 分支，按结算 fair price）
 -> payout deposited into PredictManager
 -> position quantity decreases
 ```
 
-当前代码中 directional position 支持 `redeem_permissionless`。Range 当前按 owner 调用 `redeem_range` 处理；MVP 不依赖 range permissionless keeper。
+### 11.2 提前 Cash Out（未结算）
+
+```text
+oracle ACTIVE 且价格 30s 内新鲜
+-> build 同样的 redeem PTB（同一入口）
+-> Predict.redeem / redeem_range（unsettled 分支）
+-> 仓位从 vault 移除，按当前 live bid（扣 spread）即时付款
+-> payout deposited into PredictManager
+```
+
+可用窗口由 `assert_quoteable_oracle` 决定：
+
+```text
+ACTIVE + fresh          -> 允许（live bid）
+PENDING_SETTLEMENT      -> 拒绝（到期未结算空窗被故意冻结，防抢跑）
+INACTIVE / stale (>30s) -> 拒绝
+SETTLED                 -> 允许（结算价）
+```
+
+注意：`trading_paused` 只 gate `mint` / `mint_range`，不 gate redeem——协议暂停交易时用户仍可退出。
+
+当前代码中 directional position 支持 `redeem_permissionless`，但它断言 `oracle.is_settled()`，只用于结算后 keeper 路径，不能用于提前平仓。Range 当前按 owner 调用 `redeem_range` 处理；MVP 不依赖 range permissionless keeper。
 
 ## 12. Opening Cutoff
 

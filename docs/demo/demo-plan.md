@@ -22,16 +22,16 @@ BTC K-line / Oracle Spot
 
 ## 2. 核心讲法
 
-推荐开场：
+推荐开场（核心钩子：settlement ≠ pace）：
 
 ```text
-Most prediction markets stop at isolated bets. Strike5 Arena turns DeepBook Predict's BTC oracle markets into a social prediction arena: users join short-cycle rounds, make fixed-risk on-chain predictions, publish sealed calls, compete on opt-in leaderboards, and redeem after settlement.
+Settlement is slow, but markets are fast. We read the Predict contract and found that the vault is a continuous counterparty: positions can be sold back at the live vol-surface bid at any time before settlement. So we built Strike5 Arena — a fixed-risk BTC scalping arena where users open a position, watch live PnL tick, and cash out in seconds, all on-chain. On top of that, a streak parlay rewards those who dare to lock positions to settlement: win 3 consecutive rounds for 8x arena score, but cash out early and you forfeit the streak.
 ```
 
 中文讲法：
 
 ```text
-传统预测市场通常只是孤立下注。Strike5 Arena 把 DeepBook Predict 的 BTC oracle markets 包装成一个短周期预测竞技场：用户每轮参与 BTC Above / Below / Range 挑战，用真实 dUSDC 开仓，到期链上结算，并通过 opt-in 排行榜、晒单和 Sealed Calls 形成社交声誉。
+结算很慢，但市场很快。我们读了 Predict 合约，发现 vault 是连续报价的对手方：仓位在结算前随时可以按波动率曲面的 live bid 卖回。于是我们做了 Strike5 Arena——固定风险的 BTC 短线竞技场：开仓、看实时 PnL 跳动、几秒内 Cash Out，全程链上。再往上是连胜串关：敢把仓位锁到结算的人，连赢 3 轮拿 8x Arena 分数；提前落袋就弃权。随时可以跑，但跑了连胜就没了。
 ```
 
 ## 3. 必须强调的事实
@@ -64,18 +64,18 @@ The current MVP uses DeepBook Predict's live BTC oracle. ETH, SUI, SOL, sports, 
 当前 MVP 使用 DeepBook Predict 已有的 BTC oracle。ETH / SUI / SOL、体育、政治或新闻事件，只有在存在官方 oracle 和结算路径后才会扩展。
 ```
 
-### 3.3 不是 5 分钟链上结算
+### 3.3 节奏来自连续交易，不伪造更短结算
 
 正确说法：
 
 ```text
-Strike5 uses short product rounds with DeepBook Predict's current BTC oracle expiry. It does not fake a shorter on-chain settlement.
+Pace comes from continuous trading: positions can be cashed out at the live bid anytime before settlement. Settlement itself always uses DeepBook Predict's real oracle expiry. Strike5 never fakes a shorter on-chain settlement.
 ```
 
 中文：
 
 ```text
-Strike5 是短周期产品竞技节奏，实际结算使用当前 DeepBook Predict testnet 的 BTC oracle expiry，不伪造更短链上结算。
+节奏来自连续交易：仓位在结算前随时可按 live bid 平仓（Cash Out）。结算本身始终使用 DeepBook Predict 真实的 oracle expiry，Strike5 不伪造更短链上结算。
 ```
 
 ### 3.4 Chart Price 和 Oracle Spot 不一样
@@ -125,13 +125,13 @@ Sealed Calls 隐藏的是赛前发表的观点内容，不隐藏底层 DeepBook 
 正确说法：
 
 ```text
-Predict payouts settle normally. Combo multiplies Arena score and reputation, not the underlying on-chain payout.
+Predict payouts settle normally. Combo multiplies Arena score and reputation, not the underlying on-chain payout. Streak legs must be held to settlement; cashing out early forfeits the streak (a neutral surrender, not a loss).
 ```
 
 中文：
 
 ```text
-DeepBook Predict 的真实 payout 仍按原生仓位结算。Combo 乘倍的是 Arena 积分和声誉，不是底层链上赔付。
+DeepBook Predict 的真实 payout 仍按原生仓位结算。Combo 乘倍的是 Arena 积分和声誉，不是底层链上赔付。串关 leg 必须持有到结算；提前 Cash Out 即弃权（中性状态，不算败）。
 ```
 
 ## 4. Demo 顺序
@@ -239,7 +239,7 @@ The quote is simulated through DeepBook Predict before signing. The user sees co
 The frontend builds the PTB, the wallet signs it, and Sui RPC submits it. The Predict shared object executes mint or mint_range.
 ```
 
-### Step 7: Position Panel
+### Step 7: Position Panel + Live PnL
 
 展示刚创建的仓位。
 
@@ -251,13 +251,33 @@ The frontend builds the PTB, the wallet signs it, and Sui RPC submits it. The Pr
 - quantity。
 - cost。
 - status。
-- redeem state。
+- 实时浮动 PnL（随 oracle tick 跳动）。
+- Cash Out / redeem state。
 
 讲解：
 
 ```text
-The position quantity is recorded in PredictManager rather than as a standalone wallet object.
+The position quantity is recorded in PredictManager rather than as a standalone wallet object. The floating PnL you see ticking is quoted live against the vault's vol-surface bid.
 ```
+
+### Step 7b: Cash Out（核心演示）
+
+等实时 PnL 跳动几秒后，直接点 Cash Out。
+
+展示：
+
+- 当前 live 退出价。
+- wallet signature request。
+- tx digest。
+- payout 回到 PredictManager，余额变化。
+
+讲解：
+
+```text
+This is the part most people miss about DeepBook Predict: the vault is a continuous counterparty. We do not wait for settlement — the position is sold back at the live bid, on-chain, in one transaction. Open, watch, exit: the whole loop takes seconds.
+```
+
+这是整场 demo 的高光段落：30 秒内完成 开仓 -> PnL 跳动 -> Cash Out 落袋 的完整链上闭环。
 
 ### Step 8: Leaderboard Opt-in
 
@@ -340,6 +360,72 @@ Each leg settles through DeepBook Predict normally. Combo is an Arena scoring la
 
 ```text
 After OracleSVI settlement, the user can redeem payout back into PredictManager.
+```
+
+## 4.5 五分钟 Demo 视频脚本（官方评审结构）
+
+官方推荐结构：problem -> solution -> live demo -> why Sui -> roadmap。Real-World Application 占评分 50%，live demo 质量是核心。
+
+### 0:00 - 0:45 Problem
+
+```text
+Prediction markets and on-chain options share one problem: you bet, then you wait.
+Settlement windows are minutes to days, but traders live second to second.
+Slow feedback kills retention — and that is a UX problem, not an infrastructure problem.
+```
+
+配画面：Polymarket 式"等待开奖"界面 vs 行情秒级跳动的对比。
+
+### 0:45 - 1:30 Solution
+
+```text
+DeepBook Predict's vault is a continuous counterparty with vol-surface pricing.
+We read the contract and productized what the docs don't emphasize:
+positions can be sold back at the live bid at any time before settlement.
+
+Strike5 Arena is a fixed-risk BTC scalping arena:
+open a position, watch live PnL tick, cash out in seconds — all on-chain.
+On top: a streak parlay that rewards commitment. Hold legs to settlement,
+win 3 consecutive rounds for 8x arena score. Cash out early? You forfeit the streak.
+```
+
+### 1:30 - 3:30 Live Demo（核心，全程真机）
+
+按以下节拍演：
+
+1. 首页：K 线 + Oracle Spot + 结算轮次卡（约 15s）。
+2. 选 Above 挑战，输入金额，展示链上模拟报价：cost / max payout / max loss（约 20s）。
+3. 签名 mint，展示 SuiVision tx 链接，持仓卡出现（约 25s）。
+4. 镜头停在实时 PnL 跳动几秒，旁白解释这是 vault 的 vol-surface live bid（约 15s）。
+5. 点 Cash Out，签名，payout 回 Manager，余额变化 + tx 链接（约 25s）。
+6. 切到 Playbook：展示连胜串关进度条 2x/4x/8x，演示串关 leg 的弃权警告弹窗（约 20s）。
+7. 快速掠过 Leaderboard opt-in / Arena Feed / Sealed Calls（约 20s）。
+
+关键台词：
+
+```text
+Notice we never waited for settlement. Open, watch, exit — the whole loop took 30 seconds,
+and every step was a real DeepBook Predict transaction you can verify on SuiVision.
+```
+
+### 3:30 - 4:15 Why Sui
+
+```text
+This product cannot exist elsewhere.
+- DeepBook Predict gives day-one vault liquidity and Block Scholes vol-surface pricing.
+- One PTB atomically deposits collateral and mints the position — no approval dance.
+- PredictManager's object model keeps balances and positions in one shared account.
+- Sub-second checkpoints make the live PnL tape actually live.
+```
+
+### 4:15 - 5:00 Roadmap + 商业闭环
+
+```text
+Every mint and cash-out pays spread into the Predict vault — our pace mechanics
+are a volume engine for PLP. Roadmap: app-layer fee in the same PTB, zkLogin +
+sponsored transactions for walletless onboarding, Seal-backed sealed calls,
+Nautilus-verified scoring, and a real-money parlay vault after mainnet.
+All contract IDs live in one config file — we migrate the day Predict hits mainnet.
 ```
 
 ## 5. 推荐演示脚本
@@ -428,12 +514,50 @@ K 线价格是外部行情参考。Strike5 会同时展示 Chart Price 和 Oracl
 仓位不是独立 NFT 或独立 position object。DeepBook Predict 的 binary positions 和 ranges 是记录在用户 PredictManager 内部的 quantity。
 ```
 
-### Q8: 这个项目对 DeepBook 有什么价值？
+### Q8: 现在 testnet 只有日档 oracle，你们的快节奏从哪来？
 
 答：
 
 ```text
-Strike5 Arena 给 DeepBook Predict 带来一个 consumer-facing prediction arena，会增加 dUSDC 使用、PredictManager 创建、mint / redeem 交易量和 Predict Vault / PLP 流动性需求。排行榜、晒单和 Combo 提高复玩率，有利于把 Predict 从协议能力变成用户增长产品。
+节奏不依赖结算频率。我们读合约发现 redeem 有未结算分支：仓位随时可按 live bid 卖回 vault。所以节奏来自连续交易（开仓 -> 实时 PnL -> Cash Out），oracle expiry 只作为串关和开奖的结算锚点。日档 oracle 反而是全天开放的赛场；短档恢复时体验自动更好，但不是依赖。
+```
+
+### Q9: 这个项目对 DeepBook 有什么价值？
+
+答：
+
+```text
+Strike5 Arena 给 DeepBook Predict 带来一个 consumer-facing prediction arena，会增加 dUSDC 使用、PredictManager 创建、mint / redeem 交易量和 Predict Vault / PLP 流动性需求。排行榜、晒单和 Combo 提高复玩率，有利于把 Predict 从协议能力变成用户增长产品。每次 Cash Out 都付一次 spread 给 vault——快节奏玩法本身就是 PLP 的收入放大器。
+```
+
+### Q10: 和官方将要发布的 first-party app 有什么区别？
+
+答：
+
+```text
+官方 first-party app 是交易终端形态，服务已经会交易的人。Strike5 是 consumer arena：
+固定风险、无爆仓、连胜串关、弃权张力、社交晒单——把不懂期权的预测玩家变成交易者。
+终端是工具，竞技场是分发层。我们给协议带来的是它自己触达不到的用户群，不是替代官方入口。
+```
+
+### Q11: 奖励主网部署，但你们在 testnet，怎么办？
+
+答：
+
+```text
+DeepBook Predict 协议本身还在 testnet（官方口径 mainnet later this year）。
+我们是 mainnet-ready, protocol-gated：所有 package / object id 集中在一个 config 文件，
+官方主网部署当天我们换一份配置即可迁移。这是协议时间表的约束，不是我们的架构债。
+```
+
+### Q12: 排行榜和连胜分数在 localStorage，这算 production-ready 吗？
+
+答：
+
+```text
+分两层看。资金层 100% 链上：每条串关 leg 都锚定真实 PredictManager 仓位和 tx digest，
+任何人可验证；分数聚合层是 MVP 取舍，文档里从未声称上链。
+roadmap 是后端聚合 + Nautilus 可信计分。我们宁可如实标注，也不伪装链上统计。
 ```
 
 ## 7. 备用方案
@@ -494,16 +618,16 @@ Demo 成功的最低标准：
 ```text
 展示 K 线
 展示 active oracle
-展示 current round
 展示 challenge quote
 签名 mint
-展示 position
-展示 redeem 路径
-展示 opt-in leaderboard / feed 玩法
+展示 position 和实时 PnL 跳动
+现场 Cash Out 落袋（30 秒闭环）
+展示结算 redeem 路径
+展示 opt-in leaderboard / feed / 连胜串关玩法
 ```
 
 最佳状态：
 
 ```text
-现场完成 mint + redeem，并能在 tx effects / events 中看到 DeepBook Predict 真实交易结果；同时展示一个 opt-in leaderboard entry、一个 verified showcase 和一个 sealed call reveal flow。
+现场完成 mint -> 实时 PnL -> Cash Out 的秒级闭环，并能在 tx effects / events 中看到 DeepBook Predict 真实交易结果；展示一条进行中的连胜串关（含弃权警告）、一个 opt-in leaderboard entry、一个 verified showcase 和一个 sealed call reveal flow。
 ```

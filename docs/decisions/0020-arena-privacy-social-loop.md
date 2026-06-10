@@ -1,6 +1,6 @@
 # 0020: Arena Privacy Social Loop
 
-Status: Accepted
+Status: Accepted (Combo portion superseded by 0021-combo-consecutive-streak-and-live-pnl.md)
 Date: 2026-06-08
 
 ## Context

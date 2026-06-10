@@ -11,8 +11,6 @@ export const PREDICT_CONFIG = {
 } as const;
 
 export const PRODUCT_TIMING = {
-  uiRoundMs: 5 * 60 * 1000,
-  currentMinExpiryMs: 15 * 60 * 1000,
   openingCutoffMs: 90 * 1000,
 } as const;
 

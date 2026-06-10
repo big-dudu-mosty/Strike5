@@ -14,5 +14,5 @@ export interface KlineSeries {
   candles: BtcCandle[];
   latestPrice: number | null;
   fetchedAt: number;
-  provider: 'CryptoCompare';
+  provider: 'Binance';
 }

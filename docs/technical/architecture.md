@@ -241,8 +241,11 @@ Custom
 职责：
 
 - 根据 PredictManager 和 indexer 数据展示持仓。
-- 区分 open / pending settlement / redeemable / redeemed。
-- 触发 redeem / redeem_range。
+- 区分 open / frozen(到期未结算) / redeemable / redeemed / surrendered。
+- 进行中仓位展示实时浮动 PnL（`当前退出价 - 成本`），用 live mark / `liveRedeem` 值按现有轮询刷新，仅作参考。
+- 进行中仓位提供 Cash Out：复用 redeem / redeem_range PTB 的未结算分支，按 live bid 即时平仓；oracle stale 或 PENDING_SETTLEMENT 时禁用并说明（见 decision 0022）。
+- 串关 leg 的 Cash Out 需先确认弃权警告。
+- 触发结算后 redeem / redeem_range。
 - 支持 settlement reveal 和 showcase 生成。
 
 注意：
@@ -274,15 +277,17 @@ MVP 可以先用应用层存储 opt-in 和 alias；战绩应尽量由 Predict Se
 
 如果接入 Sui Seal，模块负责 client-side encryption 和 policy-gated reveal。否则 UI 必须标注 demo-only，不得声称已完成真实加密。
 
-### 5.8 Combo 模块
+### 5.8 Combo 模块（连胜串关）
 
 职责：
 
-- 选择连续多个 round 的 challenge。
-- 跟踪每个 leg 对应的真实 Predict position。
-- 在全部 settlement 后计算 score multiplier。
+- 以连续 oracle 到期轮次为固定节点，跟踪一条连胜（streak）。
+- 每关绑定真实 Predict position，赢一关解锁下一关。
+- 倍率固定翻倍 `2x -> 4x -> 8x`（`2^命中数`），任意一关 `lost` 即断线清零。
+- 第 k+1 关必须开在第 k 关紧接着的下一个到期；跳过则连胜过期重置。
+- 承诺规则：串关 leg 在结算前被 Cash Out 即弃权（surrendered，中性终态），整条连胜终结，不算败也不点亮倍率。
 
-Combo 不改变 DeepBook Predict 原生 payout。
+Combo 不改变 DeepBook Predict 原生 payout，只乘 Arena score。详见 `docs/decisions/0021-combo-consecutive-streak-and-live-pnl.md` 与 `0022-continuous-cash-out-and-streak-commitment.md`。
 
 ### 5.9 Vault / PLP 协议数据
 

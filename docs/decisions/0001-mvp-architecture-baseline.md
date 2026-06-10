@@ -3,7 +3,7 @@
 Status: Accepted
 Date: 2026-06-02
 
-Supersession note: Product positioning in this record is superseded by `0020-arena-privacy-social-loop.md`. The DeepBook Predict technical baseline remains accepted.
+Supersession note: Product positioning in this record is superseded by `0020-arena-privacy-social-loop.md`. The 5-minute product round is retired by `0022-continuous-cash-out-and-streak-commitment.md` (continuous trading with cash-out). The DeepBook Predict technical baseline remains accepted.
 
 ## Context
 

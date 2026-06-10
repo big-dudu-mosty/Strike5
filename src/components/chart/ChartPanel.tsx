@@ -230,7 +230,7 @@ export function ChartPanel({
 
       <div className="flex items-center justify-between border-t border-zinc-800 px-4 py-2 text-xs text-zinc-500">
         <span>
-          {t('chart.source')}: {provider ?? 'CryptoCompare'}
+          {t('chart.source')}: {provider ?? 'Binance'}
         </span>
         {candles.length > 0 ? (
           <span className="hidden text-zinc-400 sm:inline">{t('chart.lookback7d')}</span>

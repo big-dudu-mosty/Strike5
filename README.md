@@ -1,5 +1,11 @@
 # Strike5
 
+> **Strike5 Arena — a fixed-risk BTC scalping arena powered by DeepBook Predict.**
+>
+> Settlement is slow, but markets are fast. DeepBook Predict's vault is a continuous counterparty with vol-surface pricing, so positions can be sold back at the live bid at any time before settlement. Strike5 productizes that: open a position, watch live PnL tick, cash out in seconds — all on-chain on Sui. A streak parlay rewards those who dare to lock legs to settlement: win 3 consecutive rounds for 8x arena score; cash out early and you forfeit the streak. Every mint and cash-out pays spread into the Predict vault, making the pace mechanics a volume engine for PLP.
+>
+> Real on-chain loop on Sui testnet: `quote (simulation) -> mint / mint_range -> live PnL -> cash out (unsettled redeem at live bid) -> settlement redeem`. All contract IDs live in `src/config/predict.ts` — mainnet migration is a config swap.
+
 Strike5 Arena 是一个基于 **DeepBook Predict** 的 BTC 短周期预测竞技场。
 
 用户在产品里看 BTC K 线和 DeepBook Predict Oracle Spot，每个 active BTC expiry 都是一轮 Arena。用户用 dUSDC 参与 Above / Below / Range 挑战，真实报价、仓位记录、流动性、风险暴露和到期结算都由 DeepBook Predict on Sui 负责。
@@ -10,7 +16,7 @@ Strike5 Arena 是一个基于 **DeepBook Predict** 的 BTC 短周期预测竞技
 
 更具体地说：
 
-> 用户加入短周期 BTC Arena rounds，通过 Sui 钱包签名 PTB，调用 DeepBook Predict 的 Predict shared object 完成 mint / mint_range / redeem；到期后基于 OracleSVI settlement price 结算，并通过 opt-in leaderboard、verified showcase、Sealed Calls 和 Combo score 形成竞技和社交循环。
+> 结算很慢，但市场很快。Predict 的 vault 是连续报价的对手方：用户通过钱包签名 PTB 完成 mint / mint_range，看实时 PnL 跳动，并可在结算前随时按 live bid Cash Out（redeem 未结算分支）；持有到期则按 OracleSVI settlement price 结算。连胜串关奖励敢锁仓到结算的人，配合 opt-in leaderboard、verified showcase 和 Sealed Calls 形成竞技和社交循环。
 
 ## 核心定位
 
@@ -22,12 +28,13 @@ Strike5 不是泛预测市场，也不是体育、政治或新闻事件投注平
 BTC 短周期价格判断
 + DeepBook Predict 原生 strike / range 仓位
 + dUSDC 固定风险交易
++ 连续交易：实时 PnL + 随时 Cash Out（live bid 卖回 vault）
 + Predict Vault / PLP 做流动性和对手方
-+ OracleSVI 到期结算
++ OracleSVI 到期结算（串关与开奖锚点）
++ 连胜串关（锁仓到结算，提前平即弃权）
 + opt-in leaderboard
 + verified social feed
 + sealed calls
-+ combo score multiplier
 ```
 
 当前 MVP 不伪造 ETH / SUI / SOL oracle，也不伪造任意事件结算。
@@ -52,21 +59,24 @@ Strike5 Arena 直接使用这些能力，把它包装成一个用户能反复参
 Strike5 不声称提供不存在的链上市场，也不声称隐藏底层链上交易。产品采用：
 
 ```text
-DeepBook Predict BTC expiry = 实际链上 settlement
-Strike5 Round = 产品竞技轮次
+DeepBook Predict BTC expiry = 实际链上 settlement（串关与开奖的结算锚点）
+连续交易 = oracle 存活期间随时 mint，随时按 live bid Cash Out
 Leaderboard = opt-in 展示
 Sealed Calls = 隐藏赛前观点内容，不隐藏 mint / redeem 交易
-Combo = 乘倍 Arena score，不乘倍链上 payout
+Combo = 连续轮次连胜串关，固定翻倍乘倍 Arena score，不乘倍链上 payout；
+        串关 leg 锁到结算，提前 Cash Out 即弃权
 ```
 
 示例：
 
 | 阶段 | Strike5 行为 | DeepBook Predict 行为 |
 |---|---|---|
-| Round open | 展示 challenge cards | active BTC OracleSVI 可 quote |
+| Oracle live | 展示 challenge cards / 实时 PnL | active BTC OracleSVI 可 quote |
 | User joins | 钱包签名 PTB | `mint` / `mint_range` |
-| Round closed | 停止新开仓 | 等待 oracle settlement |
-| Settled | reveal result / update stats | `redeem` / `redeem_range` |
+| Cash out anytime | 按当前 live 价平仓落袋 | `redeem` / `redeem_range`（未结算分支，live bid） |
+| Near expiry | 停止新开仓（cutoff），仍可 Cash Out | 等待 oracle settlement |
+| Expired, unsettled | 仓位冻结，如实展示 | 拒绝 redeem（防抢跑空窗） |
+| Settled | reveal result / update stats / 判定串关 | `redeem` / `redeem_range`（结算价） |
 | Post-round | showcase / leaderboard / combo | Predict events 可索引 |
 
 ## 文档目录
@@ -122,8 +132,10 @@ pnpm lint
 - Quote preview。
 - PTB 构造和钱包签名。
 - mint / mint_range。
-- Position panel。
+- Position panel + 实时浮动 PnL。
+- Cash Out（未结算 live bid 平仓）。
 - redeem / redeem_range。
+- 连胜串关（含弃权规则）。
 - opt-in leaderboard。
 - verified call / showcase feed。
 

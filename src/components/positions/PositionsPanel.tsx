@@ -2,6 +2,8 @@ import { ArrowDown, ArrowUp, CheckCircle2, Layers, ScanLine, Sparkles, XCircle }
 import { useState } from 'react';
 import { usePositionRedeem } from '../../hooks/usePositionRedeem';
 import { usePredictPositions, type PredictPositionDisplayRow } from '../../hooks/usePredictPositions';
+import { useTradeQuote } from '../../hooks/useTradeQuote';
+import type { TradeQuoteRequest } from '../../lib/deepbook/quote';
 import {
   formatDUsdc,
   formatTime,
@@ -9,6 +11,7 @@ import {
   scaleOracleUsd,
   scaleQuoteAsset,
 } from '../../lib/formatters';
+import { findMatchingLeg, type ArenaComboLeg } from '../../lib/combo';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { MessageKey } from '../../lib/i18n/types';
 import { TransactionLink } from '../transaction/TransactionLink';
@@ -16,9 +19,16 @@ import { TransactionLink } from '../transaction/TransactionLink';
 interface PositionsPanelProps {
   isExpectedNetwork: boolean;
   managerId: string | null;
+  onStreakSurrender: (legId: string) => void;
+  streakLegs: ArenaComboLeg[];
 }
 
-export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelProps) {
+export function PositionsPanel({
+  isExpectedNetwork,
+  managerId,
+  onStreakSurrender,
+  streakLegs,
+}: PositionsPanelProps) {
   const { t } = useI18n();
   const positions = usePredictPositions(managerId);
   const positionRedeem = usePositionRedeem({ managerId });
@@ -31,9 +41,26 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
   function handleRedeem(row: PredictPositionDisplayRow) {
     setRedeemFeedbackPositionId(row.id);
     setRedeemingPositionId(row.id);
-    void positionRedeem.mutateAsync(row).finally(() => {
-      setRedeemingPositionId(null);
-    });
+    const wasUnsettledExit = row.status === 'active';
+    void positionRedeem
+      .mutateAsync(row)
+      .then(() => {
+        if (!wasUnsettledExit) return;
+        const leg = findMatchingLeg(row, streakLegs);
+        if (leg && !leg.result) {
+          onStreakSurrender(leg.id);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        setRedeemingPositionId(null);
+      });
+  }
+
+  function getPendingSurrenderLeg(row: PredictPositionDisplayRow) {
+    if (row.status !== 'active') return null;
+    const leg = findMatchingLeg(row, streakLegs);
+    return leg && !leg.result ? leg : null;
   }
 
   return (
@@ -88,6 +115,7 @@ export function PositionsPanel({ isExpectedNetwork, managerId }: PositionsPanelP
                   ? getRedeemErrorMessage(positionRedeem.error?.message, t)
                   : null
               }
+              requiresSurrenderConfirm={Boolean(getPendingSurrenderLeg(row))}
               row={row}
             />
           ))}
@@ -205,6 +233,7 @@ function PositionCard({
   lastRedeemDigest,
   onRedeem,
   redeemError,
+  requiresSurrenderConfirm,
   row,
 }: {
   isExpectedNetwork: boolean;
@@ -212,15 +241,29 @@ function PositionCard({
   lastRedeemDigest: string | null;
   onRedeem: () => void;
   redeemError: string | null;
+  requiresSurrenderConfirm: boolean;
   row: PredictPositionDisplayRow;
 }) {
   const { t } = useI18n();
   const Icon = row.kind === 'above' ? ArrowUp : row.kind === 'below' ? ArrowDown : ScanLine;
   const titleKey = getPositionTitleKey(row.kind);
-  const markOrPayout = getMarkOrPayout(row);
+  const isActive = row.status === 'active';
+  const liveQuote = useTradeQuote(isActive ? buildPositionQuoteRequest(row) : null);
+  const liveExitRaw = liveQuote.data?.liveRedeem ?? null;
+  const hasLive = isActive && liveExitRaw != null;
+  const markOrPayout = hasLive ? Number(liveExitRaw) : getMarkOrPayout(row);
   const pnl = getPositionPnl(row, markOrPayout);
+  const pnlTone = pnl == null ? undefined : pnl >= 0 ? 'up' : 'down';
   const canRedeem = canRedeemPosition(row);
+  const canCashOut = isActive && row.openQuantity > 0;
   const redeemLabel = getRedeemLabel(row, t);
+
+  function handleCashOut() {
+    if (requiresSurrenderConfirm && !window.confirm(t('positions.cashOutStreakWarning'))) {
+      return;
+    }
+    onRedeem();
+  }
 
   return (
     <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
@@ -234,7 +277,15 @@ function PositionCard({
             <p className="mt-0.5 truncate text-sm text-zinc-500">{formatInstrument(row)}</p>
           </div>
         </div>
-        <StatusBadge status={row.status} />
+        <div className="flex shrink-0 items-center gap-2">
+          {hasLive ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+              {t('positions.live')}
+            </span>
+          ) : null}
+          <StatusBadge status={row.status} />
+        </div>
       </div>
 
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -250,7 +301,7 @@ function PositionCard({
           label={t('positions.markOrPayout')}
           value={formatDUsdc(scaleQuoteAsset(markOrPayout))}
         />
-        <Metric label={t('positions.pnl')} value={formatDUsdc(scaleQuoteAsset(pnl))} />
+        <Metric label={t('positions.pnl')} tone={pnlTone} value={formatDUsdc(scaleQuoteAsset(pnl))} />
         <Metric label={t('positions.expiry')} value={formatTime(row.expiry)} />
         <Metric label={t('positions.updated')} value={formatTime(row.lastActivityAt)} />
         <Metric
@@ -263,6 +314,35 @@ function PositionCard({
         />
       </dl>
 
+      {canCashOut ? (
+        <div className="mt-4 border-t border-zinc-800 pt-3">
+          <button
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+            disabled={!isExpectedNetwork || isRedeeming || !hasLive}
+            onClick={handleCashOut}
+            type="button"
+          >
+            {isRedeeming
+              ? t('positions.cashingOut')
+              : hasLive
+                ? `${t('positions.cashOut')} ≈ ${formatDUsdc(scaleQuoteAsset(markOrPayout))}`
+                : t('positions.cashOut')}
+          </button>
+          {requiresSurrenderConfirm ? (
+            <div className="mt-2 text-xs text-amber-200">{t('positions.streakLegHint')}</div>
+          ) : null}
+          {liveQuote.isError ? (
+            <div className="mt-2 text-xs text-amber-200">{t('positions.cashOutUnavailable')}</div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {row.status === 'awaiting_settlement' ? (
+        <div className="mt-4 rounded-md border border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-400">
+          {t('positions.frozen')}
+        </div>
+      ) : null}
+
       {canRedeem ? (
         <div className="mt-4 border-t border-zinc-800 pt-3">
           <button
@@ -273,6 +353,11 @@ function PositionCard({
           >
             {isRedeeming ? t('positions.redeeming') : redeemLabel}
           </button>
+        </div>
+      ) : null}
+
+      {canCashOut || canRedeem ? (
+        <>
           {lastRedeemDigest ? (
             <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
               <TransactionLink digest={lastRedeemDigest} label={t('positions.redeemSuccess')} />
@@ -288,19 +373,56 @@ function PositionCard({
               {t('positions.networkRequired')}
             </div>
           ) : null}
-        </div>
+        </>
       ) : null}
     </article>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  tone,
+  value,
+}: {
+  label: string;
+  tone?: 'up' | 'down';
+  value: string;
+}) {
+  const toneClass =
+    tone === 'up' ? 'text-emerald-300' : tone === 'down' ? 'text-red-300' : 'text-zinc-100';
+
   return (
     <div className="min-w-0">
       <dt className="truncate text-zinc-500">{label}</dt>
-      <dd className="mt-1 truncate font-medium text-zinc-100">{value}</dd>
+      <dd className={`mt-1 truncate font-medium ${toneClass}`}>{value}</dd>
     </div>
   );
+}
+
+function buildPositionQuoteRequest(row: PredictPositionDisplayRow): TradeQuoteRequest | null {
+  const quantity = BigInt(Math.max(0, Math.trunc(row.openQuantity)));
+  if (quantity <= 0n) return null;
+
+  const expiry = BigInt(row.expiry);
+
+  if (row.kind === 'range') {
+    return {
+      kind: 'range',
+      expiry,
+      higherStrike: BigInt(Math.trunc(row.higherStrike)),
+      lowerStrike: BigInt(Math.trunc(row.lowerStrike)),
+      oracleId: row.oracleId,
+      quantity,
+    };
+  }
+
+  return {
+    kind: row.kind,
+    expiry,
+    oracleId: row.oracleId,
+    quantity,
+    strike: BigInt(Math.trunc(row.strike)),
+  };
 }
 
 function StatusBadge({ status }: { status: string }) {

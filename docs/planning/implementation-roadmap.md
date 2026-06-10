@@ -305,35 +305,85 @@ Sealed Calls 隐藏的是社交观点内容。
 - 文案不夸大链上隐私。
 - 如果接入 Seal，能展示加密对象和 reveal。
 
-## 15. Milestone 12: Combo Score Multiplier
+## 15. Milestone 12: Combo Consecutive Streak
 
-状态：待实现。
+状态：重新定义，待实现。详见 `docs/decisions/0021-combo-consecutive-streak-and-live-pnl.md`。
 
 目标：
 
-实现 3-round combo 的积分乘倍玩法。
+把 Combo 从"一次性锁 3 腿草稿"改成**连续轮次连胜挑战**。
 
 预计工作：
 
-- Combo builder。
-- 支持选择 3 个连续 round / challenge。
-- 每个 leg 对应真实 Predict position。
-- 结算后检查全中。
-- 全中后乘倍 Arena score。
-- 展示 combo result。
+- 把 `lib/combo.ts` 从一次性 slip 改成 streak 模型；`getComboMultiplier` 改为 `2^命中数`。
+- 1 关 = 1 个真实 oracle 到期轮次，第 k+1 关必须开在第 k 关紧接着的下一个到期。
+- 赢一关解锁下一关，倍率 `2x -> 4x -> 8x`；任意一关 `lost` 即断线清零。
+- 跳过某一轮则连胜过期重置；断线后允许用当前轮立刻重开。
+- 输赢判定复用 `usePredictPositions` 的 `redeemable` / `lost`。
+- `ComboPanel.tsx` 改成连胜进度 UI（leg 1/2/3、倍率灯、断线红）。
+- `TradePanel.tsx` 的 combo 动作语义改成"用这单开启 / 续接连胜"。
+- 下一个 oracle 未就绪时诚实提示，不伪造连续性。
 
 边界：
 
 ```text
 Predict payouts settle normally.
 Combo multiplies Arena score and reputation only.
+1 leg = 1 real oracle expiry; no sub-15-minute on-chain settlement is faked.
 ```
 
 验收：
 
 - Combo 不改变链上 payout。
-- 用户能看到每个 leg 的真实 Predict 仓位状态。
-- 全中 / 未全中结果清楚。
+- 每关都绑定到连续、真实结算的 oracle 轮次。
+- 倍率固定翻倍，断线清零，状态清楚。
+
+## 15a. Milestone 12b: Single-Round Live PnL
+
+状态：待实现。详见 `docs/decisions/0021-combo-consecutive-streak-and-live-pnl.md`。
+
+目标：
+
+让 15 分钟轮次内不再是干等开奖，补足即时刺激。
+
+预计工作：
+
+- 新增一个拿 live mark / `liveRedeem` 值的 hook（复用 quote / simulate 路径）。
+- 在 `PositionsPanel.tsx` 的进行中仓位卡片上展示 `当前退出价 - 成本` 的浮动 PnL。
+- 按现有 5s 轮询节奏刷新。
+
+边界：
+
+```text
+实时 PnL 仅作参考反馈，最终输赢以 OracleSVI settlement price 为准。
+```
+
+验收：
+
+- 进行中仓位能看到随 oracle 跳动的浮动盈亏。
+- 不与 settlement 权威状态混淆。
+
+## 15b. Milestone 12c: Cash Out 与连胜承诺规则
+
+状态：待实现。详见 `docs/decisions/0022-continuous-cash-out-and-streak-commitment.md`。
+
+目标：
+
+让节奏与结算频率解耦：随时开仓、随时平仓；串关 leg 锁定到结算。
+
+预计工作：
+
+- 移除 `PRODUCT_TIMING.uiRoundMs` 与所有 5 分钟轮次文案。
+- `PositionsPanel` 为 `active` 仓位加 Cash Out 按钮（复用 redeem / redeem_range PTB 未结算分支，展示当前 live 退出价）。
+- 状态映射：ACTIVE+fresh 可平；stale 禁用并说明；到期未结算显示冻结；settled 走原有 redeem。
+- 串关 leg 平仓前弹弃权确认；弃权后 streak 进入 surrendered 中性终态（不算败、不计 leaderboard loss）。
+- 弃权检测：leg 对应仓位在 oracle 结算前数量减少即判弃权。
+
+验收：
+
+- 30 秒内可完成 开仓 -> 实时 PnL -> Cash Out 的真实链上闭环。
+- 串关 leg 的承诺语义清晰：提前平 = 弃权,无"99% 确定再跑"漏洞。
+- 冻结窗（到期未结算）如实呈现,不出现必失败的按钮。
 
 ## 16. Milestone 13: Demo Hardening
 
@@ -359,12 +409,12 @@ Combo multiplies Arena score and reputation only.
 
 ## 17. 当前下一步
 
-当前真实交易闭环已基本完成，下一步进入 Arena 产品层。
+主线功能已全部落地：连胜 streak（M12）、实时 PnL（M12b）、Cash Out 与弃权规则（M12c，已真实测试）、5 分钟轮次残留清除、Arena 文案改造与"已参与"状态。
 
-建议下一轮先做：
+当前重点转入提交准备：
 
-1. Round Arena section 和 challenge card 文案改造。
-2. Settlement reveal 视图。
-3. Opt-in leaderboard 的数据模型和 UI。
-4. Social Feed / Showcase 的最小版本。
-5. Sealed Calls 的 UI 状态和技术 spike。
+1. 按 demo-plan 4.5 节录制五分钟 demo 视频（官方评审结构）。
+2. 演练 30 秒 open -> tick -> cash out 闭环 + 串关弃权演示。
+3. Settlement reveal 视图增强（次优先）。
+4. Sealed Calls 的 Sui Seal 技术 spike（stretch）。
+5. 入门摩擦优化（主网阶段）：zkLogin + sponsored transactions，让 web2 预测玩家无钱包开玩；这是"吸引用户来 Sui"叙事的落地路径。

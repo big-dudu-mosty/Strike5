@@ -1,13 +1,16 @@
-import { ArrowDown, ArrowUp, Clock3, Plus, ScanLine, Trophy } from 'lucide-react';
+import { ArrowDown, ArrowUp, CheckCircle2, Clock3, Plus, ScanLine, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PRODUCT_TIMING } from '../../config/predict';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
+import { usePredictPositions } from '../../hooks/usePredictPositions';
 import { useTradeMint } from '../../hooks/useTradeMint';
 import { useTradeQuote } from '../../hooks/useTradeQuote';
 import { useNow } from '../../hooks/useNow';
 import {
-  COMBO_LEG_TARGET,
+  STREAK_TARGET,
   createArenaComboLeg,
+  getStreakAppendError,
+  isStreakTerminal,
   type ArenaComboLeg,
 } from '../../lib/combo';
 import { parseDUsdcInput } from '../../lib/dusdc';
@@ -48,10 +51,10 @@ type TradeMode = 'quick' | 'custom';
 
 interface TradePanelProps {
   accountOverview: PredictAccountOverview;
-  comboLegCount: number;
   onAddComboLeg: (leg: ArenaComboLeg) => void;
   onQuoteRequestChange: (request: TradeQuoteRequest | null) => void;
   overview: PredictMarketOverview | undefined;
+  streakLegs: ArenaComboLeg[];
 }
 
 const DEFAULT_QUANTITY = '';
@@ -60,10 +63,10 @@ const ORACLE_PRICE_SCALE = 1_000_000_000n;
 
 export function TradePanel({
   accountOverview,
-  comboLegCount,
   onAddComboLeg,
   onQuoteRequestChange,
   overview,
+  streakLegs,
 }: TradePanelProps) {
   const { t } = useI18n();
   const now = useNow();
@@ -144,6 +147,13 @@ export function TradePanel({
   const timeLeftMs = activeOracle ? activeOracle.expiry - now : null;
   const isOpeningCutoff =
     timeLeftMs != null && timeLeftMs <= PRODUCT_TIMING.openingCutoffMs;
+  const positions = usePredictPositions(accountOverview.managerId);
+  const hasJoinedCurrentRound = Boolean(
+    activeOracle &&
+      positions.data?.rows.some(
+        (row) => row.oracleId === activeOracle.oracle_id && row.openQuantity > 0,
+      ),
+  );
   const tradeQuote = useTradeQuote(isOpeningCutoff ? null : quoteRequest);
   const tradeMint = useTradeMint({ managerId: accountOverview.managerId });
   const selectedPick =
@@ -182,12 +192,20 @@ export function TradePanel({
     tradeQuote.isLoading ||
     tradeQuote.isError ||
     tradeMint.isPending;
+  const streakAppendError = quoteRequest
+    ? getStreakAppendError(streakLegs, {
+        expiry: quoteRequest.expiry,
+        oracleId: quoteRequest.oracleId,
+      })
+    : null;
+  const isStreakFull = !isStreakTerminal(streakLegs) && streakLegs.length >= STREAK_TARGET;
   const isComboAddDisabled =
     !quoteRequest ||
     !tradeQuote.data ||
     tradeQuote.isLoading ||
     tradeQuote.isError ||
-    comboLegCount >= COMBO_LEG_TARGET;
+    isStreakFull ||
+    streakAppendError === 'order';
   const roundStatus = !activeOracle
     ? t('trade.round.noOracle')
     : isOpeningCutoff
@@ -221,14 +239,22 @@ export function TradePanel({
               </div>
             </div>
           </div>
-          <span
-            className={`shrink-0 rounded px-2 py-1 text-xs font-semibold ${
-              activeOracle && !isOpeningCutoff
-                ? 'bg-emerald-400 text-zinc-950'
-                : 'bg-zinc-800 text-zinc-300'
-            }`}
-          >
-            {roundStatus}
+          <span className="flex shrink-0 items-center gap-1.5">
+            {hasJoinedCurrentRound ? (
+              <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-200">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {t('trade.round.joined')}
+              </span>
+            ) : null}
+            <span
+              className={`rounded px-2 py-1 text-xs font-semibold ${
+                activeOracle && !isOpeningCutoff
+                  ? 'bg-emerald-400 text-zinc-950'
+                  : 'bg-zinc-800 text-zinc-300'
+              }`}
+            >
+              {roundStatus}
+            </span>
           </span>
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -455,8 +481,12 @@ export function TradePanel({
           type="button"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
-          {comboLegCount >= COMBO_LEG_TARGET ? t('trade.combo.full') : t('trade.combo.add')}
+          {isStreakFull ? t('trade.combo.full') : t('trade.combo.add')}
         </button>
+
+        {streakAppendError === 'order' ? (
+          <div className="mt-2 text-xs text-amber-200">{t('trade.combo.order')}</div>
+        ) : null}
 
         {tradeMint.error ? (
           <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">

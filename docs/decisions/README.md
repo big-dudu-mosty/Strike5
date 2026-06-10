@@ -108,3 +108,5 @@ Date: YYYY-MM-DD
 - `0018-demo-readiness-panel.md`
 - `0019-consumer-demo-surface-simplification.md`
 - `0020-arena-privacy-social-loop.md`
+- `0021-combo-consecutive-streak-and-live-pnl.md`
+- `0022-continuous-cash-out-and-streak-commitment.md`

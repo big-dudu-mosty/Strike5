@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchBtcKlines } from '../lib/market-data/cryptocompare';
+import { fetchBtcKlines } from '../lib/market-data/binance';
 import type { KlineInterval } from '../lib/market-data/types';
 
 export function useBtcKlines(interval: KlineInterval) {

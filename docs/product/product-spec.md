@@ -187,34 +187,47 @@ BTC breaks below lower strike
 
 如果未来要做双向突破组合，需要额外设计组合购买和结果展示，不能把它说成 DeepBook Predict 原生单一仓位。
 
-## 7. Round 和 Expiry
+## 7. 连续交易、Cash Out 与 Expiry
 
-当前 DeepBook Predict testnet 的最短 active BTC expiry 间隔按 15 分钟处理。因此：
+详见 `docs/decisions/0022-continuous-cash-out-and-streak-commitment.md`。
+
+Strike5 没有固定的产品轮次节奏。交易循环是**连续的**：
 
 ```text
-Strike5 Round = 产品竞技轮次
-DeepBook Predict expiry = 当前实际链上 oracle settlement 周期
+oracle 存活期间随时 mint
+-> 实时浮动 PnL 跳动
+-> 随时 Cash Out（按当前 live bid 卖回 vault），或持有到结算
 ```
 
-Strike5 不伪造 5 分钟链上结算。
+oracle expiry 不再是节奏来源，而是**结算锚点**：串关 leg 在这里判定输赢，reveal / redeem 在这里发生。长周期 oracle 不是缺陷，而是全天开放的赛场。
 
-示例时间线：
+核心依据（合约已核实）：
 
-| 时间窗口 | 产品状态 | 结算目标 |
-|---|---|---|
-| 14:45 - 14:50 | Round opening，生成挑战卡片 | 15:00 oracle |
-| 14:50 - 14:55 | Round active，允许继续参与 | 15:00 oracle |
-| 14:55 - 14:58:30 | Final entry window | 15:00 oracle |
-| 14:58:30 - 15:00 | 停止开仓 | 等待 settlement |
-| 15:00 之后 | reveal / redeem / 结算战绩 | 下一 expiry |
+```text
+predict::redeem / redeem_range 有未结算分支：
+按 live bid（扣 spread）即时卖回 vault，提前退出是协议一等能力。
+```
 
-建议 MVP 在到期前 60-90 秒停止开仓，避免钱包签名、RPC 提交和 oracle 状态变化导致最后一秒交易失败。
+Cash Out 可用窗口与合约状态一一对应：
+
+```text
+ACTIVE + 价格 30s 内新鲜    -> 可随时 Cash Out
+oracle stale（>30s 无 tick）-> 暂时不可平，UI 说明原因
+到期未结算（PENDING）        -> 冻结，等待结算，不可退出
+SETTLED                     -> 按结算价 redeem（原有流程）
+```
+
+补充事实：`trading_paused` 只挡开仓，不挡退出——协议暂停交易时用户仍可平仓离场。
+
+开仓侧保留 cutoff：到期前 60-90 秒停止开新仓，避免签名 / RPC / oracle 状态变化导致最后一秒失败。
 
 UI 状态：
 
 ```text
-Trading closed for this round. Waiting for settlement.
+Opening closed near expiry. Cash out or wait for settlement.
 ```
+
+Strike5 不伪造任何短于真实 expiry 的链上结算；节奏来自用户自己的进出，而不是虚构的轮次时钟。
 
 ## 8. Arena 玩法
 
@@ -328,20 +341,48 @@ Sealed Calls 隐藏的是用户发表的观点内容。
 它不隐藏 DeepBook Predict mint / redeem 链上交易本身。
 ```
 
-### 8.5 Combo
+### 8.5 Combo（连胜串关）
 
-Combo 是连续多轮预测玩法。
+Combo 是**连续轮次连胜挑战**，不是一次性押多腿的彩票。
 
-MVP 先做积分串关，不做真钱乘法赔付。
+MVP 只做积分连胜，不做真钱乘法赔付。
 
-规则：
+核心规则：
 
 ```text
-用户选择连续 3 个 round 的预测
-每个预测都是真实 DeepBook Predict 仓位
-如果 3 个全中，Arena score 乘倍
-如果没全中，真实仓位仍按 Predict 原生规则结算
+1 关 = 1 个真实 oracle 到期轮次（连续节点）
+赢一关 -> 解锁下一关，倍率往上跳
+任意一关挂掉 -> 断线，倍率清零
+3 关全中 -> Arena score 8x
 ```
+
+节点和倍率：
+
+```text
+Leg1 命中 -> 2x
+Leg2 命中 -> 4x
+Leg3 命中 -> 8x
+固定翻倍，不用赔率连乘。
+```
+
+详细规则：
+
+- 连续性：第 k+1 关必须开在第 k 关 oracle 紧接着的下一个到期。跳过某一轮则连胜过期重置。
+- 方向自由：每关 Above / Below / Range 任选，只要赢即可。
+- 下单大小：MVP 不限制。
+- 断线后：允许用当前轮立刻重开一条新连胜。
+- 输赢判定：直接复用持仓状态，`redeemable` = 赢，`lost` = 输，无需新增判定逻辑。
+- **承诺规则（弃权）**：串关 leg 必须持有到结算才算数。结算前对 leg 提前 Cash Out = **弃权**，整条连胜立即终结。弃权是中性终态：不算败、不计入排行榜 loss、不点亮任何倍率，只是放弃这条连胜。UI 在对串关 leg 平仓前必须警告。
+- 弃权规则天然不需要"到期前 X 分钟封盘"：哪怕 99% 确定要赢，提前平也作废，没有可钻的空子。
+
+两种模式在链上是同一种仓位，区别只在 app 层：
+
+```text
+普通仓位 = 交易模式  -> 随时 Cash Out，无任何附带条件
+串关 leg = 承诺模式  -> 锁到结算才算数，提前平 = 弃权
+```
+
+"随时可以跑,但跑了连胜就没了"——8x 的诱惑 vs 落袋为安,这个拉扯本身就是串关的玩点。
 
 正确口径：
 
@@ -354,6 +395,16 @@ Predict payouts settle normally. Combo multiplies arena score and leaderboard re
 ```text
 真实 payout 直接相乘。
 ```
+
+为什么不做"5 分钟一关、3 关叠成 15 分钟"：
+
+```text
+链上只在 oracle 到期结算，最短 15 分钟。
+5 分钟、10 分钟没有 oracle 价格，也没有结算。
+用 K 线参考价判定会违反 chart price 仅参考、不作结算依据的边界。
+```
+
+节奏与等待：一条完整 3 连胜要跨越三个连续 oracle 到期。这被接受，因为节奏由连续交易层（实时 PnL + Cash Out，见第 7 节与 9.3）承担，串关只负责高承诺的声誉玩法；等待期间用户本来就在持续交易，不存在干等。
 
 真钱串关需要后续额外设计 Parlay Vault / Bonus Pool / 风险控制，不进入 MVP。
 
@@ -434,8 +485,12 @@ Positions 展示：
 - quantity。
 - cost。
 - status。
+- 实时浮动 PnL：进行中仓位展示 `当前退出价 - 成本`，按现有轮询节奏刷新。
+- **Cash Out 按钮**：进行中仓位（oracle ACTIVE 且新鲜）可按当前 live bid 立即平仓，payout 回到 PredictManager。串关 leg 平仓前需确认"将弃权连胜"。
 - settlement result。
 - redeem button。
+
+实时 PnL 和 Cash Out 价用 quote / simulate 路径已有的 live mark / `liveRedeem` 值；提前平仓按 bid 价成交（含 vault spread），最终结算输赢仍以 OracleSVI settlement price 为准。
 
 Market / expiry 状态和 position 状态不要混在一起。
 
@@ -443,18 +498,20 @@ Market / expiry 状态：
 
 ```text
 OPEN_TO_TRADE
-CLOSED_TO_NEW_TRADES
-PENDING_SETTLEMENT
+CLOSED_TO_NEW_TRADES (opening cutoff，仍可 Cash Out)
+PENDING_SETTLEMENT (冻结：不可开仓也不可退出)
 SETTLED
 ```
 
 Position 状态：
 
 ```text
-OPEN
+OPEN (可 Cash Out)
+FROZEN (oracle 到期未结算，等待)
 REDEEMABLE
 REDEEMED
 LOST
+SURRENDERED (串关 leg 提前平仓弃权，中性状态)
 ```
 
 ### 9.4 Leaderboard
@@ -533,8 +590,10 @@ MVP 需要满足：
 - 前端能 snap strike。
 - 用户能看到 quote preview。
 - 用户能签名并 mint / mint_range。
-- Position 能显示。
+- Position 能显示，并带实时浮动 PnL。
+- 进行中仓位能随时 Cash Out（未结算 live bid 平仓）。
 - 到期后能 redeem / redeem_range。
+- 连胜串关可用，串关 leg 提前平仓有弃权确认。
 - 用户能 opt-in leaderboard。
 - Leaderboard 能展示 Top 10 规则和真实/可追溯统计。
 - 用户能发表 Call 或 Showcase。
