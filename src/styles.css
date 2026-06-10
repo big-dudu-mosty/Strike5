@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 /*
- * Strike5 "Voltrex" theme: deep navy glass cards floating on a vivid purple
- * gradient. Token names stay semantic so components survive theme swaps:
+ * Strike5 trading desk theme: neutral dark surfaces with restrained exchange
+ * accents. Token names stay semantic so components survive theme swaps:
  * ink   = navy surface scale (page / cards / borders)
  * cream = cool near-white text scale
  * brass = warm yellow accent (brand, selection, highlights)
  * moss  = positive / win / profit (mint green)
- * clay  = negative / loss / drawdown (hot pink)
+ * clay  = negative / loss / drawdown (red)
  */
 @theme {
-  --color-ink-950: #0d0f26;
-  --color-ink-900: #131633;
-  --color-ink-800: #1d2147;
-  --color-ink-700: #2b3060;
-  --color-ink-600: #3c4279;
-  --color-ink-500: #555b96;
+  --color-ink-950: #070914;
+  --color-ink-900: #0d111d;
+  --color-ink-800: #161d2c;
+  --color-ink-700: #263248;
+  --color-ink-600: #35435c;
+  --color-ink-500: #536279;
 
   --color-cream-100: #f4f5ff;
   --color-cream-200: #e2e4f8;
@@ -33,9 +33,9 @@
   --color-moss-300: #8ae8bb;
   --color-moss-400: #53d99a;
 
-  --color-clay-200: #fbc8e0;
-  --color-clay-300: #f795c6;
-  --color-clay-400: #ef64a3;
+  --color-clay-200: #fecaca;
+  --color-clay-300: #fca5a5;
+  --color-clay-400: #ef4444;
 
   --font-display:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -59,12 +59,12 @@ body {
   min-width: 320px;
   min-height: 100vh;
   color: #f4f5ff;
-  background-color: #6d4fc4;
+  background-color: #070914;
   background-image:
-    radial-gradient(at 12% 8%, #8a68e8 0, transparent 55%),
-    radial-gradient(at 88% 12%, #b07ae0 0, transparent 50%),
-    radial-gradient(at 80% 95%, #d394d9 0, transparent 55%),
-    radial-gradient(at 15% 90%, #5b3fae 0, transparent 55%);
+    radial-gradient(at 16% 0%, rgba(42, 57, 103, 0.42) 0, transparent 44%),
+    radial-gradient(at 84% 8%, rgba(24, 62, 76, 0.28) 0, transparent 40%),
+    radial-gradient(at 78% 96%, rgba(93, 74, 39, 0.22) 0, transparent 42%),
+    linear-gradient(180deg, #070914 0%, #0b1020 52%, #070914 100%);
   background-attachment: fixed;
 }
 
