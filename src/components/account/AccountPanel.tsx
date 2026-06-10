@@ -27,17 +27,19 @@ export function AccountPanel({ overview }: AccountPanelProps) {
   } = overview;
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 glass p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('account.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('account.subtitle')}</p>
+          <h2 className="font-display text-lg font-semibold text-cream-100">
+            {t('account.title')}
+          </h2>
+          <p className="text-sm text-cream-600">{t('account.subtitle')}</p>
         </div>
-        <Wallet className="h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <Wallet className="h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
       {!address ? (
-        <div className="mt-4 rounded-md border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
+        <div className="mt-4 rounded-xl border border-dashed border-ink-600 p-4 text-sm text-cream-600">
           {t('account.connectPrompt')}
         </div>
       ) : (
@@ -61,16 +63,16 @@ export function AccountPanel({ overview }: AccountPanelProps) {
             }
           />
 
-          <div className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
+          <div className="rounded-xl border border-ink-700 bg-ink-950 p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm text-zinc-400">{t('account.manager')}</div>
-                <div className="mt-1 text-sm font-medium text-zinc-100">
+                <div className="text-sm text-cream-500">{t('account.manager')}</div>
+                <div className="mt-1 text-sm font-medium text-cream-100">
                   {managerId ? truncateAddress(managerId) : t('account.managerMissing')}
                 </div>
               </div>
               {managerId ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-300" aria-hidden="true" />
+                <CheckCircle2 className="h-5 w-5 text-moss-300" aria-hidden="true" />
               ) : null}
             </div>
 
@@ -111,7 +113,7 @@ export function AccountPanel({ overview }: AccountPanelProps) {
               </div>
             ) : (
               <button
-                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-700 disabled:text-cream-600"
                 disabled={!isExpectedNetwork || createManagerMutation.isPending}
                 onClick={() => void overview.createManager()}
                 type="button"
@@ -128,19 +130,19 @@ export function AccountPanel({ overview }: AccountPanelProps) {
             )}
 
             {createdManagerHint ? (
-              <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+              <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm">
                 <TransactionLink digest={createdManagerHint.digest} label={t('account.lastTx')} />
               </div>
             ) : null}
 
             {createManagerMutation.error ? (
-              <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
                 {createManagerMutation.error.message}
               </div>
             ) : null}
 
             {!isExpectedNetwork ? (
-              <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+              <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
                 {t('account.networkWarning')}
               </div>
             ) : null}
@@ -162,14 +164,14 @@ function AccountRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-zinc-500">{label}</span>
+      <span className="text-cream-600">{label}</span>
       <span
         className={
           tone === 'ok'
-            ? 'font-medium text-emerald-300'
+            ? 'font-medium text-moss-300'
             : tone === 'warn'
               ? 'font-medium text-amber-300'
-              : 'font-medium text-zinc-200'
+              : 'font-medium text-cream-200'
         }
       >
         {value}

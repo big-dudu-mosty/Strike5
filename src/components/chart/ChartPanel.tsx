@@ -9,6 +9,9 @@ import {
   type IPriceLine,
   type ISeriesApi,
 } from 'lightweight-charts';
+import { PRODUCT_TIMING } from '../../config/predict';
+import { useNow } from '../../hooks/useNow';
+import { formatDuration, formatFreshness, formatPercent, formatUsd } from '../../lib/formatters';
 import { useI18n } from '../../lib/i18n/I18nProvider';
 import type { BtcCandle, KlineInterval } from '../../lib/market-data/types';
 
@@ -23,9 +26,13 @@ export interface ChartTradeOverlay {
 
 interface ChartPanelProps {
   candles: BtcCandle[];
+  chartOracleDiff: number | null;
+  chartPrice: number | null;
   interval: KlineInterval;
   onIntervalChange: (interval: KlineInterval) => void;
   oracleSpot: number | null;
+  oracleTimestamp: number | null;
+  roundExpiryMs: number | null;
   tradeOverlay: ChartTradeOverlay | null;
   provider?: string;
   isLoading: boolean;
@@ -34,15 +41,20 @@ interface ChartPanelProps {
 
 export function ChartPanel({
   candles,
+  chartOracleDiff,
+  chartPrice,
   interval,
   onIntervalChange,
   oracleSpot,
+  oracleTimestamp,
+  roundExpiryMs,
   tradeOverlay,
   provider,
   isLoading,
   error,
 }: ChartPanelProps) {
   const { t } = useI18n();
+  const now = useNow();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -57,35 +69,35 @@ export function ChartPanel({
     const chart = createChart(containerRef.current, {
       autoSize: true,
       layout: {
-        background: { type: ColorType.Solid, color: '#18181b' },
-        textColor: '#a1a1aa',
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#8388b6',
       },
       grid: {
-        vertLines: { color: '#27272a' },
-        horzLines: { color: '#27272a' },
+        vertLines: { color: '#1d2147' },
+        horzLines: { color: '#1d2147' },
       },
       rightPriceScale: {
-        borderColor: '#3f3f46',
+        borderColor: '#2b3060',
       },
       timeScale: {
-        borderColor: '#3f3f46',
+        borderColor: '#2b3060',
         timeVisible: true,
         secondsVisible: false,
       },
       crosshair: {
-        vertLine: { color: '#71717a' },
-        horzLine: { color: '#71717a' },
+        vertLine: { color: '#555b96' },
+        horzLine: { color: '#555b96' },
       },
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: '#34d399',
-      downColor: '#fb7185',
-      borderUpColor: '#34d399',
-      borderDownColor: '#fb7185',
-      wickUpColor: '#34d399',
-      wickDownColor: '#fb7185',
-      priceLineColor: '#71717a',
+      upColor: '#f0c24b',
+      downColor: '#ef64a3',
+      borderUpColor: '#f0c24b',
+      borderDownColor: '#ef64a3',
+      wickUpColor: '#f0c24b',
+      wickDownColor: '#ef64a3',
+      priceLineColor: '#555b96',
     });
 
     chartRef.current = chart;
@@ -123,7 +135,7 @@ export function ChartPanel({
 
     oracleLineRef.current = series.createPriceLine({
       price: oracleSpot,
-      color: '#60a5fa',
+      color: '#c8cbe8',
       lineWidth: 2,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -148,7 +160,7 @@ export function ChartPanel({
       if (tradeOverlay.lowerStrike != null) {
         rangeLowerLineRef.current = series.createPriceLine({
           price: tradeOverlay.lowerStrike,
-          color: '#fbbf24',
+          color: '#f5d36e',
           lineWidth: 2,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
@@ -158,7 +170,7 @@ export function ChartPanel({
       if (tradeOverlay.higherStrike != null) {
         rangeHigherLineRef.current = series.createPriceLine({
           price: tradeOverlay.higherStrike,
-          color: '#fbbf24',
+          color: '#f5d36e',
           lineWidth: 2,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
@@ -172,7 +184,7 @@ export function ChartPanel({
 
     selectedStrikeLineRef.current = series.createPriceLine({
       price: tradeOverlay.strike,
-      color: tradeOverlay.kind === 'above' ? '#34d399' : '#fb7185',
+      color: tradeOverlay.kind === 'above' ? '#53d99a' : '#ef64a3',
       lineWidth: 2,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -181,46 +193,77 @@ export function ChartPanel({
   }, [t, tradeOverlay]);
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
+    <section className="overflow-hidden rounded-3xl border border-ink-700/60 glass">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-5">
         <div>
-          <h2 className="text-base font-semibold">{t('chart.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('chart.subtitle')}</p>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cream-600">
+            BTC / USD
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <span className="text-4xl font-bold tracking-tight text-cream-100">
+              {chartPrice == null ? '—' : formatUsd(chartPrice)}
+            </span>
+            {chartOracleDiff != null ? (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${
+                  chartOracleDiff >= 0
+                    ? 'bg-moss-400/15 text-moss-300'
+                    : 'bg-clay-400/15 text-clay-300'
+                }`}
+              >
+                {chartOracleDiff >= 0 ? '▲' : '▼'} {formatPercent(Math.abs(chartOracleDiff))}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-1.5 text-xs text-cream-600">
+            {t('marketPulse.oracleSpot')}{' '}
+            <span className="font-medium text-cream-300">
+              {oracleSpot == null ? '—' : formatUsd(oracleSpot)}
+            </span>
+            {' · '}
+            {t('marketPulse.oracleFreshness')}{' '}
+            <span className="font-medium text-cream-300">
+              {oracleTimestamp == null ? '—' : formatFreshness(now, oracleTimestamp)}
+            </span>
+          </div>
         </div>
-        <div className="flex rounded-md border border-zinc-800 bg-zinc-950 p-1 text-sm">
-          {intervals.map((item) => (
-            <button
-              className={[
-                'h-8 rounded px-3 transition',
-                item === interval
-                  ? 'bg-emerald-400 text-zinc-950'
-                  : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-50',
-              ].join(' ')}
-              key={item}
-              onClick={() => onIntervalChange(item)}
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex rounded-full border border-ink-700/60 bg-ink-950/60 p-1 text-xs font-semibold">
+            {intervals.map((item) => (
+              <button
+                className={[
+                  'h-8 rounded-full px-3.5 transition',
+                  item === interval
+                    ? 'bg-cream-100 text-ink-950'
+                    : 'text-cream-500 hover:text-cream-100',
+                ].join(' ')}
+                key={item}
+                onClick={() => onIntervalChange(item)}
+                type="button"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          <RoundPill expiryMs={roundExpiryMs} now={now} />
         </div>
       </div>
 
-      <div className="relative min-h-[320px]">
-        <div className="h-[360px] min-h-[320px]" ref={containerRef} />
+      <div className="relative min-h-[340px]">
+        <div className="h-[380px] min-h-[340px] lg:h-[520px]" ref={containerRef} />
 
         {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/70 text-sm text-zinc-400">
+          <div className="absolute inset-0 flex items-center justify-center bg-ink-900/70 text-sm text-cream-500">
             {t('chart.loading')}
           </div>
         ) : null}
 
         {error ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/85 px-6">
-            <div className="flex flex-col items-center gap-3 text-center text-zinc-500">
-              <CandlestickChart className="h-10 w-10 text-zinc-600" aria-hidden="true" />
+          <div className="absolute inset-0 flex items-center justify-center bg-ink-900/85 px-6">
+            <div className="flex flex-col items-center gap-3 text-center text-cream-600">
+              <CandlestickChart className="h-10 w-10 text-cream-700" aria-hidden="true" />
               <div>
-                <div className="text-sm font-medium text-zinc-300">{t('chart.error')}</div>
+                <div className="text-sm font-medium text-cream-300">{t('chart.error')}</div>
                 <div className="mt-1 max-w-md text-sm">{t('chart.placeholder.body')}</div>
               </div>
             </div>
@@ -228,16 +271,47 @@ export function ChartPanel({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between border-t border-zinc-800 px-4 py-2 text-xs text-zinc-500">
+      <div className="flex items-center justify-between border-t border-ink-700 px-4 py-2 text-xs text-cream-600">
         <span>
           {t('chart.source')}: {provider ?? 'Binance'}
         </span>
         {candles.length > 0 ? (
-          <span className="hidden text-zinc-400 sm:inline">{t('chart.lookback7d')}</span>
+          <span className="hidden text-cream-500 sm:inline">{t('chart.lookback7d')}</span>
         ) : null}
         <span>{tradeOverlay ? formatTradeOverlayLabel(tradeOverlay, t) : t('chart.oracleLine')}</span>
       </div>
     </section>
+  );
+}
+
+function RoundPill({ expiryMs, now }: { expiryMs: number | null; now: number }) {
+  const { t } = useI18n();
+
+  if (expiryMs == null) return null;
+
+  const left = expiryMs - now;
+  const isCutoff = left > 0 && left <= PRODUCT_TIMING.openingCutoffMs;
+  const isExpired = left <= 0;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+        isExpired
+          ? 'bg-ink-800 text-cream-500'
+          : isCutoff
+            ? 'bg-amber-400/15 text-amber-200'
+            : 'bg-moss-400/15 text-moss-300'
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          isExpired ? 'bg-cream-600' : isCutoff ? 'bg-amber-300' : 'animate-pulse bg-moss-400'
+        }`}
+      />
+      {isExpired
+        ? t('positions.status.awaitingSettlement')
+        : `${isCutoff ? t('trade.round.closed') : t('trade.round.open')} · ${formatDuration(left)}`}
+    </span>
   );
 }
 

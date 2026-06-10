@@ -215,33 +215,33 @@ export function TradePanel({
   const roundExpiry = activeOracle ? formatTime(activeOracle.expiry) : t('marketPulse.pending');
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 glass p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('trade.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('trade.subtitle')}</p>
+          <h2 className="font-display text-lg font-semibold text-cream-100">{t('trade.title')}</h2>
+          <p className="text-sm text-cream-600">{t('trade.subtitle')}</p>
         </div>
-        <Trophy className="mt-0.5 h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <Trophy className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-3">
+      <div className="mt-4 rounded-xl border border-brass-400/25 bg-brass-400/10 p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-400 text-zinc-950">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brass-400 text-ink-950">
               <Clock3 className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <div className="text-xs font-medium uppercase tracking-normal text-emerald-100/70">
+              <div className="text-xs font-medium uppercase tracking-normal text-brass-200/70">
                 {t('trade.round.label')}
               </div>
-              <div className="mt-1 truncate text-sm font-semibold text-emerald-50">
+              <div className="mt-1 truncate text-sm font-semibold text-cream-100">
                 {activeOracle ? `BTC ${roundExpiry}` : t('trade.round.noOracle')}
               </div>
             </div>
           </div>
           <span className="flex shrink-0 items-center gap-1.5">
             {hasJoinedCurrentRound ? (
-              <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-200">
+              <span className="inline-flex items-center gap-1 rounded bg-brass-400/15 px-2 py-1 text-xs font-semibold text-brass-200">
                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                 {t('trade.round.joined')}
               </span>
@@ -249,8 +249,8 @@ export function TradePanel({
             <span
               className={`rounded px-2 py-1 text-xs font-semibold ${
                 activeOracle && !isOpeningCutoff
-                  ? 'bg-emerald-400 text-zinc-950'
-                  : 'bg-zinc-800 text-zinc-300'
+                  ? 'bg-brass-400 text-ink-950'
+                  : 'bg-ink-800 text-cream-300'
               }`}
             >
               {roundStatus}
@@ -259,112 +259,112 @@ export function TradePanel({
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className="text-xs text-emerald-100/60">{t('trade.round.timeLeft')}</dt>
-            <dd className="mt-1 font-medium text-emerald-50">{roundTimeLeft}</dd>
+            <dt className="text-xs text-brass-200/60">{t('trade.round.timeLeft')}</dt>
+            <dd className="mt-1 font-medium text-cream-100">{roundTimeLeft}</dd>
           </div>
           <div>
-            <dt className="text-xs text-emerald-100/60">{t('trade.round.expiry')}</dt>
-            <dd className="mt-1 font-medium text-emerald-50">{roundExpiry}</dd>
+            <dt className="text-xs text-brass-200/60">{t('trade.round.expiry')}</dt>
+            <dd className="mt-1 font-medium text-cream-100">{roundExpiry}</dd>
           </div>
         </dl>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 rounded-md border border-zinc-800 bg-zinc-950 p-1">
-        <button
-          className={`h-9 rounded px-3 text-sm font-medium transition ${
-            tradeMode === 'quick'
-              ? 'bg-emerald-400 text-zinc-950'
-              : 'text-zinc-400 hover:text-zinc-100'
-          }`}
-          onClick={() => setTradeMode('quick')}
-          type="button"
-        >
-          {t('trade.mode.quick')}
-        </button>
-        <button
-          className={`h-9 rounded px-3 text-sm font-medium transition ${
-            tradeMode === 'custom'
-              ? 'bg-emerald-400 text-zinc-950'
-              : 'text-zinc-400 hover:text-zinc-100'
-          }`}
-          onClick={() => setTradeMode('custom')}
-          type="button"
-        >
-          {t('trade.mode.custom')}
-        </button>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex rounded-full border border-ink-700/60 bg-ink-950/60 p-1 text-xs font-semibold">
+          {(['quick', 'custom'] as const).map((mode) => (
+            <button
+              className={`h-8 rounded-full px-3.5 transition ${
+                tradeMode === mode
+                  ? 'bg-cream-100 text-ink-950'
+                  : 'text-cream-500 hover:text-cream-100'
+              }`}
+              key={mode}
+              onClick={() => setTradeMode(mode)}
+              type="button"
+            >
+              {mode === 'quick' ? t('trade.mode.quick') : t('trade.mode.custom')}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 grid gap-3">
+      <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl border border-ink-700/60 bg-ink-950/60 p-1">
         {challengeCards.map((pick) => {
           const Icon = pick.icon;
           const isSelected = pick.kind === selectedKind;
           return (
             <button
-              className={`flex items-center gap-3 rounded-md border p-3 text-left transition ${
+              className={`inline-flex h-11 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition ${
                 isSelected
-                  ? 'border-emerald-400 bg-emerald-400/10'
-                  : 'border-zinc-800 bg-zinc-950 hover:border-emerald-500/60'
+                  ? pick.kind === 'above'
+                    ? 'bg-moss-400 text-ink-950'
+                    : pick.kind === 'below'
+                      ? 'bg-clay-400 text-ink-950'
+                      : 'bg-brass-400 text-ink-950'
+                  : 'text-cream-500 hover:text-cream-100'
               }`}
               key={pick.kind}
               onClick={() => setSelectedKind(pick.kind)}
               type="button"
             >
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
-                  isSelected ? 'bg-emerald-400 text-zinc-950' : 'bg-zinc-800 text-emerald-300'
-                }`}
-              >
-                <Icon className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <span>
-                <span className="block text-sm font-semibold text-zinc-100">
-                  {t(pick.typeKey)}
-                </span>
-                <span className="mt-0.5 block text-sm text-zinc-500">{t(pick.labelKey)}</span>
-              </span>
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              {t(pick.typeKey)}
             </button>
           );
         })}
       </div>
+      <div className="mt-2 px-1 text-xs text-cream-600">{t(selectedPick.labelKey)}</div>
 
-      <div className="mt-4 rounded-md border border-zinc-800 bg-zinc-950 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-zinc-100">
-              {t(selectedPick.typeKey)} {t('trade.preview')}
-            </div>
-            <div className="mt-1 text-sm text-zinc-500">
-              {quoteRequest
-                ? formatInstrument(quoteRequest)
-                : isQuantityEmpty
-                  ? t('trade.waitingQuantity')
-                  : t('trade.waitingMarket')}
-            </div>
+      <div className="mt-3">
+        <div className="rounded-2xl border border-ink-700/60 bg-ink-950/60 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-cream-600" htmlFor="trade-quantity">
+              {t('trade.quantity')}
+            </label>
+            <span className="text-xs font-semibold text-cream-500">dUSDC</span>
+          </div>
+          <input
+            className="mt-1 w-full bg-transparent text-3xl font-bold tracking-tight text-cream-100 outline-none placeholder:text-cream-700"
+            id="trade-quantity"
+            inputMode="decimal"
+            onChange={(event) => setQuantityInput(event.target.value)}
+            placeholder="0.00"
+            type="text"
+            value={quantityInput}
+          />
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {['1', '5', '10', '25', '50'].map((preset) => (
+              <button
+                className={`h-7 rounded-full px-3 text-xs font-semibold transition ${
+                  quantityInput === preset
+                    ? 'bg-cream-100 text-ink-950'
+                    : 'bg-ink-800 text-cream-500 hover:text-cream-100'
+                }`}
+                key={preset}
+                onClick={() => setQuantityInput(preset)}
+                type="button"
+              >
+                {preset}
+              </button>
+            ))}
           </div>
         </div>
-
-        <label className="mt-4 block text-sm text-zinc-400" htmlFor="trade-quantity">
-          {t('trade.quantity')}
-        </label>
-        <input
-          className="mt-2 h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
-          id="trade-quantity"
-          inputMode="decimal"
-          onChange={(event) => setQuantityInput(event.target.value)}
-          placeholder={t('trade.quantityPlaceholder')}
-          type="text"
-          value={quantityInput}
-        />
-        <div className="mt-2 text-xs text-zinc-500">{t('trade.quantityNote')}</div>
+        <div className="mt-2 px-1 text-xs text-cream-600">
+          {quoteRequest
+            ? `${t(selectedPick.typeKey)} · ${formatInstrument(quoteRequest)}`
+            : isQuantityEmpty
+              ? t('trade.waitingQuantity')
+              : t('trade.waitingMarket')}
+        </div>
 
         {tradeMode === 'custom' ? (
           <div className="mt-4 grid gap-3">
             {selectedKind === 'range' ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm text-zinc-400" htmlFor="trade-lower-strike">
+                <label className="block text-sm text-cream-500" htmlFor="trade-lower-strike">
                   {t('trade.lowerStrike')}
                   <input
-                    className="mt-2 h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
+                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-900 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
                     id="trade-lower-strike"
                     inputMode="decimal"
                     onChange={(event) => setCustomLowerStrikeInput(event.target.value)}
@@ -373,10 +373,10 @@ export function TradePanel({
                     value={customLowerStrikeInput}
                   />
                 </label>
-                <label className="block text-sm text-zinc-400" htmlFor="trade-higher-strike">
+                <label className="block text-sm text-cream-500" htmlFor="trade-higher-strike">
                   {t('trade.higherStrike')}
                   <input
-                    className="mt-2 h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
+                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-900 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
                     id="trade-higher-strike"
                     inputMode="decimal"
                     onChange={(event) => setCustomHigherStrikeInput(event.target.value)}
@@ -387,10 +387,10 @@ export function TradePanel({
                 </label>
               </div>
             ) : (
-              <label className="block text-sm text-zinc-400" htmlFor="trade-custom-strike">
+              <label className="block text-sm text-cream-500" htmlFor="trade-custom-strike">
                 {t('trade.strike')}
                 <input
-                  className="mt-2 h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400"
+                  className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-900 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
                   id="trade-custom-strike"
                   inputMode="decimal"
                   onChange={(event) => setCustomStrikeInput(event.target.value)}
@@ -400,7 +400,7 @@ export function TradePanel({
                 />
               </label>
             )}
-            <div className="rounded-md border border-dashed border-zinc-700 p-3 text-xs text-zinc-500">
+            <div className="rounded-xl border border-dashed border-ink-600 p-3 text-xs text-cream-600">
               {t('trade.customSnapNote')}
             </div>
           </div>
@@ -420,32 +420,32 @@ export function TradePanel({
         </div>
 
         {tradeQuote.isLoading ? (
-          <div className="mt-3 text-sm text-zinc-500">{t('trade.quoteLoading')}</div>
+          <div className="mt-3 text-sm text-cream-600">{t('trade.quoteLoading')}</div>
         ) : null}
         {tradeQuote.error ? (
-          <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+          <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
             {tradeQuote.error.message}
           </div>
         ) : null}
         {isQuantityInvalid ? (
-          <div className="mt-3 text-sm text-red-300">{t('trade.quantityInvalid')}</div>
+          <div className="mt-3 text-sm text-clay-300">{t('trade.quantityInvalid')}</div>
         ) : null}
         {customValidationMessage ? (
-          <div className="mt-3 text-sm text-red-300">{customValidationMessage}</div>
+          <div className="mt-3 text-sm text-clay-300">{customValidationMessage}</div>
         ) : null}
         {isOpeningCutoff ? (
           <div className="mt-3 text-sm text-amber-200">{t('trade.openingCutoff')}</div>
         ) : null}
         {managerTopUpAmount > 0n && !isWalletBalanceInsufficientForTopUp ? (
-          <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-            <div className="text-sm font-medium text-emerald-100">
+          <div className="mt-3 rounded-xl border border-brass-400/30 bg-brass-400/10 p-3">
+            <div className="text-sm font-medium text-brass-200">
               {t('trade.autoTopUp')} {formatDUsdcRaw(managerTopUpAmount)}
             </div>
-            <div className="mt-1 text-xs text-emerald-100/70">{t('trade.autoTopUpNote')}</div>
+            <div className="mt-1 text-xs text-brass-200/70">{t('trade.autoTopUpNote')}</div>
           </div>
         ) : null}
         {isWalletBalanceInsufficientForTopUp ? (
-          <div className="mt-3 text-sm text-red-300">{t('trade.insufficientWalletBalance')}</div>
+          <div className="mt-3 text-sm text-clay-300">{t('trade.insufficientWalletBalance')}</div>
         ) : null}
         {!accountOverview.managerId ? (
           <div className="mt-3 text-sm text-amber-200">{t('trade.managerRequired')}</div>
@@ -455,7 +455,7 @@ export function TradePanel({
         ) : null}
 
         <button
-          className="mt-4 h-10 w-full rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+          className="mt-4 h-12 w-full rounded-2xl bg-cream-100 px-3 text-sm font-bold text-ink-950 transition hover:bg-white disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
           disabled={isMintDisabled}
           onClick={() => {
             if (!quoteRequest || isMintDisabled) return;
@@ -472,7 +472,7 @@ export function TradePanel({
         </button>
 
         <button
-          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-zinc-700 px-3 text-sm font-semibold text-zinc-200 transition hover:border-emerald-400 hover:text-emerald-100 disabled:cursor-not-allowed disabled:border-zinc-800 disabled:text-zinc-600"
+          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-ink-600 px-3 text-sm font-semibold text-cream-200 transition hover:border-brass-400 hover:text-brass-200 disabled:cursor-not-allowed disabled:border-ink-700 disabled:text-cream-700"
           disabled={isComboAddDisabled}
           onClick={() => {
             if (!quoteRequest || !tradeQuote.data || isComboAddDisabled) return;
@@ -489,18 +489,18 @@ export function TradePanel({
         ) : null}
 
         {tradeMint.error ? (
-          <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+          <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
             {formatTradeMintError(tradeMint.error, t)}
           </div>
         ) : null}
         {tradeMint.data ? (
-          <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+          <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm text-moss-200">
             <TransactionLink digest={tradeMint.data.digest} label={t('trade.mintSuccess')} />
           </div>
         ) : null}
       </div>
 
-      <div className="mt-4 rounded-md border border-dashed border-zinc-700 p-3 text-sm text-zinc-500">
+      <div className="mt-4 rounded-xl border border-dashed border-ink-600 p-3 text-sm text-cream-600">
         {t('trade.quoteNote')}
       </div>
     </section>
@@ -510,8 +510,8 @@ export function TradePanel({
 function QuoteRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-zinc-500">{label}</span>
-      <span className="font-medium text-zinc-100">{value}</span>
+      <span className="text-cream-600">{label}</span>
+      <span className="font-medium text-cream-100">{value}</span>
     </div>
   );
 }

@@ -1,7 +1,6 @@
-import { Activity, CircleDollarSign, ListChecks, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Activity, ListChecks, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
-import { MarketPulsePanel } from '../components/market-pulse/MarketPulsePanel';
 import { TradePanel } from '../components/trade-panel/TradePanel';
 import { PositionsPanel } from '../components/positions/PositionsPanel';
 import { ChartPanel, type ChartTradeOverlay } from '../components/chart/ChartPanel';
@@ -10,6 +9,8 @@ import { AccountPanel } from '../components/account/AccountPanel';
 import { LeaderboardPanel } from '../components/leaderboard/LeaderboardPanel';
 import { ArenaFeedPanel } from '../components/social-feed/ArenaFeedPanel';
 import { ComboPanel } from '../components/combo/ComboPanel';
+import { StreakMeter } from '../components/combo/StreakMeter';
+import { PredictStatusStrip } from '../components/predict-status/PredictStatusStrip';
 import { SealedCallsPanel } from '../components/sealed-calls/SealedCallsPanel';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
@@ -21,7 +22,7 @@ import {
   type ArenaStreak,
   type StreakLegResult,
 } from '../lib/combo';
-import { formatPercent, scaleOracleUsd } from '../lib/formatters';
+import { scaleOracleUsd } from '../lib/formatters';
 import { useI18n } from '../lib/i18n/I18nProvider';
 import type { TradeQuoteRequest } from '../lib/deepbook/quote';
 import type { KlineInterval } from '../lib/market-data/types';
@@ -141,90 +142,90 @@ export function App() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-4 md:px-6">
-        <header className="flex flex-col gap-3 border-b border-zinc-800 pb-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-400 text-zinc-950">
-                <Activity className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold tracking-normal">Strike5</h1>
-                <p className="text-sm text-zinc-400">{t('app.tagline')}</p>
-              </div>
+    <main className="min-h-screen bg-ink-950 text-cream-100">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 md:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-1">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brass-400 text-ink-950">
+              <Activity className="h-5 w-5" aria-hidden="true" />
             </div>
+            <h1 className="text-xl font-bold tracking-tight text-cream-100">Strike5</h1>
           </div>
+
+          <nav className="order-3 flex w-full items-center justify-center gap-1 rounded-full border border-ink-700/60 glass p-1 sm:order-none sm:w-auto">
+            {appPages.map((page) => {
+              const isActive = activePage === page.key;
+
+              return (
+                <button
+                  className={`inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition ${
+                    isActive
+                      ? 'bg-cream-100 text-ink-950'
+                      : 'text-cream-500 hover:text-cream-100'
+                  }`}
+                  key={page.key}
+                  onClick={() => setActivePage(page.key)}
+                  type="button"
+                >
+                  {t(page.labelKey)}
+                </button>
+              );
+            })}
+          </nav>
 
           <div className="flex flex-wrap items-center gap-2">
             <LanguageToggle />
-            <StatusBadge icon={<ShieldCheck className="h-4 w-4" />} label={t('status.suiTestnet')} />
-            <StatusBadge icon={<CircleDollarSign className="h-4 w-4" />} label={t('status.dusdc')} />
+            <StatusBadge
+              icon={<ShieldCheck className="h-4 w-4" />}
+              label={`${t('status.suiTestnet')} · ${t('status.dusdc')}`}
+            />
             <ConnectButton />
           </div>
         </header>
 
-        <nav className="flex gap-2 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-900 p-1">
-          {appPages.map((page) => {
-            const Icon = page.icon;
-            const isActive = activePage === page.key;
-
-            return (
-              <button
-                className={`inline-flex h-10 min-w-fit items-center gap-2 rounded-md px-3 text-sm font-medium transition ${
-                  isActive
-                    ? 'bg-emerald-400 text-zinc-950'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
-                }`}
-                key={page.key}
-                onClick={() => setActivePage(page.key)}
-                type="button"
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                {t(page.labelKey)}
-              </button>
-            );
-          })}
-        </nav>
-
         {activePage === 'arena' ? (
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
-            <div className="flex flex-col gap-4">
-              <ChartPanel
-                candles={btcKlines.data?.candles ?? []}
-                error={btcKlines.error}
-                interval={chartInterval}
-                isLoading={btcKlines.isLoading}
-                onIntervalChange={setChartInterval}
-                oracleSpot={oracleSpot}
-                provider={btcKlines.data?.provider}
-                tradeOverlay={tradeOverlay}
-              />
-              <PositionsPanel
-                isExpectedNetwork={accountOverview.isExpectedNetwork}
-                managerId={accountOverview.managerId}
-                onStreakSurrender={(legId) => setStreakLegResult(legId, 'surrendered')}
-                streakLegs={streakLegsForPanel}
-              />
+          <section className="flex flex-col gap-4">
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+              <div className="flex flex-col gap-4">
+                <ChartPanel
+                  candles={btcKlines.data?.candles ?? []}
+                  chartOracleDiff={oracleDiff}
+                  chartPrice={chartPrice}
+                  error={btcKlines.error}
+                  interval={chartInterval}
+                  isLoading={btcKlines.isLoading}
+                  onIntervalChange={setChartInterval}
+                  oracleSpot={oracleSpot}
+                  oracleTimestamp={
+                    marketOverview.data?.oracleState?.latest_price?.onchain_timestamp ?? null
+                  }
+                  provider={btcKlines.data?.provider}
+                  roundExpiryMs={marketOverview.data?.activeOracle?.expiry ?? null}
+                  tradeOverlay={tradeOverlay}
+                />
+
+                <PositionsPanel
+                  isExpectedNetwork={accountOverview.isExpectedNetwork}
+                  managerId={accountOverview.managerId}
+                  onStreakSurrender={(legId) => setStreakLegResult(legId, 'surrendered')}
+                  streakLegs={streakLegsForPanel}
+                />
+              </div>
+
+              <aside className="flex flex-col gap-4">
+                <TradePanel
+                  accountOverview={accountOverview}
+                  onAddComboLeg={addComboLeg}
+                  onQuoteRequestChange={setSelectedTradeRequest}
+                  overview={marketOverview.data}
+                  streakLegs={streakLegsForPanel}
+                />
+                <StreakMeter managerId={managerId} streak={managerCurrentStreak} />
+                <AccountPanel overview={accountOverview} />
+              </aside>
             </div>
 
-            <aside className="flex flex-col gap-4">
-              <MarketPulsePanel
-                error={marketOverview.error}
-                chartOracleDiff={oracleDiff == null ? null : formatPercent(oracleDiff)}
-                chartPrice={chartPrice}
-                isLoading={marketOverview.isLoading}
-                overview={marketOverview.data}
-              />
-              <AccountPanel overview={accountOverview} />
-            <TradePanel
-              accountOverview={accountOverview}
-              onAddComboLeg={addComboLeg}
-              onQuoteRequestChange={setSelectedTradeRequest}
-              overview={marketOverview.data}
-              streakLegs={streakLegsForPanel}
-            />
-            </aside>
+            <PredictStatusStrip managerId={managerId} overview={marketOverview.data} />
           </section>
         ) : null}
 
@@ -258,8 +259,8 @@ export function App() {
 
 function StatusBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-zinc-300">
-      <span className="text-emerald-300">{icon}</span>
+    <div className="inline-flex h-9 items-center gap-2 rounded-full border border-ink-700/60 glass px-3 text-sm text-cream-300">
+      <span className="text-brass-300">{icon}</span>
       {label}
     </div>
   );

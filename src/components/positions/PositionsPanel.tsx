@@ -64,13 +64,15 @@ export function PositionsPanel({
   }
 
   return (
-    <section className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+    <section className="rounded-3xl border border-ink-700/60 glass p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{t('positions.title')}</h2>
-          <p className="text-sm text-zinc-500">{t('positions.subtitle')}</p>
+          <h2 className="font-display text-lg font-semibold text-cream-100">
+            {t('positions.title')}
+          </h2>
+          <p className="text-sm text-cream-600">{t('positions.subtitle')}</p>
         </div>
-        <Layers className="h-5 w-5 text-emerald-300" aria-hidden="true" />
+        <Layers className="h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
       {!managerId ? (
@@ -78,7 +80,7 @@ export function PositionsPanel({
       ) : positions.isLoading ? (
         <EmptyPositions message={t('positions.loading')} />
       ) : positions.error ? (
-        <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+        <div className="mt-4 rounded-xl border border-clay-400/40 bg-clay-400/10 p-4 text-sm text-clay-200">
           {t('positions.error')}
         </div>
       ) : rows.length === 0 ? (
@@ -149,34 +151,34 @@ function SettlementRevealPanel({
 
   return (
     <article
-      className={`rounded-md border p-4 ${
+      className={`rounded-xl border p-4 ${
         didWin
-          ? 'border-emerald-400/40 bg-emerald-400/10'
-          : 'border-red-400/40 bg-red-400/10'
+          ? 'border-moss-400/40 bg-moss-400/10'
+          : 'border-clay-400/40 bg-clay-400/10'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${
-              didWin ? 'bg-emerald-400 text-zinc-950' : 'bg-red-400 text-zinc-950'
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+              didWin ? 'bg-moss-400 text-ink-950' : 'bg-clay-400 text-ink-950'
             }`}
           >
             <Sparkles className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <div className="text-xs font-medium uppercase tracking-normal text-zinc-400">
+            <div className="text-xs font-medium uppercase tracking-normal text-cream-500">
               {t('positions.reveal.title')}
             </div>
-            <h3 className="mt-1 text-base font-semibold text-zinc-100">
+            <h3 className="mt-1 text-base font-semibold text-cream-100">
               {didWin ? t('positions.reveal.winTitle') : t('positions.reveal.lossTitle')}
             </h3>
-            <p className="mt-1 truncate text-sm text-zinc-400">{formatInstrument(row)}</p>
+            <p className="mt-1 truncate text-sm text-cream-500">{formatInstrument(row)}</p>
           </div>
         </div>
         <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${
-            didWin ? 'bg-emerald-400 text-zinc-950' : 'bg-red-400 text-zinc-950'
+          className={`inline-flex shrink-0 items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold ${
+            didWin ? 'bg-moss-400 text-ink-950' : 'bg-clay-400 text-ink-950'
           }`}
         >
           <ResultIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -199,7 +201,7 @@ function SettlementRevealPanel({
       {canRedeem ? (
         <div className="mt-4">
           <button
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
             disabled={!isExpectedNetwork || isRedeeming}
             onClick={onRedeem}
             type="button"
@@ -207,12 +209,12 @@ function SettlementRevealPanel({
             {isRedeeming ? t('positions.redeeming') : getRedeemLabel(row, t)}
           </button>
           {lastRedeemDigest ? (
-            <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+            <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm text-moss-200">
               <TransactionLink digest={lastRedeemDigest} label={t('positions.redeemSuccess')} />
             </div>
           ) : null}
           {redeemError ? (
-            <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
               {redeemError}
             </div>
           ) : null}
@@ -266,21 +268,21 @@ function PositionCard({
   }
 
   return (
-    <article className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
+    <article className="rounded-xl border border-ink-700 bg-ink-950 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-zinc-800 text-emerald-300">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink-800 text-brass-300">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-zinc-100">{t(titleKey)}</h3>
-            <p className="mt-0.5 truncate text-sm text-zinc-500">{formatInstrument(row)}</p>
+            <h3 className="text-sm font-semibold text-cream-100">{t(titleKey)}</h3>
+            <p className="mt-0.5 truncate text-sm text-cream-600">{formatInstrument(row)}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {hasLive ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-brass-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brass-400" />
               {t('positions.live')}
             </span>
           ) : null}
@@ -315,9 +317,9 @@ function PositionCard({
       </dl>
 
       {canCashOut ? (
-        <div className="mt-4 border-t border-zinc-800 pt-3">
+        <div className="mt-4 border-t border-ink-700 pt-3">
           <button
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
             disabled={!isExpectedNetwork || isRedeeming || !hasLive}
             onClick={handleCashOut}
             type="button"
@@ -338,15 +340,15 @@ function PositionCard({
       ) : null}
 
       {row.status === 'awaiting_settlement' ? (
-        <div className="mt-4 rounded-md border border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-400">
+        <div className="mt-4 rounded-xl border border-ink-600 bg-ink-900 p-3 text-xs text-cream-500">
           {t('positions.frozen')}
         </div>
       ) : null}
 
       {canRedeem ? (
-        <div className="mt-4 border-t border-zinc-800 pt-3">
+        <div className="mt-4 border-t border-ink-700 pt-3">
           <button
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-emerald-400 px-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400"
+            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
             disabled={!isExpectedNetwork || isRedeeming}
             onClick={onRedeem}
             type="button"
@@ -359,12 +361,12 @@ function PositionCard({
       {canCashOut || canRedeem ? (
         <>
           {lastRedeemDigest ? (
-            <div className="mt-3 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+            <div className="mt-3 rounded-xl border border-moss-400/30 bg-moss-400/10 p-3 text-sm text-moss-200">
               <TransactionLink digest={lastRedeemDigest} label={t('positions.redeemSuccess')} />
             </div>
           ) : null}
           {redeemError ? (
-            <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="mt-3 rounded-xl border border-clay-400/40 bg-clay-400/10 p-3 text-sm text-clay-200">
               {redeemError}
             </div>
           ) : null}
@@ -389,11 +391,11 @@ function Metric({
   value: string;
 }) {
   const toneClass =
-    tone === 'up' ? 'text-emerald-300' : tone === 'down' ? 'text-red-300' : 'text-zinc-100';
+    tone === 'up' ? 'text-moss-300' : tone === 'down' ? 'text-clay-300' : 'text-cream-100';
 
   return (
     <div className="min-w-0">
-      <dt className="truncate text-zinc-500">{label}</dt>
+      <dt className="truncate text-cream-600">{label}</dt>
       <dd className={`mt-1 truncate font-medium ${toneClass}`}>{value}</dd>
     </div>
   );
@@ -430,7 +432,7 @@ function StatusBadge({ status }: { status: string }) {
   const colorClass = getStatusColorClass(status);
 
   return (
-    <span className={`shrink-0 rounded-md border px-2 py-1 text-xs font-medium ${colorClass}`}>
+    <span className={`shrink-0 rounded-xl border px-2 py-1 text-xs font-medium ${colorClass}`}>
       {getStatusLabel(status, t)}
     </span>
   );
@@ -438,7 +440,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function EmptyPositions({ message }: { message: string }) {
   return (
-    <div className="mt-4 rounded-md border border-dashed border-zinc-700 p-6 text-center text-sm text-zinc-500">
+    <div className="mt-4 rounded-xl border border-dashed border-ink-600 p-6 text-center text-sm text-cream-600">
       {message}
     </div>
   );
@@ -525,14 +527,14 @@ function getStatusLabel(status: string, t: (key: MessageKey) => string) {
 function getStatusColorClass(status: string) {
   switch (status) {
     case 'redeemable':
-      return 'border-emerald-400/40 bg-emerald-400/10 text-emerald-200';
+      return 'border-moss-400/40 bg-moss-400/10 text-moss-200';
     case 'awaiting_settlement':
       return 'border-amber-400/40 bg-amber-400/10 text-amber-200';
     case 'active':
-      return 'border-sky-400/40 bg-sky-400/10 text-sky-200';
+      return 'border-brass-400/40 bg-brass-400/10 text-brass-200';
     case 'lost':
-      return 'border-red-400/40 bg-red-400/10 text-red-200';
+      return 'border-clay-400/40 bg-clay-400/10 text-clay-200';
     default:
-      return 'border-zinc-700 bg-zinc-800 text-zinc-300';
+      return 'border-ink-600 bg-ink-800 text-cream-300';
   }
 }

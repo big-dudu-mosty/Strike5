@@ -9,7 +9,7 @@ interface TransactionLinkProps {
 export function TransactionLink({ digest, label }: TransactionLinkProps) {
   return (
     <a
-      className="inline-flex min-w-0 items-center gap-1.5 font-mono text-emerald-100 underline-offset-4 transition hover:text-emerald-200 hover:underline"
+      className="inline-flex min-w-0 items-center gap-1.5 font-mono text-brass-200 underline-offset-4 transition hover:text-brass-300 hover:underline"
       href={getSuiVisionTxUrl(digest)}
       rel="noreferrer"
       target="_blank"

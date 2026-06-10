@@ -293,6 +293,8 @@ export type MessageKey =
   | 'vault.totalMaxPayout'
   | 'vault.utilization'
   | 'vault.plpSharePrice'
-  | 'vault.error';
+  | 'vault.error'
+  | 'predict.powered'
+  | 'predict.package';
 
 export type Messages = Record<MessageKey, string>;

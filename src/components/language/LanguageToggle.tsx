@@ -7,9 +7,9 @@ export function LanguageToggle() {
   return (
     <div
       aria-label={t('app.language')}
-      className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 p-1 text-sm text-zinc-300"
+      className="inline-flex h-9 items-center gap-1 rounded-full border border-ink-700/60 glass p-1 text-sm text-cream-300"
     >
-      <Languages className="ml-2 h-4 w-4 text-emerald-300" aria-hidden="true" />
+      <Languages className="ml-2 h-4 w-4 text-brass-300" aria-hidden="true" />
       <button
         className={buttonClass(locale === 'en')}
         onClick={() => setLocale('en')}
@@ -30,7 +30,7 @@ export function LanguageToggle() {
 
 function buttonClass(active: boolean) {
   return [
-    'h-7 rounded px-2 transition',
-    active ? 'bg-emerald-400 text-zinc-950' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50',
+    'h-7 rounded-full px-2.5 transition',
+    active ? 'bg-cream-100 text-ink-950 font-semibold' : 'text-cream-600 hover:text-cream-100',
   ].join(' ');
 }

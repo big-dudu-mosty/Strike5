@@ -313,6 +313,8 @@ export const messages: Record<Locale, Messages> = {
     'vault.utilization': 'Utilization',
     'vault.plpSharePrice': 'PLP Share Price',
     'vault.error': 'Vault summary unavailable from Predict Server.',
+    'predict.powered': 'Powered by DeepBook Predict on Sui',
+    'predict.package': 'Contract',
   },
   zh: {
     'app.tagline': '由 DeepBook Predict 驱动的 BTC 预测竞技场',
@@ -613,5 +615,7 @@ export const messages: Record<Locale, Messages> = {
     'vault.utilization': '利用率',
     'vault.plpSharePrice': 'PLP 份额价格',
     'vault.error': '无法从 Predict Server 获取 Vault summary。',
+    'predict.powered': '由 Sui 上的 DeepBook Predict 驱动',
+    'predict.package': '合约',
   },
 };
