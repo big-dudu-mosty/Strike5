@@ -189,6 +189,7 @@ export function App() {
             <ArenaOverviewPanel
               accountOverview={accountOverview}
               overview={marketOverview.data}
+              streak={managerCurrentStreak}
             />
 
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">

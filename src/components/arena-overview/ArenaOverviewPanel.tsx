@@ -1,4 +1,4 @@
-import { Activity, Database, ShieldCheck, Wallet, Zap } from 'lucide-react';
+import { Activity, Database, Flame, Zap } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
 import {
@@ -6,6 +6,12 @@ import {
   type PredictPositionDisplayRow,
 } from '../../hooks/usePredictPositions';
 import { useNow } from '../../hooks/useNow';
+import {
+  STREAK_TARGET,
+  resolveStreak,
+  type ArenaStreak,
+  type StreakResolution,
+} from '../../lib/combo';
 import {
   formatDUsdc,
   formatFreshness,
@@ -20,26 +26,26 @@ import type { PredictMarketOverview } from '../../lib/predict-server/types';
 interface ArenaOverviewPanelProps {
   accountOverview: PredictAccountOverview;
   overview?: PredictMarketOverview;
+  streak: ArenaStreak | null;
 }
 
 export function ArenaOverviewPanel({
   accountOverview,
   overview,
+  streak,
 }: ArenaOverviewPanelProps) {
   const { t } = useI18n();
   const now = useNow();
   const positions = usePredictPositions(accountOverview.managerId);
   const rows = positions.data?.rows ?? [];
   const activePosition = useMemo(() => getPriorityPosition(rows), [rows]);
+  const streakResolution = useMemo(
+    () => (streak ? resolveStreak(streak.legs, rows) : null),
+    [rows, streak],
+  );
   const oracleSpot = scaleOracleUsd(overview?.oracleState?.latest_price?.spot);
   const oracleTimestamp = overview?.oracleState?.latest_price?.onchain_timestamp ?? null;
   const vaultLiquidity = scaleQuoteAsset(overview?.vaultSummary?.available_liquidity);
-  const walletStatus = accountOverview.address
-    ? truncateAddress(accountOverview.address)
-    : t('arenaOverview.wallet.connect');
-  const managerStatus = accountOverview.managerId
-    ? `${t('account.manager')} ${truncateAddress(accountOverview.managerId)}`
-    : t('account.managerMissing');
 
   return (
     <section className="rounded-2xl border border-ink-700/60 bg-ink-900/70 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
@@ -73,17 +79,11 @@ export function ArenaOverviewPanel({
           value={vaultLiquidity == null ? '—' : formatDUsdc(vaultLiquidity)}
         />
         <StatusItem
-          detail={managerStatus}
-          icon={
-            accountOverview.address ? (
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <Wallet className="h-4 w-4" aria-hidden="true" />
-            )
-          }
-          label={t('arenaOverview.wallet.title')}
-          value={walletStatus}
-          valueTone={accountOverview.address ? 'success' : 'muted'}
+          detail={getComboDetail(streakResolution, streak, t)}
+          icon={<Flame className="h-4 w-4" aria-hidden="true" />}
+          label={t('arenaOverview.combo.title')}
+          value={getComboValue(streakResolution)}
+          valueTone={streakResolution?.completed ? 'success' : 'default'}
         />
       </div>
     </section>
@@ -184,6 +184,22 @@ function getPositionTypeLabel(
   }
 }
 
-function truncateAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+function getComboValue(resolution: StreakResolution | null) {
+  return `${resolution?.litMultiplier ?? 1}x`;
+}
+
+function getComboDetail(
+  resolution: StreakResolution | null,
+  streak: ArenaStreak | null,
+  t: (key: MessageKey) => string,
+) {
+  if (!streak || streak.legs.length === 0 || !resolution) {
+    return t('arenaOverview.combo.empty');
+  }
+
+  if (resolution.completed) return t('arenaOverview.combo.completed');
+  if (resolution.busted) return t('arenaOverview.combo.busted');
+  if (resolution.surrendered) return t('arenaOverview.combo.surrendered');
+
+  return `${resolution.consecutiveWins}/${STREAK_TARGET} ${t('arenaOverview.combo.progress')}`;
 }
