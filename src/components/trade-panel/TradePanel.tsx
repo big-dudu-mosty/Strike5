@@ -337,7 +337,7 @@ export function TradePanel({
               <button
                 className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-bold transition ${
                   isSelected
-                    ? 'bg-brass-400 text-ink-950 shadow-[0_0_0_1px_rgba(240,194,75,0.28)]'
+                    ? 'bg-brass-400 text-ink-950 shadow-[0_0_0_1px_rgba(96,165,250,0.32)]'
                     : 'text-cream-500 hover:bg-ink-800/70 hover:text-cream-100'
                 }`}
                 key={pick.kind}

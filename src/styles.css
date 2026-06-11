@@ -5,7 +5,7 @@
  * exchange accents. Token names stay semantic so components survive theme swaps:
  * ink   = graphite surface scale (page / cards / borders)
  * cream = cool near-white text scale
- * brass = warm yellow accent (brand, selection, highlights)
+ * brass = cobalt accent (legacy token name for brand, selection, highlights)
  * moss  = positive / win / profit (mint green)
  * clay  = negative / loss / drawdown (red)
  */
@@ -24,10 +24,10 @@
   --color-cream-600: #a7b2c2;
   --color-cream-700: #8a96aa;
 
-  --color-brass-200: #f8e7ae;
-  --color-brass-300: #f5d36e;
-  --color-brass-400: #f0c24b;
-  --color-brass-500: #d4a52f;
+  --color-brass-200: #dbeafe;
+  --color-brass-300: #93c5fd;
+  --color-brass-400: #60a5fa;
+  --color-brass-500: #3b82f6;
 
   --color-moss-200: #c0f3d9;
   --color-moss-300: #8ae8bb;
@@ -63,7 +63,7 @@ body {
   background-image:
     radial-gradient(at 12% 0%, rgba(139, 154, 174, 0.24) 0, transparent 38%),
     radial-gradient(at 86% 8%, rgba(63, 128, 112, 0.14) 0, transparent 36%),
-    radial-gradient(at 78% 96%, rgba(160, 132, 72, 0.1) 0, transparent 40%),
+    radial-gradient(at 78% 96%, rgba(104, 123, 151, 0.12) 0, transparent 40%),
     linear-gradient(180deg, #344052 0%, #263142 50%, #212b3a 100%);
   background-attachment: fixed;
 }
@@ -73,7 +73,7 @@ button {
 }
 
 ::selection {
-  background: #f0c24b;
+  background: #60a5fa;
   color: #263142;
 }
 

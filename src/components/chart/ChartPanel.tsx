@@ -160,7 +160,7 @@ export function ChartPanel({
       if (tradeOverlay.lowerStrike != null) {
         rangeLowerLineRef.current = series.createPriceLine({
           price: tradeOverlay.lowerStrike,
-          color: '#f0c24b',
+          color: '#60a5fa',
           lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
@@ -170,7 +170,7 @@ export function ChartPanel({
       if (tradeOverlay.higherStrike != null) {
         rangeHigherLineRef.current = series.createPriceLine({
           price: tradeOverlay.higherStrike,
-          color: '#f0c24b',
+          color: '#60a5fa',
           lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
@@ -184,7 +184,7 @@ export function ChartPanel({
 
     selectedStrikeLineRef.current = series.createPriceLine({
       price: tradeOverlay.strike,
-      color: '#f0c24b',
+      color: '#60a5fa',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
