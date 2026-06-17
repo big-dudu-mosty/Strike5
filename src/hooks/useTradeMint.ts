@@ -2,11 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentAccount, useCurrentClient, useDAppKit } from '@mysten/dapp-kit-react';
 import type { SuiClientTypes } from '@mysten/sui/client';
 import { PREDICT_CONFIG } from '../config/predict';
-import type { TradeQuoteRequest } from '../lib/deepbook/quote';
+import type { TradeQuote, TradeQuoteRequest } from '../lib/deepbook/quote';
 import {
   buildDirectionalMintTransaction,
   buildRangeMintTransaction,
 } from '../lib/deepbook/transactions';
+import { addLocalMintedPosition } from './usePredictPositions';
 
 interface UseTradeMintOptions {
   managerId: string | null;
@@ -14,6 +15,7 @@ interface UseTradeMintOptions {
 
 interface TradeMintInput {
   managerTopUpAmount?: bigint;
+  quote: TradeQuote;
   request: TradeQuoteRequest;
 }
 
@@ -77,7 +79,16 @@ export function useTradeMint({ managerId }: UseTradeMintOptions) {
         digest: tx.digest,
       };
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, { quote, request }) => {
+      if (managerId) {
+        addLocalMintedPosition({
+          managerId,
+          queryClient,
+          quote,
+          request,
+        });
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['predict-manager-summary', managerId] }),
         queryClient.invalidateQueries({ queryKey: ['wallet-dusdc-balance', account?.address] }),

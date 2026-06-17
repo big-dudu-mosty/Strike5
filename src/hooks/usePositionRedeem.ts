@@ -3,7 +3,7 @@ import { useCurrentAccount, useCurrentClient, useDAppKit } from '@mysten/dapp-ki
 import type { SuiClientTypes } from '@mysten/sui/client';
 import type { Transaction } from '@mysten/sui/transactions';
 import { PREDICT_CONFIG } from '../config/predict';
-import type { PredictPositionDisplayRow } from './usePredictPositions';
+import { removeLocalMintedPosition, type PredictPositionDisplayRow } from './usePredictPositions';
 import {
   buildDirectionalRedeemTransaction,
   buildRangeRedeemTransaction,
@@ -54,7 +54,13 @@ export function usePositionRedeem({ managerId }: UsePositionRedeemOptions) {
         positionId: position.id,
       };
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, position) => {
+      removeLocalMintedPosition({
+        managerId,
+        positionId: position.id,
+        queryClient,
+      });
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['predict-manager-summary', managerId] }),
         queryClient.invalidateQueries({ queryKey: ['predict-manager-positions', managerId] }),

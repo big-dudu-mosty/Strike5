@@ -502,9 +502,10 @@ export function TradePanel({
           className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-brass-400 px-3 text-sm font-bold text-ink-950 shadow-[0_14px_34px_rgba(34,211,238,0.24)] transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600 disabled:shadow-none"
           disabled={isMintDisabled}
           onClick={() => {
-            if (!quoteRequest || isMintDisabled) return;
+            if (!quoteRequest || !tradeQuote.data || isMintDisabled) return;
             void tradeMint.mutateAsync({
               managerTopUpAmount,
+              quote: tradeQuote.data,
               request: quoteRequest,
             });
           }}

@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import {
   fetchPredictManagerPositionSummary,
   fetchPredictManagerRanges,
   fetchPredictOracles,
 } from '../lib/predict-server/client';
+import type { TradeQuote, TradeQuoteRequest } from '../lib/deepbook/quote';
 import type {
   PredictOracle,
   PredictPositionStatus,
@@ -12,6 +13,7 @@ import type {
 } from '../lib/predict-server/types';
 
 type PositionKind = 'above' | 'below' | 'range';
+const LOCAL_POSITION_TTL_MS = 5 * 60_000;
 
 interface BasePositionDisplayRow {
   id: string;
@@ -46,6 +48,10 @@ export type PredictPositionDisplayRow =
   | DirectionalPositionDisplayRow
   | RangePositionDisplayRow;
 
+type LocalPositionDisplayRow = PredictPositionDisplayRow & {
+  localCreatedAt: number;
+};
+
 export interface PredictPositionsOverview {
   isPartial: boolean;
   rows: PredictPositionDisplayRow[];
@@ -56,6 +62,8 @@ export interface PredictPositionsOverview {
 type PositionDataWarning = 'directional' | 'ranges' | 'oracles';
 
 export function usePredictPositions(managerId: string | null) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['predict-manager-positions', managerId],
     queryFn: async () => {
@@ -109,9 +117,11 @@ export function usePredictPositions(managerId: string | null) {
           lastActivityAt: row.last_activity_at,
         }));
       const rangeRows = aggregateRangeRows(ranges.minted, ranges.redeemed, oracleById);
-      const rows = [...directionRows, ...rangeRows]
+      const indexedRows = [...directionRows, ...rangeRows]
         .filter((row) => row.status !== 'redeemed')
         .sort(comparePositionRows);
+      const localRows = getActiveLocalRows(queryClient, managerId, indexedRows);
+      const rows = mergeIndexedAndLocalRows(indexedRows, localRows).sort(comparePositionRows);
 
       return {
         isPartial: warnings.length > 0,
@@ -124,6 +134,67 @@ export function usePredictPositions(managerId: string | null) {
     refetchInterval: managerId ? 5_000 : false,
     staleTime: 2_000,
   });
+}
+
+export function addLocalMintedPosition({
+  managerId,
+  queryClient,
+  quote,
+  request,
+}: {
+  managerId: string;
+  queryClient: QueryClient;
+  quote: TradeQuote;
+  request: TradeQuoteRequest;
+}) {
+  const now = Date.now();
+  const id = getPositionId(request);
+  const localKey = getLocalPositionsQueryKey(managerId);
+  const localRows = queryClient.getQueryData<LocalPositionDisplayRow[]>(localKey) ?? [];
+  const displayedRows =
+    queryClient.getQueryData<PredictPositionsOverview>(['predict-manager-positions', managerId])
+      ?.rows ?? [];
+  const baseRow =
+    localRows.find((row) => row.id === id) ?? displayedRows.find((row) => row.id === id);
+  const nextRow = baseRow
+    ? mergeMintIntoPositionRow(baseRow, request, quote, now)
+    : createLocalPositionRow(request, quote, now);
+  const nextLocalRows = [...localRows.filter((row) => row.id !== id), nextRow];
+
+  queryClient.setQueryData(localKey, nextLocalRows);
+  queryClient.setQueryData<PredictPositionsOverview>(
+    ['predict-manager-positions', managerId],
+    (current) => {
+      const currentRows = current?.rows ?? [];
+      const mergedRows = mergeIndexedAndLocalRows(currentRows, nextLocalRows).sort(comparePositionRows);
+
+      return {
+        fetchedAt: current?.fetchedAt ?? now,
+        isPartial: current?.isPartial ?? false,
+        rows: mergedRows,
+        warnings: current?.warnings ?? [],
+      };
+    },
+  );
+}
+
+export function removeLocalMintedPosition({
+  managerId,
+  positionId,
+  queryClient,
+}: {
+  managerId: string | null;
+  positionId: string;
+  queryClient: QueryClient;
+}) {
+  if (!managerId) return;
+
+  const localKey = getLocalPositionsQueryKey(managerId);
+  const localRows = queryClient.getQueryData<LocalPositionDisplayRow[]>(localKey) ?? [];
+  queryClient.setQueryData(
+    localKey,
+    localRows.filter((row) => row.id !== positionId),
+  );
 }
 
 interface MutableRangeAggregate {
@@ -274,4 +345,166 @@ function getStatusRank(status: PredictPositionStatus) {
     default:
       return 5;
   }
+}
+
+function getLocalPositionsQueryKey(managerId: string) {
+  return ['predict-local-minted-positions', managerId] as const;
+}
+
+function getActiveLocalRows(
+  queryClient: QueryClient,
+  managerId: string,
+  indexedRows: PredictPositionDisplayRow[],
+) {
+  const localKey = getLocalPositionsQueryKey(managerId);
+  const localRows = queryClient.getQueryData<LocalPositionDisplayRow[]>(localKey) ?? [];
+  const now = Date.now();
+  const activeRows = localRows.filter((row) => shouldKeepLocalRow(row, indexedRows, now));
+
+  if (activeRows.length !== localRows.length) {
+    queryClient.setQueryData(localKey, activeRows);
+  }
+
+  return activeRows;
+}
+
+function shouldKeepLocalRow(
+  localRow: LocalPositionDisplayRow,
+  indexedRows: PredictPositionDisplayRow[],
+  now: number,
+) {
+  if (now - localRow.localCreatedAt > LOCAL_POSITION_TTL_MS) return false;
+
+  const indexedRow = indexedRows.find((row) => row.id === localRow.id);
+  if (!indexedRow) return true;
+
+  return (
+    indexedRow.mintedQuantity < localRow.mintedQuantity ||
+    indexedRow.openQuantity < localRow.openQuantity
+  );
+}
+
+function mergeIndexedAndLocalRows(
+  indexedRows: PredictPositionDisplayRow[],
+  localRows: LocalPositionDisplayRow[],
+) {
+  const rowById = new Map(indexedRows.map((row) => [row.id, row]));
+
+  for (const localRow of localRows) {
+    const indexedRow = rowById.get(localRow.id);
+    if (
+      !indexedRow ||
+      indexedRow.mintedQuantity < localRow.mintedQuantity ||
+      indexedRow.openQuantity < localRow.openQuantity
+    ) {
+      rowById.set(localRow.id, localRow);
+    }
+  }
+
+  return Array.from(rowById.values());
+}
+
+function getPositionId(request: TradeQuoteRequest) {
+  if (request.kind === 'range') {
+    return [
+      'range',
+      request.oracleId,
+      request.expiry.toString(),
+      request.lowerStrike.toString(),
+      request.higherStrike.toString(),
+    ].join(':');
+  }
+
+  return [
+    'directional',
+    request.oracleId,
+    request.expiry.toString(),
+    request.strike.toString(),
+    request.kind === 'above' ? 'up' : 'down',
+  ].join(':');
+}
+
+function createLocalPositionRow(
+  request: TradeQuoteRequest,
+  quote: TradeQuote,
+  now: number,
+): LocalPositionDisplayRow {
+  const common = {
+    id: getPositionId(request),
+    status: getLocalStatus(request.expiry, now),
+    oracleId: request.oracleId,
+    expiry: Number(request.expiry),
+    mintedQuantity: Number(request.quantity),
+    redeemedQuantity: 0,
+    openQuantity: Number(request.quantity),
+    costBasis: Number(quote.cost),
+    settlementPrice: null,
+    totalPayout: 0,
+    realizedPnl: 0,
+    lastActivityAt: now,
+    localCreatedAt: now,
+  };
+
+  if (request.kind === 'range') {
+    return {
+      ...common,
+      kind: 'range',
+      lowerStrike: Number(request.lowerStrike),
+      higherStrike: Number(request.higherStrike),
+    };
+  }
+
+  return {
+    ...common,
+    kind: request.kind,
+    strike: Number(request.strike),
+    markValue: Number(quote.liveRedeem),
+    unrealizedPnl: Number(quote.liveRedeem) - Number(quote.cost),
+  };
+}
+
+function mergeMintIntoPositionRow(
+  row: PredictPositionDisplayRow,
+  request: TradeQuoteRequest,
+  quote: TradeQuote,
+  now: number,
+): LocalPositionDisplayRow {
+  if (row.kind !== request.kind) {
+    return createLocalPositionRow(request, quote, now);
+  }
+
+  const mintedQuantity = row.mintedQuantity + Number(request.quantity);
+  const openQuantity = row.openQuantity + Number(request.quantity);
+  const costBasis = row.costBasis + Number(quote.cost);
+  const status = getLocalStatus(request.expiry, now);
+
+  if (row.kind === 'range') {
+    return {
+      ...row,
+      status,
+      mintedQuantity,
+      openQuantity,
+      costBasis,
+      lastActivityAt: now,
+      localCreatedAt: now,
+    };
+  }
+
+  const markValue = (row.markValue ?? 0) + Number(quote.liveRedeem);
+
+  return {
+    ...row,
+    status,
+    mintedQuantity,
+    openQuantity,
+    costBasis,
+    lastActivityAt: now,
+    localCreatedAt: now,
+    markValue,
+    unrealizedPnl: markValue - costBasis,
+  };
+}
+
+function getLocalStatus(expiry: bigint, now: number): PredictPositionStatus {
+  return now >= Number(expiry) ? 'awaiting_settlement' : 'active';
 }
