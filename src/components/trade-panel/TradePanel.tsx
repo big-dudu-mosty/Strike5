@@ -173,9 +173,10 @@ export function TradePanel({
       ? null
       : BigInt(Math.max(0, accountOverview.managerSummary.trading_balance));
   const managerReserveTarget = tradeQuote.data?.maxPayout ?? 0n;
+  const spendableManagerBalance = managerBalanceRaw ?? 0n;
   const managerTopUpAmount =
-    managerReserveTarget > 0n && managerBalanceRaw != null && managerReserveTarget > managerBalanceRaw
-      ? managerReserveTarget - managerBalanceRaw
+    managerReserveTarget > 0n && managerReserveTarget > spendableManagerBalance
+      ? managerReserveTarget - spendableManagerBalance
       : 0n;
   const isWalletBalanceUnavailableForTopUp =
     managerTopUpAmount > 0n && accountOverview.walletDUsdcBalanceRaw == null;
@@ -183,8 +184,6 @@ export function TradePanel({
     managerTopUpAmount > 0n &&
     accountOverview.walletDUsdcBalanceRaw != null &&
     managerTopUpAmount > accountOverview.walletDUsdcBalanceRaw;
-  const isManagerBalanceUnavailable =
-    Boolean(accountOverview.managerId) && managerBalanceRaw == null;
   const isQuantityEmpty = quantityInput.trim() === '';
   const isQuantityInvalid = quantityInput.trim() !== '' && quantity == null;
   const customValidationMessage =
@@ -192,7 +191,6 @@ export function TradePanel({
   const isMintDisabled =
     !accountOverview.isExpectedNetwork ||
     !accountOverview.managerId ||
-    isManagerBalanceUnavailable ||
     isWalletBalanceUnavailableForTopUp ||
     isWalletBalanceInsufficientForTopUp ||
     isOpeningCutoff ||
@@ -231,7 +229,6 @@ export function TradePanel({
   const mintDisabledReason = isMintDisabled
     ? getMintDisabledReason({
         accountOverview,
-        isManagerBalanceUnavailable,
         isOpeningCutoff,
         isQuantityEmpty,
         isQuantityInvalid,
@@ -647,7 +644,6 @@ function truncateAddress(value: string) {
 
 function getMintDisabledReason({
   accountOverview,
-  isManagerBalanceUnavailable,
   isOpeningCutoff,
   isQuantityEmpty,
   isQuantityInvalid,
@@ -661,7 +657,6 @@ function getMintDisabledReason({
   tradeQuoteIsLoading,
 }: {
   accountOverview: PredictAccountOverview;
-  isManagerBalanceUnavailable: boolean;
   isOpeningCutoff: boolean;
   isQuantityEmpty: boolean;
   isQuantityInvalid: boolean;
@@ -676,7 +671,6 @@ function getMintDisabledReason({
 }) {
   if (!accountOverview.isExpectedNetwork) return t('trade.disabled.network');
   if (!accountOverview.managerId) return t('trade.managerRequired');
-  if (isManagerBalanceUnavailable) return t('trade.managerBalanceLoading');
   if (isWalletBalanceUnavailableForTopUp) return t('trade.disabled.walletBalanceLoading');
   if (isWalletBalanceInsufficientForTopUp) return t('trade.insufficientWalletBalance');
   if (isOpeningCutoff) return t('trade.openingCutoff');
