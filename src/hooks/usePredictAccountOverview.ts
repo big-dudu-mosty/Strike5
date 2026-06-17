@@ -92,7 +92,8 @@ export function usePredictAccountOverview() {
       if (!managerId) throw new Error('PredictManager id is required.');
       return fetchPredictManagerSummary(managerId);
     },
-    enabled: Boolean(managerId && indexedManager),
+    enabled: Boolean(managerId),
+    refetchInterval: (query) => (query.state.data ? false : 5_000),
   });
 
   const createManagerMutation = useMutation({
