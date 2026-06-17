@@ -47,9 +47,13 @@ export type PredictPositionDisplayRow =
   | RangePositionDisplayRow;
 
 export interface PredictPositionsOverview {
+  isPartial: boolean;
   rows: PredictPositionDisplayRow[];
   fetchedAt: number;
+  warnings: PositionDataWarning[];
 }
+
+type PositionDataWarning = 'directional' | 'ranges' | 'oracles';
 
 export function usePredictPositions(managerId: string | null) {
   return useQuery({
@@ -57,11 +61,26 @@ export function usePredictPositions(managerId: string | null) {
     queryFn: async () => {
       if (!managerId) throw new Error('PredictManager id is required.');
 
-      const [directionalSummaries, ranges, oracles] = await Promise.all([
+      const [directionalResult, rangesResult, oraclesResult] = await Promise.allSettled([
         fetchPredictManagerPositionSummary(managerId),
         fetchPredictManagerRanges(managerId),
         fetchPredictOracles(),
       ]);
+      const warnings: PositionDataWarning[] = [];
+
+      if (directionalResult.status === 'rejected') warnings.push('directional');
+      if (rangesResult.status === 'rejected') warnings.push('ranges');
+      if (oraclesResult.status === 'rejected') warnings.push('oracles');
+
+      if (directionalResult.status === 'rejected' && rangesResult.status === 'rejected') {
+        throw new Error('Predict Server position endpoints unavailable.');
+      }
+
+      const directionalSummaries =
+        directionalResult.status === 'fulfilled' ? directionalResult.value : [];
+      const ranges =
+        rangesResult.status === 'fulfilled' ? rangesResult.value : { minted: [], redeemed: [] };
+      const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
       const directionRows = directionalSummaries
         .filter((row) => row.status !== 'redeemed')
@@ -95,8 +114,10 @@ export function usePredictPositions(managerId: string | null) {
         .sort(comparePositionRows);
 
       return {
+        isPartial: warnings.length > 0,
         rows,
         fetchedAt: Date.now(),
+        warnings,
       } satisfies PredictPositionsOverview;
     },
     enabled: Boolean(managerId),

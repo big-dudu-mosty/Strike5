@@ -176,6 +176,8 @@ export type MessageKey =
   | 'positions.noManager'
   | 'positions.loading'
   | 'positions.error'
+  | 'positions.partial'
+  | 'positions.retry'
   | 'positions.openSize'
   | 'positions.costBasis'
   | 'positions.markOrPayout'

@@ -1,4 +1,13 @@
-import { ArrowDown, ArrowUp, CheckCircle2, Layers, ScanLine, Sparkles, XCircle } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  CheckCircle2,
+  Layers,
+  RefreshCw,
+  ScanLine,
+  Sparkles,
+  XCircle,
+} from 'lucide-react';
 import { useState } from 'react';
 import { usePositionRedeem } from '../../hooks/usePositionRedeem';
 import { usePredictPositions, type PredictPositionDisplayRow } from '../../hooks/usePredictPositions';
@@ -80,13 +89,23 @@ export function PositionsPanel({
       ) : positions.isLoading ? (
         <EmptyPositions message={t('positions.loading')} />
       ) : positions.error ? (
-        <div className="mt-4 rounded-xl border border-clay-400/40 bg-clay-400/10 p-4 text-sm text-clay-200">
-          {t('positions.error')}
-        </div>
+        <PositionDataNotice
+          isRetrying={positions.isRefetching}
+          message={t('positions.error')}
+          onRetry={() => void positions.refetch()}
+        />
       ) : rows.length === 0 ? (
         <EmptyPositions message={t('positions.empty')} />
       ) : (
         <div className="mt-4 grid gap-3">
+          {positions.data?.isPartial ? (
+            <PositionDataNotice
+              isRetrying={positions.isRefetching}
+              message={t('positions.partial')}
+              onRetry={() => void positions.refetch()}
+              tone="warn"
+            />
+          ) : null}
           {revealRow ? (
             <SettlementRevealPanel
               isExpectedNetwork={isExpectedNetwork}
@@ -124,6 +143,39 @@ export function PositionsPanel({
         </div>
       )}
     </section>
+  );
+}
+
+function PositionDataNotice({
+  isRetrying,
+  message,
+  onRetry,
+  tone = 'warn',
+}: {
+  isRetrying: boolean;
+  message: string;
+  onRetry: () => void;
+  tone?: 'risk' | 'warn';
+}) {
+  const { t } = useI18n();
+  const toneClass =
+    tone === 'risk'
+      ? 'border-clay-400/30 bg-clay-400/10 text-clay-200'
+      : 'border-amber-400/25 bg-amber-400/10 text-amber-100';
+
+  return (
+    <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm ${toneClass}`}>
+      <span>{message}</span>
+      <button
+        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-current/25 px-2.5 text-xs font-semibold transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={isRetrying}
+        onClick={onRetry}
+        type="button"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? 'animate-spin' : ''}`} aria-hidden="true" />
+        {t('positions.retry')}
+      </button>
+    </div>
   );
 }
 
