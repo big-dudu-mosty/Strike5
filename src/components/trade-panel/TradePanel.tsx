@@ -20,6 +20,7 @@ import {
   STREAK_TARGET,
   createArenaComboLeg,
   getStreakAppendError,
+  hasComboLegForRequest,
   isStreakTerminal,
   type ArenaComboLeg,
 } from '../../lib/combo';
@@ -206,12 +207,16 @@ export function TradePanel({
         oracleId: quoteRequest.oracleId,
       })
     : null;
+  const isQuoteAlreadyInStreak = quoteRequest
+    ? hasComboLegForRequest(streakLegs, quoteRequest)
+    : false;
   const isStreakFull = !isStreakTerminal(streakLegs) && streakLegs.length >= STREAK_TARGET;
   const isComboAddDisabled =
     !quoteRequest ||
     !tradeQuote.data ||
     tradeQuote.isLoading ||
     tradeQuote.isError ||
+    isQuoteAlreadyInStreak ||
     isStreakFull ||
     streakAppendError === 'order';
   const roundStatus = !activeOracle
@@ -245,6 +250,7 @@ export function TradePanel({
   const comboDisabledReason = isComboAddDisabled
     ? getComboDisabledReason({
         isQuantityEmpty,
+        isQuoteAlreadyInStreak,
         isStreakFull,
         quoteRequest,
         streakAppendError,
@@ -503,11 +509,16 @@ export function TradePanel({
           disabled={isMintDisabled}
           onClick={() => {
             if (!quoteRequest || !tradeQuote.data || isMintDisabled) return;
+            const comboLeg = createArenaComboLeg(quoteRequest, tradeQuote.data);
             void tradeMint.mutateAsync({
               managerTopUpAmount,
               quote: tradeQuote.data,
               request: quoteRequest,
-            });
+            }).then(() => {
+              if (!isQuoteAlreadyInStreak && !isStreakFull && !streakAppendError) {
+                onAddComboLeg(comboLeg);
+              }
+            }).catch(() => undefined);
           }}
           type="button"
         >
@@ -534,7 +545,11 @@ export function TradePanel({
           type="button"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
-          {isStreakFull ? t('trade.combo.full') : t('trade.combo.add')}
+          {isQuoteAlreadyInStreak
+            ? t('trade.combo.added')
+            : isStreakFull
+              ? t('trade.combo.full')
+              : t('trade.combo.add')}
         </button>
         {comboDisabledReason ? (
           <div className="mt-2 text-xs leading-5 text-cream-700">{comboDisabledReason}</div>
@@ -686,6 +701,7 @@ function getMintDisabledReason({
 
 function getComboDisabledReason({
   isQuantityEmpty,
+  isQuoteAlreadyInStreak,
   isStreakFull,
   quoteRequest,
   streakAppendError,
@@ -695,6 +711,7 @@ function getComboDisabledReason({
   tradeQuoteIsLoading,
 }: {
   isQuantityEmpty: boolean;
+  isQuoteAlreadyInStreak: boolean;
   isStreakFull: boolean;
   quoteRequest: TradeQuoteRequest | null;
   streakAppendError: 'full' | 'order' | null;
@@ -703,6 +720,7 @@ function getComboDisabledReason({
   tradeQuoteIsError: boolean;
   tradeQuoteIsLoading: boolean;
 }) {
+  if (isQuoteAlreadyInStreak) return t('trade.combo.addedHint');
   if (isStreakFull) return t('trade.combo.full');
   if (streakAppendError === 'order') return t('trade.combo.order');
   if (isQuantityEmpty || !quoteRequest) return t('trade.combo.needQuote');

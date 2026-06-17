@@ -70,6 +70,10 @@ export function getComboLegKey(leg: ArenaComboLeg) {
   ].join(':');
 }
 
+export function hasComboLegForRequest(legs: ArenaComboLeg[], request: TradeQuoteRequest) {
+  return legs.some((leg) => quoteMatchesLeg(request, leg));
+}
+
 export function getComboTotalCost(legs: ArenaComboLeg[]) {
   return legs.reduce((total, leg) => total + BigInt(leg.cost), 0n);
 }
@@ -250,6 +254,21 @@ function legMatchesRow(leg: ArenaComboLeg, row: PredictPositionDisplayRow) {
   }
 
   return BigInt(row.strike) === BigInt(leg.strike ?? -1);
+}
+
+function quoteMatchesLeg(request: TradeQuoteRequest, leg: ArenaComboLeg) {
+  if (request.kind !== leg.kind) return false;
+  if (request.oracleId !== leg.oracleId) return false;
+  if (request.expiry !== BigInt(leg.expiry)) return false;
+
+  if (request.kind === 'range') {
+    return (
+      request.lowerStrike === BigInt(leg.lowerStrike ?? -1) &&
+      request.higherStrike === BigInt(leg.higherStrike ?? -1)
+    );
+  }
+
+  return request.strike === BigInt(leg.strike ?? -1);
 }
 
 function createId() {

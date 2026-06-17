@@ -160,6 +160,8 @@ export type MessageKey =
   | 'trade.minting'
   | 'trade.mintSuccess'
   | 'trade.combo.add'
+  | 'trade.combo.added'
+  | 'trade.combo.addedHint'
   | 'trade.combo.full'
   | 'trade.combo.needQuote'
   | 'trade.combo.order'
