@@ -48,8 +48,8 @@ export function ArenaOverviewPanel({
   const vaultLiquidity = scaleQuoteAsset(overview?.vaultSummary?.available_liquidity);
 
   return (
-    <section className="rounded-2xl border border-ink-700/60 bg-ink-900/70 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-      <div className="grid gap-y-3 divide-y divide-ink-700/60 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-[1.25fr_1fr_1fr_1.2fr]">
+    <section className="terminal-panel rounded-2xl px-4 py-3">
+      <div className="grid gap-y-3 divide-y divide-ink-700/50 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-[1.25fr_1fr_1fr_1.2fr]">
         <StatusItem
           detail={
             activePosition
@@ -112,11 +112,11 @@ function StatusItem({
 
   return (
     <div className="min-w-0 px-0 py-1 sm:px-4 first:sm:pl-0 last:sm:pr-0">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-cream-700">
+      <div className="metric-label flex items-center gap-2 text-cream-700">
         <span className="text-brass-300">{icon}</span>
         {label}
       </div>
-      <div className={`mt-1 truncate text-lg font-bold tabular-nums ${valueClass}`}>{value}</div>
+      <div className={`mt-1 truncate text-xl font-bold tabular-nums ${valueClass}`}>{value}</div>
       <div className="mt-0.5 truncate text-xs text-cream-600">{detail}</div>
     </div>
   );

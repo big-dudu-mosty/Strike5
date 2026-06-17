@@ -56,7 +56,7 @@ export function ComboPanel({
   }, [resolution, onLegResult]);
 
   return (
-    <section className="rounded-3xl border border-ink-700/60 bg-ink-900/70 p-5">
+    <section className="terminal-panel rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[17px] font-semibold text-cream-100">{t('combo.title')}</h2>
@@ -65,7 +65,7 @@ export function ComboPanel({
         <ListChecks className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-2xl bg-ink-950/45 p-3 text-sm text-cream-500">
+      <div className="soft-panel mt-4 rounded-2xl p-3 text-sm text-cream-500">
         <div className="flex gap-2">
           <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss-300" aria-hidden="true" />
           <p>{t('combo.note')}</p>
@@ -126,7 +126,7 @@ function CurrentStreakBlock({
   const totalCost = getComboTotalCost(currentStreak.legs);
 
   return (
-    <div className="mt-4 rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
+    <div className="soft-panel mt-4 rounded-2xl p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-cream-100">{t('combo.current')}</h3>

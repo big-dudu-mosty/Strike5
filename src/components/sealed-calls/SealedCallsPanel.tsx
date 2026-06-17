@@ -128,7 +128,7 @@ export function SealedCallsPanel({
   }
 
   return (
-    <section className="rounded-3xl border border-ink-700/60 bg-ink-900/70 p-5">
+    <section className="terminal-panel rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[17px] font-semibold text-cream-100">{t('sealed.title')}</h2>
@@ -137,7 +137,7 @@ export function SealedCallsPanel({
         <ShieldCheck className="mt-0.5 h-5 w-5 text-brass-300" aria-hidden="true" />
       </div>
 
-      <div className="mt-4 rounded-2xl bg-ink-950/45 p-3 text-sm text-cream-500">
+      <div className="soft-panel mt-4 rounded-2xl p-3 text-sm text-cream-500">
         <div className="flex gap-2">
           <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-brass-300" aria-hidden="true" />
           <p>{t('sealed.note')}</p>
@@ -232,7 +232,7 @@ function RoundStatus({ activeOracle, now }: { activeOracle: PredictOracle | null
   const { t } = useI18n();
 
   return (
-    <div className="mt-4 rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
+    <div className="soft-panel mt-4 rounded-2xl p-3">
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <Metric
           label={t('sealed.round')}
@@ -263,7 +263,7 @@ function SealedCallRow({
   const isRevealed = Boolean(call.revealedAt);
 
   return (
-    <article className="rounded-2xl border border-ink-700/60 bg-ink-950/45 p-3">
+    <article className="soft-panel rounded-2xl p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-xs text-cream-600">

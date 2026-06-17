@@ -70,23 +70,23 @@ export function ChartPanel({
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#8388b6',
+        textColor: '#91adc2',
       },
       grid: {
-        vertLines: { color: 'rgba(53, 67, 92, 0.42)' },
-        horzLines: { color: 'rgba(53, 67, 92, 0.42)' },
+        vertLines: { color: 'rgba(120, 169, 194, 0.16)' },
+        horzLines: { color: 'rgba(120, 169, 194, 0.16)' },
       },
       rightPriceScale: {
-        borderColor: '#263248',
+        borderColor: '#23536f',
       },
       timeScale: {
-        borderColor: '#263248',
+        borderColor: '#23536f',
         timeVisible: true,
         secondsVisible: false,
       },
       crosshair: {
-        vertLine: { color: '#536279' },
-        horzLine: { color: '#536279' },
+        vertLine: { color: '#78a9c2' },
+        horzLine: { color: '#78a9c2' },
       },
     });
 
@@ -97,7 +97,7 @@ export function ChartPanel({
       borderDownColor: '#ef4444',
       wickUpColor: '#22c55e',
       wickDownColor: '#ef4444',
-      priceLineColor: '#536279',
+      priceLineColor: '#78a9c2',
     });
 
     chartRef.current = chart;
@@ -135,7 +135,7 @@ export function ChartPanel({
 
     oracleLineRef.current = series.createPriceLine({
       price: oracleSpot,
-      color: '#9fa3cc',
+      color: '#cfdfec',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -160,7 +160,7 @@ export function ChartPanel({
       if (tradeOverlay.lowerStrike != null) {
         rangeLowerLineRef.current = series.createPriceLine({
           price: tradeOverlay.lowerStrike,
-          color: '#60a5fa',
+          color: '#22d3ee',
           lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
@@ -170,7 +170,7 @@ export function ChartPanel({
       if (tradeOverlay.higherStrike != null) {
         rangeHigherLineRef.current = series.createPriceLine({
           price: tradeOverlay.higherStrike,
-          color: '#60a5fa',
+          color: '#22d3ee',
           lineWidth: 1,
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
@@ -184,7 +184,7 @@ export function ChartPanel({
 
     selectedStrikeLineRef.current = series.createPriceLine({
       price: tradeOverlay.strike,
-      color: '#60a5fa',
+      color: '#22d3ee',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
       axisLabelVisible: true,
@@ -193,10 +193,10 @@ export function ChartPanel({
   }, [t, tradeOverlay]);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-ink-700/60 glass">
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-5">
+    <section className="terminal-panel overflow-hidden rounded-2xl">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-ink-700/35 bg-ink-900/35 px-5 pb-4 pt-5">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cream-600">
+          <div className="metric-label text-cream-600">
             BTC / USD
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-3">
@@ -228,13 +228,13 @@ export function ChartPanel({
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <div className="flex rounded-full border border-ink-700/60 bg-ink-950/60 p-1 text-xs font-semibold">
+          <div className="market-chip flex rounded-full p-1 text-xs font-semibold">
             {intervals.map((item) => (
               <button
                 className={[
                   'h-8 rounded-full px-3.5 transition',
                   item === interval
-                    ? 'bg-cream-100 text-ink-950'
+                    ? 'bg-brass-400 text-ink-950 shadow-[0_8px_24px_rgba(34,211,238,0.2)]'
                     : 'text-cream-500 hover:text-cream-100',
                 ].join(' ')}
                 key={item}
@@ -249,7 +249,7 @@ export function ChartPanel({
         </div>
       </div>
 
-      <div className="relative min-h-[340px]">
+      <div className="relative min-h-[340px] bg-ink-950/35">
         <div className="h-[380px] min-h-[340px] lg:h-[520px]" ref={containerRef} />
 
         {isLoading ? (
@@ -271,7 +271,7 @@ export function ChartPanel({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between border-t border-ink-700 px-4 py-2 text-xs text-cream-600">
+      <div className="flex items-center justify-between border-t border-ink-700/45 bg-ink-950/45 px-4 py-2 text-xs text-cream-600">
         <span>
           {t('chart.source')}: {provider ?? 'Binance'}
         </span>

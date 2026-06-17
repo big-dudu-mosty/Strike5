@@ -259,8 +259,8 @@ export function TradePanel({
     : null;
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-ink-700/70 bg-ink-900/90 shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
-      <div className="flex items-start justify-between gap-3 border-b border-ink-700/60 px-5 py-4">
+    <section className="terminal-panel overflow-hidden rounded-2xl">
+      <div className="flex items-start justify-between gap-3 border-b border-ink-700/40 bg-ink-900/45 px-5 py-4">
         <div>
           <h2 className="font-display text-[17px] font-semibold text-cream-100">
             {t('trade.title')}
@@ -271,10 +271,10 @@ export function TradePanel({
       </div>
 
       <TradePanelSection title={t('trade.section.round')}>
-        <div className="rounded-2xl border border-ink-700/60 bg-ink-950/55 p-4">
+        <div className="soft-panel rounded-2xl p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brass-400 text-ink-950">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brass-400 text-ink-950 shadow-[0_10px_28px_rgba(34,211,238,0.18)]">
                 <Clock3 className="h-5 w-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
@@ -312,7 +312,7 @@ export function TradePanel({
       </TradePanelSection>
 
       <TradePanelSection title={t('trade.section.direction')}>
-        <div className="flex rounded-full border border-ink-700/60 bg-ink-950/60 p-1 text-xs font-semibold">
+        <div className="market-chip flex rounded-full p-1 text-xs font-semibold">
           {(['quick', 'custom'] as const).map((mode) => (
             <button
               className={`h-8 flex-1 rounded-full px-3.5 transition ${
@@ -329,7 +329,7 @@ export function TradePanel({
           ))}
         </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl border border-ink-700/60 bg-ink-950/60 p-1">
+        <div className="market-chip mt-3 grid grid-cols-3 gap-1 rounded-2xl p-1">
           {challengeCards.map((pick) => {
             const Icon = pick.icon;
             const isSelected = pick.kind === selectedKind;
@@ -337,7 +337,7 @@ export function TradePanel({
               <button
                 className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-bold transition ${
                   isSelected
-                    ? 'bg-brass-400 text-ink-950 shadow-[0_0_0_1px_rgba(96,165,250,0.32)]'
+                    ? 'bg-brass-400 text-ink-950 shadow-[0_10px_26px_rgba(34,211,238,0.2)]'
                     : 'text-cream-500 hover:bg-ink-800/70 hover:text-cream-100'
                 }`}
                 key={pick.kind}
@@ -359,7 +359,7 @@ export function TradePanel({
                 <label className="block text-sm text-cream-500" htmlFor="trade-lower-strike">
                   {t('trade.lowerStrike')}
                   <input
-                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
+                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400 focus:ring-2 focus:ring-brass-400/15"
                     id="trade-lower-strike"
                     inputMode="decimal"
                     onChange={(event) => setCustomLowerStrikeInput(event.target.value)}
@@ -371,7 +371,7 @@ export function TradePanel({
                 <label className="block text-sm text-cream-500" htmlFor="trade-higher-strike">
                   {t('trade.higherStrike')}
                   <input
-                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
+                    className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400 focus:ring-2 focus:ring-brass-400/15"
                     id="trade-higher-strike"
                     inputMode="decimal"
                     onChange={(event) => setCustomHigherStrikeInput(event.target.value)}
@@ -385,7 +385,7 @@ export function TradePanel({
               <label className="block text-sm text-cream-500" htmlFor="trade-custom-strike">
                 {t('trade.strike')}
                 <input
-                  className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400"
+                  className="mt-2 h-10 w-full rounded-xl border border-ink-600 bg-ink-950/70 px-3 text-sm text-cream-100 outline-none transition placeholder:text-cream-700 focus:border-brass-400 focus:ring-2 focus:ring-brass-400/15"
                   id="trade-custom-strike"
                   inputMode="decimal"
                   onChange={(event) => setCustomStrikeInput(event.target.value)}
@@ -403,7 +403,7 @@ export function TradePanel({
       </TradePanelSection>
 
       <TradePanelSection title={t('trade.section.stake')}>
-        <div className="rounded-2xl border border-ink-700/60 bg-ink-950/60 p-4">
+        <div className="soft-panel rounded-2xl p-4">
           <div className="flex items-center justify-between gap-3">
             <label
               className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cream-700"
@@ -427,7 +427,7 @@ export function TradePanel({
               <button
                 className={`h-7 rounded-full px-3 text-xs font-semibold transition ${
                   quantityInput === preset
-                    ? 'bg-brass-400 text-ink-950'
+                    ? 'bg-brass-400 text-ink-950 shadow-[0_8px_20px_rgba(34,211,238,0.16)]'
                     : 'bg-ink-800 text-cream-500 hover:text-cream-100'
                 }`}
                 key={preset}
@@ -450,11 +450,11 @@ export function TradePanel({
 
       <TradePanelSection title={t('trade.section.preview')}>
         {isQuantityEmpty ? (
-          <div className="rounded-2xl bg-ink-950/45 p-4 text-sm leading-6 text-cream-500">
+          <div className="soft-panel rounded-2xl p-4 text-sm leading-6 text-cream-500">
             {t('trade.estimateAfterStake')}
           </div>
         ) : (
-          <div className="grid gap-2 rounded-2xl bg-ink-950/45 p-4 text-sm">
+          <div className="soft-panel grid gap-2 rounded-2xl p-4 text-sm">
             <QuoteRow
               label={t('trade.cost')}
               value={formatQuoteValue(tradeQuote.data?.cost, quoteFallback)}
@@ -502,7 +502,7 @@ export function TradePanel({
 
       <TradePanelSection title={t('trade.section.action')}>
         <button
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-brass-400 px-3 text-sm font-bold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-brass-400 px-3 text-sm font-bold text-ink-950 shadow-[0_14px_34px_rgba(34,211,238,0.24)] transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600 disabled:shadow-none"
           disabled={isMintDisabled}
           onClick={() => {
             if (!quoteRequest || isMintDisabled) return;
@@ -568,8 +568,8 @@ export function TradePanel({
 
 function TradePanelSection({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="border-b border-ink-700/45 px-5 py-4 last:border-b-0">
-      <h3 className="mb-3 text-[15px] font-semibold text-cream-200">{title}</h3>
+    <div className="border-b border-ink-700/35 px-5 py-4 last:border-b-0">
+      <h3 className="mb-3 text-[15px] font-semibold text-cream-100">{title}</h3>
       {children}
     </div>
   );

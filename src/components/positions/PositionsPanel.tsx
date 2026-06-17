@@ -64,7 +64,7 @@ export function PositionsPanel({
   }
 
   return (
-    <section className="rounded-3xl border border-ink-700/60 glass p-5">
+    <section className="terminal-panel rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold text-cream-100">
@@ -268,10 +268,10 @@ function PositionCard({
   }
 
   return (
-    <article className="rounded-xl border border-ink-700 bg-ink-950 p-3">
+    <article className="soft-panel rounded-xl p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ink-800 text-brass-300">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brass-400/10 text-brass-300">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
@@ -319,7 +319,7 @@ function PositionCard({
       {canCashOut ? (
         <div className="mt-4 border-t border-ink-700 pt-3">
           <button
-            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
+            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 shadow-[0_12px_28px_rgba(34,211,238,0.18)] transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600 disabled:shadow-none"
             disabled={!isExpectedNetwork || isRedeeming || !hasLive}
             onClick={handleCashOut}
             type="button"
@@ -348,7 +348,7 @@ function PositionCard({
       {canRedeem ? (
         <div className="mt-4 border-t border-ink-700 pt-3">
           <button
-            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600"
+            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 shadow-[0_12px_28px_rgba(34,211,238,0.18)] transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-cream-600 disabled:shadow-none"
             disabled={!isExpectedNetwork || isRedeeming}
             onClick={onRedeem}
             type="button"

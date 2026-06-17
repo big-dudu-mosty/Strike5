@@ -27,7 +27,7 @@ export function AccountPanel({ overview }: AccountPanelProps) {
   } = overview;
 
   return (
-    <section className="rounded-3xl border border-ink-700/60 glass p-5">
+    <section className="terminal-panel rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold text-cream-100">
@@ -63,7 +63,7 @@ export function AccountPanel({ overview }: AccountPanelProps) {
             }
           />
 
-          <div className="rounded-xl border border-ink-700 bg-ink-950 p-3">
+          <div className="soft-panel rounded-xl p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm text-cream-500">{t('account.manager')}</div>
@@ -113,7 +113,7 @@ export function AccountPanel({ overview }: AccountPanelProps) {
               </div>
             ) : (
               <button
-                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-700 disabled:text-cream-600"
+                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brass-400 px-3 text-sm font-semibold text-ink-950 shadow-[0_12px_28px_rgba(34,211,238,0.18)] transition hover:bg-brass-300 disabled:cursor-not-allowed disabled:bg-ink-700 disabled:text-cream-600 disabled:shadow-none"
                 disabled={!isExpectedNetwork || createManagerMutation.isPending}
                 onClick={() => void overview.createManager()}
                 type="button"

@@ -40,7 +40,7 @@ export function StreakMeter({ managerId, streak }: StreakMeterProps) {
             : t('combo.inProgress');
 
   return (
-    <section className="rounded-3xl border border-ink-700/60 glass p-5">
+    <section className="terminal-panel rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-bold text-cream-100">{t('combo.title')}</h2>
         <Flame

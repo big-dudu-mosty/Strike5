@@ -7,7 +7,7 @@ export function LanguageToggle() {
   return (
     <div
       aria-label={t('app.language')}
-      className="inline-flex h-9 items-center gap-1 rounded-full border border-ink-700/60 glass p-1 text-sm text-cream-300"
+      className="market-chip inline-flex h-9 items-center gap-1 rounded-full p-1 text-sm text-cream-300"
     >
       <Languages className="ml-2 h-4 w-4 text-brass-300" aria-hidden="true" />
       <button

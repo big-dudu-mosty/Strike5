@@ -143,17 +143,17 @@ export function App() {
   }
 
   return (
-    <main className="min-h-screen bg-ink-950 text-cream-100">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 md:px-6">
-        <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-1">
+    <main className="min-h-screen text-cream-100">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
+        <header className="sticky top-0 z-30 -mx-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-ink-700/35 bg-ink-950/85 px-3 py-3 backdrop-blur-xl sm:-mx-4 sm:px-4 md:-mx-6 md:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brass-400 text-ink-950">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brass-300/35 bg-brass-400/15 text-brass-200 shadow-[0_0_24px_rgba(34,211,238,0.18)]">
               <Activity className="h-5 w-5" aria-hidden="true" />
             </div>
             <h1 className="text-xl font-bold tracking-tight text-cream-100">Strike5</h1>
           </div>
 
-          <nav className="order-3 flex w-full items-center justify-center gap-1 rounded-full border border-ink-700/60 glass p-1 sm:order-none sm:w-auto">
+          <nav className="market-chip order-3 flex w-full items-center justify-center gap-1 rounded-full p-1 sm:order-none sm:w-auto">
             {appPages.map((page) => {
               const isActive = activePage === page.key;
 
@@ -161,7 +161,7 @@ export function App() {
                 <button
                   className={`inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition ${
                     isActive
-                      ? 'bg-cream-100 text-ink-950'
+                      ? 'bg-brass-400 text-ink-950 shadow-[0_10px_28px_rgba(34,211,238,0.22)]'
                       : 'text-cream-500 hover:text-cream-100'
                   }`}
                   key={page.key}
@@ -266,7 +266,7 @@ export function App() {
 
 function StatusBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="inline-flex h-9 items-center gap-2 rounded-full border border-ink-700/60 glass px-3 text-sm text-cream-300">
+    <div className="market-chip inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm text-cream-300">
       <span className="text-brass-300">{icon}</span>
       {label}
     </div>

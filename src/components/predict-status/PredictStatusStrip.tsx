@@ -19,7 +19,7 @@ export function PredictStatusStrip({ managerId, overview }: PredictStatusStripPr
   const availableLiquidity = scaleQuoteAsset(overview?.vaultSummary?.available_liquidity);
 
   return (
-    <section className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-2xl border border-ink-700/60 glass px-5 py-3 text-xs">
+    <section className="soft-panel flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-2xl px-5 py-3 text-xs">
       <span className="inline-flex items-center gap-1.5 font-semibold text-cream-300">
         <ShieldCheck className="h-4 w-4 text-brass-300" aria-hidden="true" />
         {t('predict.powered')}
