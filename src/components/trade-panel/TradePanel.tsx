@@ -212,6 +212,8 @@ export function TradePanel({
     : false;
   const isStreakFull = !isStreakTerminal(streakLegs) && streakLegs.length >= STREAK_TARGET;
   const isComboAddDisabled =
+    !accountOverview.isExpectedNetwork ||
+    !accountOverview.managerId ||
     !quoteRequest ||
     !tradeQuote.data ||
     tradeQuote.isLoading ||
@@ -249,6 +251,7 @@ export function TradePanel({
     : null;
   const comboDisabledReason = isComboAddDisabled
     ? getComboDisabledReason({
+        accountOverview,
         isQuantityEmpty,
         isQuoteAlreadyInStreak,
         isStreakFull,
@@ -700,6 +703,7 @@ function getMintDisabledReason({
 }
 
 function getComboDisabledReason({
+  accountOverview,
   isQuantityEmpty,
   isQuoteAlreadyInStreak,
   isStreakFull,
@@ -710,6 +714,7 @@ function getComboDisabledReason({
   tradeQuoteIsError,
   tradeQuoteIsLoading,
 }: {
+  accountOverview: PredictAccountOverview;
   isQuantityEmpty: boolean;
   isQuoteAlreadyInStreak: boolean;
   isStreakFull: boolean;
@@ -720,6 +725,8 @@ function getComboDisabledReason({
   tradeQuoteIsError: boolean;
   tradeQuoteIsLoading: boolean;
 }) {
+  if (!accountOverview.isExpectedNetwork) return t('trade.disabled.network');
+  if (!accountOverview.managerId) return t('trade.managerRequired');
   if (isQuoteAlreadyInStreak) return t('trade.combo.addedHint');
   if (isStreakFull) return t('trade.combo.full');
   if (streakAppendError === 'order') return t('trade.combo.order');
