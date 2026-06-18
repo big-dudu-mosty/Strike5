@@ -4,13 +4,15 @@ type Strike5LogoProps = {
 };
 
 export function Strike5Logo({ className = '', showWordmark = true }: Strike5LogoProps) {
-  const src = showWordmark ? '/strike5-logo.png' : '/strike5-mark.svg';
-
   return (
-    <img
-      alt="Strike5"
-      className={`block h-10 w-auto rounded-lg bg-white object-contain shadow-[0_10px_30px_rgba(0,0,0,0.18)] ${className}`}
-      src={src}
-    />
+    <div
+      aria-label="Strike5"
+      className={`inline-flex items-center gap-2.5 rounded-xl bg-white px-2 py-1 shadow-[0_10px_30px_rgba(0,0,0,0.18)] ${className}`}
+    >
+      <img alt="" className="block h-8 w-auto object-contain" src="/strike5-mark.png" />
+      {showWordmark ? (
+        <img alt="Strike5" className="block h-8 w-auto object-contain" src="/strike5-wordmark.png" />
+      ) : null}
+    </div>
   );
 }
