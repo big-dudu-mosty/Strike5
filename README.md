@@ -1,5 +1,9 @@
 # Strike5
 
+<p align="center">
+  <img src="./public/strike5-mark.png" alt="Strike5 logo" width="96" />
+</p>
+
 ![Sui Testnet](https://img.shields.io/badge/Sui-Testnet-4DA2FF)
 ![DeepBook Predict](https://img.shields.io/badge/DeepBook-Predict-111827)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
