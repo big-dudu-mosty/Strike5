@@ -202,7 +202,7 @@ function formatPnl(stats: LeaderboardStats | null) {
 }
 
 function isLeaderboardStatsSyncing(stats: LeaderboardStats | null) {
-  return Boolean(stats?.isPartial && stats.completedRounds === 0);
+  return Boolean(stats && stats.completedRounds === 0 && stats.unresolvedRounds > 0);
 }
 
 function formatAlias(address: string) {

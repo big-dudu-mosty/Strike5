@@ -20,6 +20,11 @@ interface CompletedRoundResult {
   won: boolean;
 }
 
+interface RoundBuildResult {
+  results: CompletedRoundResult[];
+  unresolvedRounds: number;
+}
+
 export interface LeaderboardStats {
   completedRounds: number;
   currentStreak: number;
@@ -27,6 +32,7 @@ export interface LeaderboardStats {
   isPartial: boolean;
   losses: number;
   totalPnlRaw: number;
+  unresolvedRounds: number;
   winRate: number | null;
   wins: number;
   warnings: LeaderboardDataWarning[];
@@ -57,9 +63,11 @@ export function useLeaderboardStats(managerId: string | null) {
         rangesResult.status === 'fulfilled' ? rangesResult.value : { minted: [], redeemed: [] };
       const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
+      const directionalBuild = buildDirectionalResults(directionalRows, oracleById);
+      const rangeBuild = buildRangeResults(ranges.minted, ranges.redeemed, oracleById);
       const results = [
-        ...buildDirectionalResults(directionalRows),
-        ...buildRangeResults(ranges.minted, ranges.redeemed, oracleById),
+        ...directionalBuild.results,
+        ...rangeBuild.results,
       ].sort((a, b) => a.expiry - b.expiry || a.id.localeCompare(b.id));
 
       const wins = results.filter((result) => result.won).length;
@@ -74,6 +82,7 @@ export function useLeaderboardStats(managerId: string | null) {
         isPartial: warnings.length > 0,
         losses,
         totalPnlRaw,
+        unresolvedRounds: directionalBuild.unresolvedRounds + rangeBuild.unresolvedRounds,
         winRate: completedRounds > 0 ? wins / completedRounds : null,
         wins,
         warnings,
@@ -89,23 +98,106 @@ export { MIN_COMPLETED_ROUNDS };
 
 function buildDirectionalResults(
   rows: PredictManagerPositionSummary[],
+  oracleById: Map<string, PredictOracle>,
+): RoundBuildResult {
+  const results: CompletedRoundResult[] = [];
+  let unresolvedRounds = 0;
+
+  for (const row of rows) {
+    const oracle = oracleById.get(row.oracle_id);
+    const result =
+      buildDirectionalOracleResult(row, oracle) ?? buildDirectionalStatusResult(row);
+
+    if (result) {
+      results.push(result);
+    } else if (isUnresolvedDirectionalRound(row, oracle)) {
+      unresolvedRounds += 1;
+    }
+  }
+
+  return { results, unresolvedRounds };
+}
+
+function buildDirectionalOracleResult(
+  row: PredictManagerPositionSummary,
+  oracle: PredictOracle | undefined,
+): CompletedRoundResult | null {
+  if (oracle?.status !== 'settled' || oracle.settlement_price == null) return null;
+
+  const won = row.is_up
+    ? oracle.settlement_price > row.strike
+    : oracle.settlement_price <= row.strike;
+  const estimatedPayout = row.total_payout + (won ? row.open_quantity : 0);
+
+  return {
+    id: getDirectionalRoundId(row),
+    expiry: row.expiry,
+    pnlRaw: estimatedPayout - row.total_cost,
+    won,
+  };
+}
+
+function buildDirectionalStatusResult(
+  row: PredictManagerPositionSummary,
+): CompletedRoundResult | null {
+  const status = normalizeStatus(row.status);
+  if (!isCompletedDirectionalStatus(status)) return null;
+
+  const won = isWinningDirectionalStatus(status, row);
+  const estimatedPayout = isRedeemableDirectionalStatus(status)
+    ? row.total_payout + row.open_quantity
+    : row.total_payout;
+
+  return {
+    id: getDirectionalRoundId(row),
+    expiry: row.expiry,
+    pnlRaw: estimatedPayout - row.total_cost,
+    won,
+  };
+}
+
+function getDirectionalRoundId(row: PredictManagerPositionSummary) {
+  return ['directional', row.oracle_id, row.expiry, row.strike, row.is_up ? 'up' : 'down'].join(':');
+}
+
+function isCompletedDirectionalStatus(status: string) {
+  return (
+    isRedeemableDirectionalStatus(status) ||
+    status.includes('lost') ||
+    status.includes('loss') ||
+    status.includes('lose') ||
+    status.includes('redeemed') ||
+    status.includes('settled') ||
+    status.includes('won') ||
+    status.includes('win')
+  );
+}
+
+function isRedeemableDirectionalStatus(status: string) {
+  return status.includes('redeemable');
+}
+
+function isWinningDirectionalStatus(status: string, row: PredictManagerPositionSummary) {
+  if (isRedeemableDirectionalStatus(status) || status.includes('won') || status.includes('win')) {
+    return true;
+  }
+
+  if (status.includes('lost') || status.includes('loss') || status.includes('lose')) {
+    return false;
+  }
+
+  return row.total_payout > 0 || row.realized_pnl > 0;
+}
+
+function isUnresolvedDirectionalRound(
+  row: PredictManagerPositionSummary,
+  oracle: PredictOracle | undefined,
 ) {
-  return rows.flatMap<CompletedRoundResult>((row) => {
-    const status = normalizeStatus(row.status);
-    if (!['redeemable', 'lost', 'redeemed'].includes(status)) return [];
+  const status = normalizeStatus(row.status);
+  if (oracle?.status === 'settled' && oracle.settlement_price == null) return true;
+  if (status.includes('awaiting') || status.includes('pending')) return true;
 
-    const won = status === 'redeemable' || (status === 'redeemed' && row.total_payout > 0);
-    const estimatedPayout = status === 'redeemable'
-      ? row.total_payout + row.open_quantity
-      : row.total_payout;
-
-    return [{
-      id: ['directional', row.oracle_id, row.expiry, row.strike, row.is_up ? 'up' : 'down'].join(':'),
-      expiry: row.expiry,
-      pnlRaw: estimatedPayout - row.total_cost,
-      won,
-    }];
-  });
+  return row.expiry <= Date.now();
 }
 
 interface RangeAggregate {
@@ -124,7 +216,7 @@ function buildRangeResults(
   minted: PredictRangeMinted[],
   redeemed: PredictRangeRedeemed[],
   oracleById: Map<string, PredictOracle>,
-) {
+): RoundBuildResult {
   const aggregates = new Map<string, RangeAggregate>();
 
   for (const event of minted) {
@@ -139,9 +231,16 @@ function buildRangeResults(
     aggregate.totalPayout += event.payout;
   }
 
-  return Array.from(aggregates.values()).flatMap<CompletedRoundResult>((aggregate) => {
+  const results: CompletedRoundResult[] = [];
+  let unresolvedRounds = 0;
+
+  for (const aggregate of aggregates.values()) {
     const oracle = oracleById.get(aggregate.oracleId);
-    if (oracle?.status !== 'settled' || oracle.settlement_price == null) return [];
+
+    if (oracle?.status !== 'settled' || oracle.settlement_price == null) {
+      if (aggregate.expiry <= Date.now()) unresolvedRounds += 1;
+      continue;
+    }
 
     const won =
       oracle.settlement_price > aggregate.lowerStrike &&
@@ -149,13 +248,15 @@ function buildRangeResults(
     const openQuantity = Math.max(0, aggregate.mintedQuantity - aggregate.redeemedQuantity);
     const estimatedPayout = aggregate.totalPayout + (won ? openQuantity : 0);
 
-    return [{
+    results.push({
       id: aggregate.id,
       expiry: aggregate.expiry,
       pnlRaw: estimatedPayout - aggregate.totalCost,
       won,
-    }];
-  });
+    });
+  }
+
+  return { results, unresolvedRounds };
 }
 
 function getOrCreateRangeAggregate(
