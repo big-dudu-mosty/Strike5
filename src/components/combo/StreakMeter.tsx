@@ -21,7 +21,7 @@ interface StreakMeterProps {
 export function StreakMeter({ managerId, streak }: StreakMeterProps) {
   const { t } = useI18n();
   const positions = usePredictPositions(managerId);
-  const rows = positions.data?.rows ?? [];
+  const rows = positions.data?.allRows ?? positions.data?.rows ?? [];
   const resolution = useMemo(
     () => (streak ? resolveStreak(streak.legs, rows) : null),
     [streak, rows],

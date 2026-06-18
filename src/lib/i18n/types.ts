@@ -164,6 +164,7 @@ export type MessageKey =
   | 'trade.combo.addedHint'
   | 'trade.combo.full'
   | 'trade.combo.needQuote'
+  | 'trade.combo.openFirst'
   | 'trade.combo.order'
   | 'trade.disabled.network'
   | 'trade.disabled.walletBalanceLoading'

@@ -38,10 +38,11 @@ export function ArenaOverviewPanel({
   const now = useNow();
   const positions = usePredictPositions(accountOverview.managerId);
   const rows = positions.data?.rows ?? [];
+  const allRows = positions.data?.allRows ?? rows;
   const activePosition = useMemo(() => getPriorityPosition(rows), [rows]);
   const streakResolution = useMemo(
-    () => (streak ? resolveStreak(streak.legs, rows) : null),
-    [rows, streak],
+    () => (streak ? resolveStreak(streak.legs, allRows) : null),
+    [allRows, streak],
   );
   const oracleSpot = scaleOracleUsd(overview?.oracleState?.latest_price?.spot);
   const oracleTimestamp = overview?.oracleState?.latest_price?.onchain_timestamp ?? null;

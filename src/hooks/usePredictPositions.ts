@@ -53,6 +53,7 @@ type LocalPositionDisplayRow = PredictPositionDisplayRow & {
 };
 
 export interface PredictPositionsOverview {
+  allRows: PredictPositionDisplayRow[];
   isPartial: boolean;
   rows: PredictPositionDisplayRow[];
   fetchedAt: number;
@@ -91,7 +92,6 @@ export function usePredictPositions(managerId: string | null) {
       const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
       const directionRows = directionalSummaries
-        .filter((row) => row.status !== 'redeemed')
         .map<DirectionalPositionDisplayRow>((row) => ({
           id: [
             'directional',
@@ -101,7 +101,7 @@ export function usePredictPositions(managerId: string | null) {
             row.is_up ? 'up' : 'down',
           ].join(':'),
           kind: row.is_up ? 'above' : 'below',
-          status: row.status,
+          status: getDirectionalStatus(row, oracleById.get(row.oracle_id)),
           oracleId: row.oracle_id,
           expiry: row.expiry,
           strike: row.strike,
@@ -117,13 +117,16 @@ export function usePredictPositions(managerId: string | null) {
           lastActivityAt: row.last_activity_at,
         }));
       const rangeRows = aggregateRangeRows(ranges.minted, ranges.redeemed, oracleById);
-      const indexedRows = [...directionRows, ...rangeRows]
-        .filter((row) => row.status !== 'redeemed')
-        .sort(comparePositionRows);
-      const localRows = getActiveLocalRows(queryClient, managerId, indexedRows);
-      const rows = mergeIndexedAndLocalRows(indexedRows, localRows).sort(comparePositionRows);
+      const indexedAllRows = [...directionRows, ...rangeRows].sort(comparePositionRows);
+      const indexedRows = filterVisiblePositionRows(indexedAllRows);
+      const localRows = getActiveLocalRows(queryClient, managerId, indexedAllRows);
+      const allRows = mergeIndexedAndLocalRows(indexedAllRows, localRows).sort(comparePositionRows);
+      const rows = filterVisiblePositionRows(
+        mergeIndexedAndLocalRows(indexedRows, localRows),
+      ).sort(comparePositionRows);
 
       return {
+        allRows,
         isPartial: warnings.length > 0,
         rows,
         fetchedAt: Date.now(),
@@ -166,9 +169,15 @@ export function addLocalMintedPosition({
     ['predict-manager-positions', managerId],
     (current) => {
       const currentRows = current?.rows ?? [];
-      const mergedRows = mergeIndexedAndLocalRows(currentRows, nextLocalRows).sort(comparePositionRows);
+      const currentAllRows = current?.allRows ?? currentRows;
+      const mergedAllRows = mergeIndexedAndLocalRows(currentAllRows, nextLocalRows)
+        .sort(comparePositionRows);
+      const mergedRows = filterVisiblePositionRows(
+        mergeIndexedAndLocalRows(currentRows, nextLocalRows),
+      ).sort(comparePositionRows);
 
       return {
+        allRows: mergedAllRows,
         fetchedAt: current?.fetchedAt ?? now,
         isPartial: current?.isPartial ?? false,
         rows: mergedRows,
@@ -320,6 +329,31 @@ function getRangeStatus(
   return 'active';
 }
 
+function getDirectionalStatus(
+  row: {
+    expiry: number;
+    is_up: boolean;
+    open_quantity: number;
+    status: PredictPositionStatus;
+    strike: number;
+  },
+  oracle: PredictOracle | undefined,
+): PredictPositionStatus {
+  if (row.open_quantity <= 0 || row.status === 'redeemed') return 'redeemed';
+  if (row.status === 'redeemable' || row.status === 'lost') return row.status;
+
+  if (oracle?.status === 'settled' && oracle.settlement_price != null) {
+    const won = row.is_up
+      ? oracle.settlement_price > row.strike
+      : oracle.settlement_price <= row.strike;
+    return won ? 'redeemable' : 'lost';
+  }
+
+  if (Date.now() >= row.expiry) return 'awaiting_settlement';
+
+  return row.status;
+}
+
 function comparePositionRows(a: PredictPositionDisplayRow, b: PredictPositionDisplayRow) {
   const rankDiff = getStatusRank(a.status) - getStatusRank(b.status);
   if (rankDiff !== 0) return rankDiff;
@@ -328,6 +362,10 @@ function comparePositionRows(a: PredictPositionDisplayRow, b: PredictPositionDis
   if (expiryDiff !== 0) return expiryDiff;
 
   return a.id.localeCompare(b.id);
+}
+
+function filterVisiblePositionRows(rows: PredictPositionDisplayRow[]) {
+  return rows.filter((row) => row.status !== 'redeemed');
 }
 
 function getStatusRank(status: PredictPositionStatus) {
@@ -377,6 +415,7 @@ function shouldKeepLocalRow(
 
   const indexedRow = indexedRows.find((row) => row.id === localRow.id);
   if (!indexedRow) return true;
+  if (indexedRow.status === 'redeemed') return false;
 
   return (
     indexedRow.mintedQuantity < localRow.mintedQuantity ||

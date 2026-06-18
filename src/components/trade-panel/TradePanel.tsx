@@ -12,7 +12,10 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PREDICT_CONFIG, PRODUCT_TIMING } from '../../config/predict';
 import type { PredictAccountOverview } from '../../hooks/usePredictAccountOverview';
-import { usePredictPositions } from '../../hooks/usePredictPositions';
+import {
+  usePredictPositions,
+  type PredictPositionDisplayRow,
+} from '../../hooks/usePredictPositions';
 import { useTradeMint } from '../../hooks/useTradeMint';
 import { useTradeQuote } from '../../hooks/useTradeQuote';
 import { useNow } from '../../hooks/useNow';
@@ -159,9 +162,11 @@ export function TradePanel({
   const isOpeningCutoff =
     timeLeftMs != null && timeLeftMs <= PRODUCT_TIMING.openingCutoffMs;
   const positions = usePredictPositions(accountOverview.managerId);
+  const positionRows = positions.data?.rows ?? [];
+  const allPositionRows = positions.data?.allRows ?? positionRows;
   const hasJoinedCurrentRound = Boolean(
     activeOracle &&
-      positions.data?.rows.some(
+      positionRows.some(
         (row) => row.oracleId === activeOracle.oracle_id && row.openQuantity > 0,
       ),
   );
@@ -210,6 +215,9 @@ export function TradePanel({
   const isQuoteAlreadyInStreak = quoteRequest
     ? hasComboLegForRequest(streakLegs, quoteRequest)
     : false;
+  const isQuoteBackedByPosition = quoteRequest
+    ? allPositionRows.some((row) => tradeRequestMatchesPosition(quoteRequest, row))
+    : false;
   const isStreakFull = !isStreakTerminal(streakLegs) && streakLegs.length >= STREAK_TARGET;
   const isComboAddDisabled =
     !accountOverview.isExpectedNetwork ||
@@ -218,6 +226,7 @@ export function TradePanel({
     !tradeQuote.data ||
     tradeQuote.isLoading ||
     tradeQuote.isError ||
+    !isQuoteBackedByPosition ||
     isQuoteAlreadyInStreak ||
     isStreakFull ||
     streakAppendError === 'order';
@@ -253,6 +262,7 @@ export function TradePanel({
     ? getComboDisabledReason({
         accountOverview,
         isQuantityEmpty,
+        isQuoteBackedByPosition,
         isQuoteAlreadyInStreak,
         isStreakFull,
         quoteRequest,
@@ -705,6 +715,7 @@ function getMintDisabledReason({
 function getComboDisabledReason({
   accountOverview,
   isQuantityEmpty,
+  isQuoteBackedByPosition,
   isQuoteAlreadyInStreak,
   isStreakFull,
   quoteRequest,
@@ -716,6 +727,7 @@ function getComboDisabledReason({
 }: {
   accountOverview: PredictAccountOverview;
   isQuantityEmpty: boolean;
+  isQuoteBackedByPosition: boolean;
   isQuoteAlreadyInStreak: boolean;
   isStreakFull: boolean;
   quoteRequest: TradeQuoteRequest | null;
@@ -733,7 +745,27 @@ function getComboDisabledReason({
   if (isQuantityEmpty || !quoteRequest) return t('trade.combo.needQuote');
   if (tradeQuoteIsLoading) return t('trade.quoteLoading');
   if (tradeQuoteIsError || !tradeQuoteHasData) return t('trade.disabled.quoteUnavailable');
+  if (!isQuoteBackedByPosition) return t('trade.combo.openFirst');
   return null;
+}
+
+function tradeRequestMatchesPosition(
+  request: TradeQuoteRequest,
+  row: PredictPositionDisplayRow,
+) {
+  if (row.kind !== request.kind) return false;
+  if (row.oracleId !== request.oracleId) return false;
+  if (BigInt(row.expiry) !== request.expiry) return false;
+
+  if (request.kind === 'range') {
+    return (
+      row.kind === 'range' &&
+      BigInt(row.lowerStrike) === request.lowerStrike &&
+      BigInt(row.higherStrike) === request.higherStrike
+    );
+  }
+
+  return row.kind !== 'range' && BigInt(row.strike) === request.strike;
 }
 
 function buildQuickPickQuoteRequest({

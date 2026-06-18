@@ -1,6 +1,9 @@
 import { BadgeCheck, Flame, ListChecks, RotateCcw } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
-import { usePredictPositions } from '../../hooks/usePredictPositions';
+import {
+  usePredictPositions,
+  type PredictPositionDisplayRow,
+} from '../../hooks/usePredictPositions';
 import {
   STREAK_TARGET,
   getComboTotalCost,
@@ -36,7 +39,7 @@ export function ComboPanel({
 }: ComboPanelProps) {
   const { t } = useI18n();
   const positions = usePredictPositions(managerId);
-  const rows = positions.data?.rows ?? [];
+  const rows = positions.data?.allRows ?? positions.data?.rows ?? [];
   const resolution = useMemo(
     () => (currentStreak ? resolveStreak(currentStreak.legs, rows) : null),
     [currentStreak, rows],
@@ -91,7 +94,7 @@ export function ComboPanel({
         <div className="mt-3 grid gap-3">
           {archivedStreaks.length > 0 ? (
             archivedStreaks.slice(0, 5).map((streak) => (
-              <ArchivedStreakRow key={streak.id} streak={streak} />
+              <ArchivedStreakRow key={streak.id} rows={rows} streak={streak} />
             ))
           ) : (
             <div className="rounded-2xl border border-dashed border-ink-600 p-4 text-sm leading-6 text-cream-500">
@@ -276,9 +279,15 @@ function StreakSlot({
   );
 }
 
-function ArchivedStreakRow({ streak }: { streak: ArenaStreak }) {
+function ArchivedStreakRow({
+  rows,
+  streak,
+}: {
+  rows: PredictPositionDisplayRow[];
+  streak: ArenaStreak;
+}) {
   const { t } = useI18n();
-  const resolution = resolveStreak(streak.legs, []);
+  const resolution = resolveStreak(streak.legs, rows);
   const resultLabel = resolution.completed
     ? t('combo.completed')
     : resolution.busted

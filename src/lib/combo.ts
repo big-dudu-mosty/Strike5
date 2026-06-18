@@ -208,8 +208,10 @@ function classifyLeg(
 
   switch (row.status) {
     case 'redeemable':
-    case 'redeemed':
       return 'won';
+    case 'redeemed':
+      if (hasEarlyExit(row)) return 'surrendered';
+      return row.totalPayout > 0 ? 'won' : 'lost';
     case 'lost':
       return 'lost';
     case 'awaiting_settlement':
@@ -224,7 +226,7 @@ function classifyLeg(
  * cashed out early, which forfeits the streak commitment.
  */
 function hasEarlyExit(row: PredictPositionDisplayRow) {
-  return row.redeemedQuantity > 0;
+  return row.redeemedQuantity > 0 && row.lastActivityAt < row.expiry;
 }
 
 export function findMatchingPosition(
