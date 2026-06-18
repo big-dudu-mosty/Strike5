@@ -15,10 +15,7 @@ Strike5 is built for the **DeepBook Predict hackathon track**. It integrates the
 ## Table Of Contents
 
 - [Product Thesis](#product-thesis)
-- [Protocol Loop](#protocol-loop)
 - [Architecture](#architecture)
-- [Transaction Lifecycle](#transaction-lifecycle)
-- [Data Truth Model](#data-truth-model)
 - [Features](#features)
 - [DeepBook Predict Integration](#deepbook-predict-integration)
 - [Tech Stack](#tech-stack)
@@ -49,25 +46,6 @@ BTC round starts
 
 The MVP intentionally stays focused on BTC because that is the real DeepBook Predict oracle surface available on testnet. It does not fake ETH, SOL, sports, politics, or news markets.
 
-## Protocol Loop
-
-```mermaid
-flowchart LR
-  A["Active BTC OracleSVI Round"] --> B["Quote Above / Below / Range"]
-  B --> C["Wallet Signs PTB"]
-  C --> D["predict::mint or predict::mint_range"]
-  D --> E["PredictManager Position"]
-  E --> F{"Before Expiry?"}
-  F -->|Cash Out| G["redeem at live bid"]
-  F -->|Hold| H["Oracle Settlement"]
-  H --> I["redeem settled payout"]
-  G --> J["Arena Stats"]
-  I --> J
-  J --> K["Leaderboard / Feed / Streak"]
-```
-
-This is the core product promise: **the game layer is social and competitive, but the position lifecycle is real DeepBook Predict state.**
-
 ## Architecture
 
 ```mermaid
@@ -93,82 +71,9 @@ flowchart TB
   Query --> Arena["Arena UI<br/>trade, positions, combo, leaderboard, feed"]
 ```
 
-### Frontend Modules
+Settlement-sensitive UI does not depend on a single summary endpoint. Strike5 reconciles position summaries, raw mint/redeem/range events, direct oracle state, and local pending transaction cache before rendering positions, streaks, feed posts, and leaderboard stats.
 
-```mermaid
-flowchart LR
-  App["app/App.tsx"] --> ArenaOverview["arena-overview"]
-  App --> Chart["chart"]
-  App --> TradePanel["trade-panel"]
-  App --> Positions["positions"]
-  App --> Combo["combo"]
-  App --> Leaderboard["leaderboard"]
-  App --> Feed["social-feed"]
-  App --> Sealed["sealed-calls"]
-  App --> Account["account"]
-
-  TradePanel --> DeepbookLib["lib/deepbook<br/>quote + PTB"]
-  Positions --> PredictHooks["hooks/usePredictPositions"]
-  Leaderboard --> StatsHook["hooks/useLeaderboardStats"]
-  Feed --> PredictHooks
-  Combo --> PredictHooks
-  PredictHooks --> PredictClient["lib/predict-server"]
-  StatsHook --> PredictClient
-```
-
-## Transaction Lifecycle
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant UI as Strike5 UI
-  participant Q as Quote Builder
-  participant W as Sui Wallet
-  participant S as Sui RPC
-  participant P as DeepBook Predict
-  participant I as Predict Server
-
-  U->>UI: Select round, direction, stake
-  UI->>Q: Build quote request
-  Q->>S: devInspect quote / transaction simulation
-  S-->>Q: cost, max payout, live redeem
-  UI-->>U: Show quote and max loss
-  U->>W: Sign mint transaction
-  W->>S: Submit PTB
-  S->>P: Execute mint / mint_range
-  P-->>S: Events and effects
-  S-->>UI: Transaction digest
-  I-->>UI: Indexed mint / position state
-  UI-->>U: Position, PnL, cash-out / settlement state
-```
-
-## Data Truth Model
-
-Settlement-sensitive UI must not depend on a single summary endpoint. Strike5 uses a layered data model:
-
-```mermaid
-flowchart TB
-  Summary["Predict Server<br/>position summary"] --> Resolver["Position Resolver"]
-  Events["Raw mint/redeem/range events"] --> Resolver
-  OracleList["Predict oracle list"] --> Resolver
-  OracleState["Direct oracle state by oracle_id"] --> Resolver
-  LocalPending["Local pending tx cache"] --> Resolver
-
-  Resolver --> Positions["Positions Panel"]
-  Resolver --> Combo["Streak Combo"]
-  Resolver --> Feed["Verified Feed"]
-  Resolver --> Leaderboard["Leaderboard Stats"]
-
-  Resolver -. "summary lag fallback" .-> Events
-  Resolver -. "missing oracle fallback" .-> OracleState
-```
-
-Why this matters:
-
-- A transaction can be confirmed before the summary endpoint updates.
-- A newly settled oracle may be missing from the short oracle list.
-- Feed posts should update when a position settles, not freeze at publish time.
-- Leaderboard stats should count real completed positions once oracle settlement is available.
+This keeps the interface aligned with confirmed on-chain actions even when indexer summaries lag.
 
 ## Features
 
@@ -436,4 +341,3 @@ Not included:
 - Predict Server API: `https://predict-server.testnet.mystenlabs.com`
 - Sui testnet explorer: `https://testnet.suivision.xyz`
 - Local protocol reference: `../deepbookv3-predict`
-
