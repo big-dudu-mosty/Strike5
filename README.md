@@ -1,189 +1,325 @@
 # Strike5
 
-> **Strike5 Arena — a fixed-risk BTC scalping arena powered by DeepBook Predict.**
->
-> Settlement is slow, but markets are fast. DeepBook Predict's vault is a continuous counterparty with vol-surface pricing, so positions can be sold back at the live bid at any time before settlement. Strike5 productizes that: open a position, watch live PnL tick, cash out in seconds — all on-chain on Sui. A streak parlay rewards those who dare to lock legs to settlement: win 3 consecutive rounds for 8x arena score; cash out early and you forfeit the streak. Every mint and cash-out pays spread into the Predict vault, making the pace mechanics a volume engine for PLP.
->
-> Real on-chain loop on Sui testnet: `quote (simulation) -> mint / mint_range -> live PnL -> cash out (unsettled redeem at live bid) -> settlement redeem`. All contract IDs live in `src/config/predict.ts` — mainnet migration is a config swap.
+Strike5 is a short-cycle BTC prediction arena built on **DeepBook Predict** on Sui testnet.
 
-Strike5 Arena 是一个基于 **DeepBook Predict** 的 BTC 短周期预测竞技场。
+It turns DeepBook Predict's live BTC oracle markets into a consumer trading game: users open fixed-risk Above, Below, or Range positions with dUSDC, watch live PnL, cash out before expiry, or hold to settlement for verified results, streaks, leaderboard stats, and social posts.
 
-用户在产品里看 BTC K 线和 DeepBook Predict Oracle Spot，每个 active BTC expiry 都是一轮 Arena。用户用 dUSDC 参与 Above / Below / Range 挑战，真实报价、仓位记录、流动性、风险暴露和到期结算都由 DeepBook Predict on Sui 负责。
+> Built for the DeepBook Predict hackathon track. The product integrates the real DeepBook Predict testnet contract, PredictManager account model, dUSDC quote asset, oracle settlement, mint/redeem flows, and Predict Server indexed data.
 
-## 一句话定位
+## Product Idea
 
-> Strike5 Arena is a privacy-aware BTC prediction arena powered by DeepBook Predict.
+Prediction markets are usually either event-listing apps or sportsbook-like products. DeepBook Predict is different: it exposes programmable strike and range markets priced from a volatility surface, with a vault acting as continuous counterparty liquidity.
 
-更具体地说：
-
-> 结算很慢，但市场很快。Predict 的 vault 是连续报价的对手方：用户通过钱包签名 PTB 完成 mint / mint_range，看实时 PnL 跳动，并可在结算前随时按 live bid Cash Out（redeem 未结算分支）；持有到期则按 OracleSVI settlement price 结算。连胜串关奖励敢锁仓到结算的人，配合 opt-in leaderboard、verified showcase 和 Sealed Calls 形成竞技和社交循环。
-
-## 核心定位
-
-Strike5 不是泛预测市场，也不是体育、政治或新闻事件投注平台。
-
-它的核心是：
+Strike5 makes that protocol legible to users through a simple loop:
 
 ```text
-BTC 短周期价格判断
-+ DeepBook Predict 原生 strike / range 仓位
-+ dUSDC 固定风险交易
-+ 连续交易：实时 PnL + 随时 Cash Out（live bid 卖回 vault）
-+ Predict Vault / PLP 做流动性和对手方
-+ OracleSVI 到期结算（串关与开奖锚点）
-+ 连胜串关（锁仓到结算，提前平即弃权）
-+ opt-in leaderboard
-+ verified social feed
-+ sealed calls
+Pick a BTC round
+-> choose Above / Below / Range
+-> get a live DeepBook Predict quote
+-> mint a real position into PredictManager
+-> track live PnL
+-> cash out early or hold to oracle settlement
+-> redeem, publish, and update leaderboard / streak stats
 ```
 
-当前 MVP 不伪造 ETH / SUI / SOL oracle，也不伪造任意事件结算。
+The goal is not to create fake ETH/SOL/news markets. The MVP stays anchored to the BTC oracle markets that DeepBook Predict currently exposes on testnet.
 
-## 为什么贴合 DeepBook Predict 赛道
+## Why It Fits DeepBook Predict
 
-DeepBook Predict 的价值不只是列出几个二元事件，而是提供：
+Strike5 uses DeepBook Predict as the core market layer, not just as a branding add-on.
 
-- 基于 oracle 的到期结算。
-- 按 strike 和 expiry 组合出的可编程市场。
-- 基于 volatility surface 的定价能力。
-- 由 Predict Vault / PLP 承担交易对手方和流动性。
-- dUSDC quote asset。
-- 可被 Sui DeFi 组合的链上账户与仓位状态。
+| Strike5 feature | DeepBook Predict primitive |
+|---|---|
+| BTC Arena rounds | Active BTC OracleSVI expiries |
+| Above / Below challenge | `predict::mint` directional binary position |
+| Stay In Range challenge | `predict::mint_range` range position |
+| Fixed-risk stake | dUSDC quote asset and max payout quote |
+| PredictManager account | User balances and position quantities |
+| Live cash out | `redeem` / `redeem_range` before settlement at live bid |
+| Final result | Oracle settlement price |
+| Leaderboard and feed | Predict Server mint/redeem/range events plus oracle state |
 
-Strike5 Arena 直接使用这些能力，把它包装成一个用户能反复参与、能公开战绩、能晒单、能做 sealed prediction calls 的产品。
+This creates a real protocol usage loop: each user action routes through DeepBook Predict quote, mint, redeem, and settlement state.
 
-## 关键产品规则
+## Core Features
 
-当前 DeepBook Predict testnet 可真实测试的主线是 BTC oracle market。
+### Trading Arena
 
-Strike5 不声称提供不存在的链上市场，也不声称隐藏底层链上交易。产品采用：
+- BTC/USD K-line chart with red/green candles.
+- DeepBook Predict Oracle Spot and oracle freshness.
+- Active round countdown.
+- Quick-pick challenge cards:
+  - Above Spot
+  - Below Spot
+  - Stay In Range
+- Custom strike and custom range builder.
+- Quote preview for cost, max payout, live redeem value, and max loss.
+- Sui wallet transaction flow for opening positions.
+
+### PredictManager Account Flow
+
+- Wallet connection through Sui dApp Kit.
+- Sui testnet network detection.
+- dUSDC wallet balance display.
+- PredictManager discovery and account state.
+- Manager balance, account value, and open position count.
+- Auto top-up into PredictManager when opening a position requires more manager balance.
+
+### Real Position Lifecycle
+
+- Mint real directional or range positions.
+- Read indexed Predict position data.
+- Fallback to raw mint/redeem events when summary data lags.
+- Display active, awaiting settlement, redeemable, lost, and redeemed states.
+- Cash out before settlement when the protocol allows live redeem.
+- Redeem settled positions after oracle settlement.
+- Link successful transactions to SuiVision testnet.
+
+### Streak Combo
+
+The combo feature is a product layer on top of real Predict positions.
+
+- A user can build a 3-leg streak across later rounds.
+- Each leg must correspond to a real opened position.
+- Winning legs increase the arena score multiplier:
+  - 1 win = 2x
+  - 2 wins = 4x
+  - 3 wins = 8x
+- Cashing out a streak leg before settlement forfeits the streak.
+- Completed, busted, surrendered, and pending streaks are resolved from real position and oracle state.
+
+This is not a fake multiplied payout at the protocol level. It is an arena scoring mechanic tied to real settlement outcomes.
+
+### Opt-In Leaderboard
+
+- Users are hidden by default.
+- A user must opt in before their Arena stats are shown.
+- Stats are computed from real Predict data:
+  - mint events
+  - redeem events
+  - position summaries
+  - range events
+  - oracle settlement prices
+- The leaderboard shows:
+  - win rate
+  - completed rounds
+  - current streak
+  - total PnL
+- If summary endpoints lag, the app falls back to raw indexed events and direct oracle state.
+
+### Arena Feed
+
+- Users can publish market views.
+- Posts can attach a verified position.
+- The attached position is not a stale screenshot only. It is matched back to current indexed position data so settlement status and PnL can update after the round ends.
+- Posts expose wallet alias and PredictManager only when the user publishes.
+
+### Sealed Calls
+
+- Users can commit to a private call before expiry.
+- The MVP uses local SHA-256 commitment logic.
+- The call content stays hidden before expiry and can be revealed later.
+- This is designed as a future path toward Sui Seal based encrypted calls.
+
+## Architecture
 
 ```text
-DeepBook Predict BTC expiry = 实际链上 settlement（串关与开奖的结算锚点）
-连续交易 = oracle 存活期间随时 mint，随时按 live bid Cash Out
-Leaderboard = opt-in 展示
-Sealed Calls = 隐藏赛前观点内容，不隐藏 mint / redeem 交易
-Combo = 连续轮次连胜串关，固定翻倍乘倍 Arena score，不乘倍链上 payout；
-        串关 leg 锁到结算，提前 Cash Out 即弃权
+React frontend
+  -> DeepBook Predict Server API
+  -> Sui testnet RPC
+  -> Sui wallet
+  -> DeepBook Predict shared object
+  -> PredictManager
+  -> OracleSVI settlement
 ```
 
-示例：
+Important distinction:
 
-| 阶段 | Strike5 行为 | DeepBook Predict 行为 |
-|---|---|---|
-| Oracle live | 展示 challenge cards / 实时 PnL | active BTC OracleSVI 可 quote |
-| User joins | 钱包签名 PTB | `mint` / `mint_range` |
-| Cash out anytime | 按当前 live 价平仓落袋 | `redeem` / `redeem_range`（未结算分支，live bid） |
-| Near expiry | 停止新开仓（cutoff），仍可 Cash Out | 等待 oracle settlement |
-| Expired, unsettled | 仓位冻结，如实展示 | 拒绝 redeem（防抢跑空窗） |
-| Settled | reveal result / update stats / 判定串关 | `redeem` / `redeem_range`（结算价） |
-| Post-round | showcase / leaderboard / combo | Predict events 可索引 |
+```text
+Predict Server summary data is useful, but it is not treated as the only source of truth.
+For settlement-sensitive features, Strike5 also reads raw mint/redeem events and oracle state.
+```
 
-## 文档目录
+This matters because newly settled positions may appear in raw events or oracle state before every summary endpoint has caught up.
 
-- 产品规格: `docs/product/product-spec.md`
-- 技术架构: `docs/technical/architecture.md`
-- DeepBook 接入: `docs/technical/deepbook-integration.md`
-- Demo 计划: `docs/demo/demo-plan.md`
-- 实现路线图: `docs/planning/implementation-roadmap.md`
-- 工程工作流: `docs/planning/engineering-workflow.md`
-- 决策记录: `docs/decisions/README.md`
+## Tech Stack
 
-## 本地开发
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite |
+| Styling | Tailwind CSS |
+| Wallet | `@mysten/dapp-kit-react` |
+| Sui SDK | `@mysten/sui` |
+| Data fetching | TanStack Query |
+| Charting | Lightweight Charts |
+| Icons | Lucide React |
+| Protocol | DeepBook Predict on Sui testnet |
 
-安装依赖：
+## DeepBook Predict Testnet Config
+
+Current app config is in `src/config/predict.ts`.
+
+| Item | Value |
+|---|---|
+| Network | Sui testnet |
+| Sui RPC | `https://fullnode.testnet.sui.io:443` |
+| Predict Server | `https://predict-server.testnet.mystenlabs.com` |
+| Predict package | `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` |
+| Predict object | `0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a` |
+| Quote asset | dUSDC testnet asset |
+
+`dUSDC` here is the DeepBook Predict testnet quote asset. It is not the official USDC token.
+
+## Getting Started
+
+Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-启动开发服务器：
+Start the local development server:
 
 ```bash
 pnpm dev
 ```
 
-构建检查：
+Build for production:
 
 ```bash
 pnpm build
 ```
 
-Lint：
+Run type checking:
+
+```bash
+pnpm typecheck
+```
+
+Run lint:
 
 ```bash
 pnpm lint
 ```
 
-## MVP 范围
+## Demo Flow
 
-必须完成：
+1. Open the app.
+2. Connect a Sui wallet.
+3. Switch to Sui testnet.
+4. Make sure the wallet has testnet dUSDC.
+5. Create or load a PredictManager.
+6. Choose an active BTC round.
+7. Enter stake size.
+8. Select Above, Below, or Stay In Range.
+9. Review quote and max loss.
+10. Open the position through wallet signing.
+11. Watch the position appear in the Positions panel.
+12. Either cash out before expiry or hold to settlement.
+13. After oracle settlement, redeem the settled position.
+14. Check Community:
+    - leaderboard completed rounds
+    - win rate
+    - PnL
+    - verified feed position status
+15. Check Playbook:
+    - streak leg status
+    - completed / busted / surrendered history
 
-- Sui wallet connect。
-- Sui testnet 环境。
-- dUSDC balance 展示。
-- PredictManager 查找 / 创建。
-- BTC K 线。
-- DeepBook Predict oracle spot、expiry、countdown。
-- Round Arena。
-- Above / Below / Range challenge cards。
-- Custom strike / range builder。
-- Strike grid snapping 和校验。
-- Quote preview。
-- PTB 构造和钱包签名。
-- mint / mint_range。
-- Position panel + 实时浮动 PnL。
-- Cash Out（未结算 live bid 平仓）。
-- redeem / redeem_range。
-- 连胜串关（含弃权规则）。
-- opt-in leaderboard。
-- verified call / showcase feed。
-
-P1 / Stretch：
-
-- Sealed Calls with Sui Seal。
-- Combo score multiplier。
-- Settlement reveal polish。
-- Nautilus verified scoring spike。
-
-暂不进入 MVP：
-
-- ETH / SUI / SOL 预测，除非官方 Predict oracle 可用。
-- 任意新闻 / 体育 / 政治事件市场。
-- 真钱串关乘法赔付。
-- DeepBook Margin。
-- Iron Bank。
-- Telegram bot。
-- Cross-venue arbitrage。
-- 主网资产路由到 testnet dUSDC。
-- 自动 keeper network。
-- 自动 vault strategy product。
-
-## 本地与官方参考
-
-本项目讨论和设计基于 DeepBook Predict 本地仓库分支：
+## Project Structure
 
 ```text
-predict-testnet-4-16
+src/
+  app/                  Main app shell and page routing
+  components/
+    account/            Wallet, dUSDC, PredictManager state
+    arena-overview/     Market status bar and top-level stats
+    chart/              BTC chart and strike overlays
+    combo/              Streak combo and history
+    leaderboard/        Opt-in community ranking
+    positions/          Position display, cash out, redeem
+    sealed-calls/       Local commitment based sealed calls
+    social-feed/        Verified Arena posts
+    trade-panel/        Quote, mint, combo entry controls
+  config/               Predict package IDs and product constants
+  hooks/                Query and transaction hooks
+  lib/
+    deepbook/           Quote and PTB construction
+    market-data/        BTC K-line provider
+    predict-server/     Predict Server API client and types
+    i18n/               English and Chinese copy
+docs/
+  product/              Product specification
+  technical/            Architecture and integration notes
+  demo/                 Demo plan
+  decisions/            Decision records
+  planning/             Engineering roadmap
 ```
 
-重点参考文件：
+## Key Documents
 
-- `deepbookv3-predict/packages/predict/README.md`
-- `deepbookv3-predict/packages/predict/sources/predict.move`
-- `deepbookv3-predict/packages/predict/sources/predict_manager.move`
-- `deepbookv3-predict/packages/predict/sources/oracle.move`
-- `deepbookv3-predict/packages/predict/sources/oracle_config.move`
-- `deepbookv3-predict/packages/predict/sources/market_key/market_key.move`
-- `deepbookv3-predict/packages/predict/sources/market_key/range_key.move`
-- `deepbookv3-predict/scripts/config/constants.ts`
-- `deepbookv3-predict/scripts/services/oracle-feed/config.ts`
+- `docs/product/product-spec.md`
+- `docs/technical/architecture.md`
+- `docs/technical/deepbook-integration.md`
+- `docs/demo/demo-plan.md`
+- `docs/planning/implementation-roadmap.md`
+- `docs/decisions/README.md`
 
-官方文档和参考：
+## What Is Real In The MVP
 
-- https://docs.sui.io/onchain-finance/deepbook-predict/
-- https://docs.sui.io/onchain-finance/deepbook-predict/design
-- https://docs.sui.io/onchain-finance/deepbook-predict/contract-information/predict-manager
-- https://www.sui.io/privacy
-- https://blog.sui.io/introducing-decentralized-seal-key-server-testnet/
-- https://www.sui.io/nautilus
+Real:
+
+- Sui wallet connection.
+- Sui testnet transaction signing.
+- dUSDC balance and PredictManager flow.
+- DeepBook Predict quote path.
+- `mint` / `mint_range` transaction construction.
+- settled and unsettled redeem path.
+- Predict Server position, range, manager, vault, and oracle reads.
+- leaderboard and feed data derived from real indexed Predict events.
+
+Product-layer MVP:
+
+- Streak combo scoring.
+- Opt-in leaderboard visibility.
+- Arena feed posts.
+- Local sealed-call commitments.
+
+Not included:
+
+- Mainnet Predict deployment.
+- Non-BTC official Predict markets.
+- Fake sports, politics, or news event markets.
+- Real multiplied payout for combo streaks.
+- Cross-chain asset routing.
+- DeepBook Margin or Iron Bank loops.
+- Production Sui Seal integration.
+
+## Current Limitations
+
+- DeepBook Predict is testnet-only in this demo.
+- dUSDC is a testnet quote asset.
+- BTC is the primary supported underlying because it is the active Predict oracle market.
+- Sealed Calls use local commitment proof in the MVP.
+- Leaderboard is opt-in and local-user scoped for the demo surface, while stats are computed from real Predict indexed data.
+- If the Predict indexer is delayed, the UI may temporarily show partial data, then reconcile from raw events and oracle state.
+
+## Roadmap
+
+Near-term improvements:
+
+- Sui Seal backed encrypted call storage.
+- Better leaderboard persistence across users.
+- Public share pages for verified calls.
+- More detailed PnL attribution.
+- PLP risk and vault analytics.
+- Multi-oracle support when official Predict markets are available.
+- Keeper-assisted settlement reminders and redeem flows.
+
+## References
+
+- DeepBook Predict docs: `https://docs.sui.io/onchain-finance/deepbook-predict/`
+- Predict Server API: `https://predict-server.testnet.mystenlabs.com`
+- Sui testnet explorer: `https://testnet.suivision.xyz`
+- Local protocol reference: `../deepbookv3-predict`
+
