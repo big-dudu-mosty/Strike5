@@ -13,6 +13,7 @@ import { StreakMeter } from '../components/combo/StreakMeter';
 import { ArenaOverviewPanel } from '../components/arena-overview/ArenaOverviewPanel';
 import { PredictStatusStrip } from '../components/predict-status/PredictStatusStrip';
 import { SealedCallsPanel } from '../components/sealed-calls/SealedCallsPanel';
+import { Strike5Logo } from '../components/brand/Strike5Logo';
 import { usePredictMarketOverview } from '../hooks/usePredictMarketOverview';
 import { useBtcKlines } from '../hooks/useBtcKlines';
 import { usePredictAccountOverview } from '../hooks/usePredictAccountOverview';
@@ -146,12 +147,7 @@ export function App() {
     <main className="min-h-screen text-cream-100">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
         <header className="sticky top-0 z-30 -mx-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-ink-700/35 bg-ink-950/85 px-3 py-3 backdrop-blur-xl sm:-mx-4 sm:px-4 md:-mx-6 md:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brass-300/35 bg-brass-400/15 text-brass-200 shadow-[0_0_24px_rgba(34,211,238,0.18)]">
-              <Activity className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-cream-100">Strike5</h1>
-          </div>
+          <Strike5Logo />
 
           <nav className="market-chip order-3 flex w-full items-center justify-center gap-1 rounded-full p-1 sm:order-none sm:w-auto">
             {appPages.map((page) => {
