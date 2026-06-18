@@ -227,6 +227,7 @@ export type MessageKey =
   | 'leaderboard.streak'
   | 'leaderboard.pnl'
   | 'leaderboard.loading'
+  | 'leaderboard.partial'
   | 'leaderboard.error'
   | 'leaderboard.top10'
   | 'leaderboard.minRounds'

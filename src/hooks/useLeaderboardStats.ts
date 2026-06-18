@@ -24,11 +24,15 @@ export interface LeaderboardStats {
   completedRounds: number;
   currentStreak: number;
   eligible: boolean;
+  isPartial: boolean;
   losses: number;
   totalPnlRaw: number;
   winRate: number | null;
   wins: number;
+  warnings: LeaderboardDataWarning[];
 }
+
+type LeaderboardDataWarning = 'directional' | 'ranges' | 'oracles';
 
 export function useLeaderboardStats(managerId: string | null) {
   return useQuery({
@@ -36,11 +40,22 @@ export function useLeaderboardStats(managerId: string | null) {
     queryFn: async () => {
       if (!managerId) throw new Error('PredictManager id is required.');
 
-      const [directionalRows, ranges, oracles] = await Promise.all([
+      const [directionalResult, rangesResult, oraclesResult] = await Promise.allSettled([
         fetchPredictManagerPositionSummary(managerId),
         fetchPredictManagerRanges(managerId),
         fetchPredictOracles(),
       ]);
+      const warnings: LeaderboardDataWarning[] = [];
+
+      if (directionalResult.status === 'rejected') warnings.push('directional');
+      if (rangesResult.status === 'rejected') warnings.push('ranges');
+      if (oraclesResult.status === 'rejected') warnings.push('oracles');
+
+      const directionalRows =
+        directionalResult.status === 'fulfilled' ? directionalResult.value : [];
+      const ranges =
+        rangesResult.status === 'fulfilled' ? rangesResult.value : { minted: [], redeemed: [] };
+      const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
       const results = [
         ...buildDirectionalResults(directionalRows, oracleById),
@@ -56,10 +71,12 @@ export function useLeaderboardStats(managerId: string | null) {
         completedRounds,
         currentStreak: calculateCurrentStreak(results),
         eligible: completedRounds >= MIN_COMPLETED_ROUNDS,
+        isPartial: warnings.length > 0,
         losses,
         totalPnlRaw,
         winRate: completedRounds > 0 ? wins / completedRounds : null,
         wins,
+        warnings,
       } satisfies LeaderboardStats;
     },
     enabled: Boolean(managerId),

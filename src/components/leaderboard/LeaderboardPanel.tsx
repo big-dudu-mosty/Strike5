@@ -126,6 +126,11 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
       {statsQuery.isLoading ? (
         <div className="mt-4 text-sm text-cream-600">{t('leaderboard.loading')}</div>
       ) : null}
+      {stats?.isPartial ? (
+        <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-100">
+          {t('leaderboard.partial')}
+        </div>
+      ) : null}
       {statsQuery.error ? (
         <div className="mt-4 rounded-xl border border-clay-400/30 bg-clay-400/10 p-3 text-sm text-clay-200">
           {t('leaderboard.error')}
