@@ -1,146 +1,260 @@
 # Strike5
 
-Strike5 is a short-cycle BTC prediction arena built on **DeepBook Predict** on Sui testnet.
+![Sui Testnet](https://img.shields.io/badge/Sui-Testnet-4DA2FF)
+![DeepBook Predict](https://img.shields.io/badge/DeepBook-Predict-111827)
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-It turns DeepBook Predict's live BTC oracle markets into a consumer trading game: users open fixed-risk Above, Below, or Range positions with dUSDC, watch live PnL, cash out before expiry, or hold to settlement for verified results, streaks, leaderboard stats, and social posts.
+**Strike5 is a short-cycle BTC prediction arena powered by DeepBook Predict on Sui.**
 
-> Built for the DeepBook Predict hackathon track. The product integrates the real DeepBook Predict testnet contract, PredictManager account model, dUSDC quote asset, oracle settlement, mint/redeem flows, and Predict Server indexed data.
+Users open fixed-risk BTC Above, Below, or Range positions with dUSDC, track live PnL, cash out before expiry, or hold to oracle settlement. The result flows into opt-in leaderboard stats, streak combos, and verified social posts.
 
-## Product Idea
+Strike5 is built for the **DeepBook Predict hackathon track**. It integrates the real testnet Predict package, PredictManager account model, dUSDC quote asset, mint/redeem transactions, oracle settlement, Predict Server indexed events, and Sui wallet signing.
 
-Prediction markets are usually either event-listing apps or sportsbook-like products. DeepBook Predict is different: it exposes programmable strike and range markets priced from a volatility surface, with a vault acting as continuous counterparty liquidity.
+## Table Of Contents
 
-Strike5 makes that protocol legible to users through a simple loop:
+- [Product Thesis](#product-thesis)
+- [Protocol Loop](#protocol-loop)
+- [Architecture](#architecture)
+- [Transaction Lifecycle](#transaction-lifecycle)
+- [Data Truth Model](#data-truth-model)
+- [Features](#features)
+- [DeepBook Predict Integration](#deepbook-predict-integration)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Demo Script](#demo-script)
+- [Project Structure](#project-structure)
+- [Open Source](#open-source)
+- [Limitations](#limitations)
+- [Roadmap](#roadmap)
+
+## Product Thesis
+
+Most prediction products feel like event boards: pick a listed event, wait for settlement, leave. DeepBook Predict exposes a stronger primitive: programmable strike and range markets, live volatility-surface pricing, and a vault that continuously acts as counterparty liquidity.
+
+Strike5 turns that protocol surface into a repeatable product loop:
 
 ```text
-Pick a BTC round
--> choose Above / Below / Range
--> get a live DeepBook Predict quote
--> mint a real position into PredictManager
--> track live PnL
--> cash out early or hold to oracle settlement
--> redeem, publish, and update leaderboard / streak stats
+BTC round starts
+-> user picks Above / Below / Range
+-> DeepBook Predict quotes the position
+-> wallet signs mint / mint_range
+-> user tracks live PnL
+-> user cashes out early or holds to settlement
+-> oracle settles
+-> user redeems
+-> leaderboard, feed, and streak state update
 ```
 
-The goal is not to create fake ETH/SOL/news markets. The MVP stays anchored to the BTC oracle markets that DeepBook Predict currently exposes on testnet.
+The MVP intentionally stays focused on BTC because that is the real DeepBook Predict oracle surface available on testnet. It does not fake ETH, SOL, sports, politics, or news markets.
 
-## Why It Fits DeepBook Predict
+## Protocol Loop
 
-Strike5 uses DeepBook Predict as the core market layer, not just as a branding add-on.
+```mermaid
+flowchart LR
+  A["Active BTC OracleSVI Round"] --> B["Quote Above / Below / Range"]
+  B --> C["Wallet Signs PTB"]
+  C --> D["predict::mint or predict::mint_range"]
+  D --> E["PredictManager Position"]
+  E --> F{"Before Expiry?"}
+  F -->|Cash Out| G["redeem at live bid"]
+  F -->|Hold| H["Oracle Settlement"]
+  H --> I["redeem settled payout"]
+  G --> J["Arena Stats"]
+  I --> J
+  J --> K["Leaderboard / Feed / Streak"]
+```
 
-| Strike5 feature | DeepBook Predict primitive |
-|---|---|
-| BTC Arena rounds | Active BTC OracleSVI expiries |
-| Above / Below challenge | `predict::mint` directional binary position |
-| Stay In Range challenge | `predict::mint_range` range position |
-| Fixed-risk stake | dUSDC quote asset and max payout quote |
-| PredictManager account | User balances and position quantities |
-| Live cash out | `redeem` / `redeem_range` before settlement at live bid |
-| Final result | Oracle settlement price |
-| Leaderboard and feed | Predict Server mint/redeem/range events plus oracle state |
+This is the core product promise: **the game layer is social and competitive, but the position lifecycle is real DeepBook Predict state.**
 
-This creates a real protocol usage loop: each user action routes through DeepBook Predict quote, mint, redeem, and settlement state.
+## Architecture
 
-## Core Features
+```mermaid
+flowchart TB
+  User["User<br/>Sui Wallet"] --> App["Strike5 React App"]
+
+  App --> Wallet["Sui dApp Kit<br/>wallet connection"]
+  App --> Query["TanStack Query<br/>state and polling"]
+  App --> Chart["BTC K-line Provider<br/>reference chart"]
+  App --> PredictAPI["Predict Server API<br/>oracle, vault, manager, events"]
+  App --> SuiRPC["Sui Testnet RPC<br/>tx submit and confirmation"]
+
+  Wallet --> PTB["Programmable Transaction Block"]
+  PTB --> SuiRPC
+  SuiRPC --> Predict["DeepBook Predict<br/>shared object"]
+
+  Predict --> Manager["PredictManager<br/>balances and positions"]
+  Predict --> Oracle["OracleSVI<br/>spot, expiry, settlement"]
+  Predict --> Vault["Predict Vault / PLP<br/>counterparty liquidity"]
+  Predict --> DUSDC["dUSDC<br/>testnet quote asset"]
+
+  PredictAPI --> Query
+  Query --> Arena["Arena UI<br/>trade, positions, combo, leaderboard, feed"]
+```
+
+### Frontend Modules
+
+```mermaid
+flowchart LR
+  App["app/App.tsx"] --> ArenaOverview["arena-overview"]
+  App --> Chart["chart"]
+  App --> TradePanel["trade-panel"]
+  App --> Positions["positions"]
+  App --> Combo["combo"]
+  App --> Leaderboard["leaderboard"]
+  App --> Feed["social-feed"]
+  App --> Sealed["sealed-calls"]
+  App --> Account["account"]
+
+  TradePanel --> DeepbookLib["lib/deepbook<br/>quote + PTB"]
+  Positions --> PredictHooks["hooks/usePredictPositions"]
+  Leaderboard --> StatsHook["hooks/useLeaderboardStats"]
+  Feed --> PredictHooks
+  Combo --> PredictHooks
+  PredictHooks --> PredictClient["lib/predict-server"]
+  StatsHook --> PredictClient
+```
+
+## Transaction Lifecycle
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant UI as Strike5 UI
+  participant Q as Quote Builder
+  participant W as Sui Wallet
+  participant S as Sui RPC
+  participant P as DeepBook Predict
+  participant I as Predict Server
+
+  U->>UI: Select round, direction, stake
+  UI->>Q: Build quote request
+  Q->>S: devInspect quote / transaction simulation
+  S-->>Q: cost, max payout, live redeem
+  UI-->>U: Show quote and max loss
+  U->>W: Sign mint transaction
+  W->>S: Submit PTB
+  S->>P: Execute mint / mint_range
+  P-->>S: Events and effects
+  S-->>UI: Transaction digest
+  I-->>UI: Indexed mint / position state
+  UI-->>U: Position, PnL, cash-out / settlement state
+```
+
+## Data Truth Model
+
+Settlement-sensitive UI must not depend on a single summary endpoint. Strike5 uses a layered data model:
+
+```mermaid
+flowchart TB
+  Summary["Predict Server<br/>position summary"] --> Resolver["Position Resolver"]
+  Events["Raw mint/redeem/range events"] --> Resolver
+  OracleList["Predict oracle list"] --> Resolver
+  OracleState["Direct oracle state by oracle_id"] --> Resolver
+  LocalPending["Local pending tx cache"] --> Resolver
+
+  Resolver --> Positions["Positions Panel"]
+  Resolver --> Combo["Streak Combo"]
+  Resolver --> Feed["Verified Feed"]
+  Resolver --> Leaderboard["Leaderboard Stats"]
+
+  Resolver -. "summary lag fallback" .-> Events
+  Resolver -. "missing oracle fallback" .-> OracleState
+```
+
+Why this matters:
+
+- A transaction can be confirmed before the summary endpoint updates.
+- A newly settled oracle may be missing from the short oracle list.
+- Feed posts should update when a position settles, not freeze at publish time.
+- Leaderboard stats should count real completed positions once oracle settlement is available.
+
+## Features
 
 ### Trading Arena
 
-- BTC/USD K-line chart with red/green candles.
-- DeepBook Predict Oracle Spot and oracle freshness.
+- BTC/USD candlestick chart.
+- DeepBook Predict Oracle Spot and freshness.
 - Active round countdown.
-- Quick-pick challenge cards:
-  - Above Spot
-  - Below Spot
-  - Stay In Range
+- Above Spot, Below Spot, and Stay In Range challenges.
 - Custom strike and custom range builder.
-- Quote preview for cost, max payout, live redeem value, and max loss.
-- Sui wallet transaction flow for opening positions.
+- Quote preview with cost, max payout, live redeem, and max loss.
+- Wallet-signed mint transactions.
 
 ### PredictManager Account Flow
 
-- Wallet connection through Sui dApp Kit.
-- Sui testnet network detection.
+- Wallet connection with Sui dApp Kit.
+- Sui testnet network check.
 - dUSDC wallet balance display.
 - PredictManager discovery and account state.
 - Manager balance, account value, and open position count.
-- Auto top-up into PredictManager when opening a position requires more manager balance.
+- Auto top-up when the manager needs more dUSDC for a trade.
 
 ### Real Position Lifecycle
 
-- Mint real directional or range positions.
-- Read indexed Predict position data.
-- Fallback to raw mint/redeem events when summary data lags.
+- Mint directional and range positions.
+- Read positions from summary and raw indexed events.
 - Display active, awaiting settlement, redeemable, lost, and redeemed states.
-- Cash out before settlement when the protocol allows live redeem.
+- Cash out before settlement when live redeem is available.
 - Redeem settled positions after oracle settlement.
-- Link successful transactions to SuiVision testnet.
+- SuiVision links for confirmed transactions.
 
 ### Streak Combo
 
-The combo feature is a product layer on top of real Predict positions.
+Streak combo is a product scoring layer built on real Predict positions.
 
-- A user can build a 3-leg streak across later rounds.
-- Each leg must correspond to a real opened position.
-- Winning legs increase the arena score multiplier:
-  - 1 win = 2x
-  - 2 wins = 4x
-  - 3 wins = 8x
-- Cashing out a streak leg before settlement forfeits the streak.
-- Completed, busted, surrendered, and pending streaks are resolved from real position and oracle state.
-
-This is not a fake multiplied payout at the protocol level. It is an arena scoring mechanic tied to real settlement outcomes.
+- 3-leg streak across later rounds.
+- Every leg must map to a real opened position.
+- 1 win = 2x score, 2 wins = 4x, 3 wins = 8x.
+- Early cash-out forfeits the streak.
+- Completed, busted, surrendered, and pending histories are resolved from real position state.
 
 ### Opt-In Leaderboard
 
 - Users are hidden by default.
-- A user must opt in before their Arena stats are shown.
-- Stats are computed from real Predict data:
-  - mint events
-  - redeem events
-  - position summaries
-  - range events
-  - oracle settlement prices
-- The leaderboard shows:
-  - win rate
-  - completed rounds
-  - current streak
-  - total PnL
-- If summary endpoints lag, the app falls back to raw indexed events and direct oracle state.
+- Users opt in before public display.
+- Stats are computed from mint events, redeem events, range events, position summaries, and oracle settlement prices.
+- Shows win rate, completed rounds, current streak, and total PnL.
 
 ### Arena Feed
 
-- Users can publish market views.
+- Users publish market views.
 - Posts can attach a verified position.
-- The attached position is not a stale screenshot only. It is matched back to current indexed position data so settlement status and PnL can update after the round ends.
-- Posts expose wallet alias and PredictManager only when the user publishes.
+- Attached positions are matched back to live indexed position data, so status and PnL update after settlement.
 
 ### Sealed Calls
 
 - Users can commit to a private call before expiry.
-- The MVP uses local SHA-256 commitment logic.
-- The call content stays hidden before expiry and can be revealed later.
-- This is designed as a future path toward Sui Seal based encrypted calls.
+- MVP uses local SHA-256 commitment proof.
+- Future path: Sui Seal-backed encrypted calls.
 
-## Architecture
+## DeepBook Predict Integration
 
-```text
-React frontend
-  -> DeepBook Predict Server API
-  -> Sui testnet RPC
-  -> Sui wallet
-  -> DeepBook Predict shared object
-  -> PredictManager
-  -> OracleSVI settlement
-```
+| Strike5 surface | DeepBook Predict source |
+|---|---|
+| Active rounds | BTC OracleSVI expiries |
+| Oracle spot | Predict Server oracle state |
+| Above / Below | `predict::mint` |
+| Range | `predict::mint_range` |
+| Cash out | `redeem` / `redeem_range` before settlement |
+| Settlement | Oracle settlement price |
+| User account | PredictManager |
+| Quote asset | dUSDC |
+| Stats | mint/redeem/range events plus oracle settlement |
 
-Important distinction:
+Current testnet config is in `src/config/predict.ts`.
 
-```text
-Predict Server summary data is useful, but it is not treated as the only source of truth.
-For settlement-sensitive features, Strike5 also reads raw mint/redeem events and oracle state.
-```
+| Item | Value |
+|---|---|
+| Network | Sui testnet |
+| Sui RPC | `https://fullnode.testnet.sui.io:443` |
+| Predict Server | `https://predict-server.testnet.mystenlabs.com` |
+| Predict package | `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` |
+| Predict object | `0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a` |
+| Quote asset | dUSDC testnet asset |
 
-This matters because newly settled positions may appear in raw events or oracle state before every summary endpoint has caught up.
+`dUSDC` is the DeepBook Predict testnet quote asset. It is not official USDC.
 
 ## Tech Stack
 
@@ -155,82 +269,63 @@ This matters because newly settled positions may appear in raw events or oracle 
 | Icons | Lucide React |
 | Protocol | DeepBook Predict on Sui testnet |
 
-## DeepBook Predict Testnet Config
-
-Current app config is in `src/config/predict.ts`.
-
-| Item | Value |
-|---|---|
-| Network | Sui testnet |
-| Sui RPC | `https://fullnode.testnet.sui.io:443` |
-| Predict Server | `https://predict-server.testnet.mystenlabs.com` |
-| Predict package | `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` |
-| Predict object | `0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a` |
-| Quote asset | dUSDC testnet asset |
-
-`dUSDC` here is the DeepBook Predict testnet quote asset. It is not the official USDC token.
-
 ## Getting Started
 
-Install dependencies:
+### Prerequisites
+
+- Node.js and pnpm.
+- Sui wallet with testnet enabled.
+- Testnet dUSDC for DeepBook Predict.
+
+### Install
 
 ```bash
 pnpm install
 ```
 
-Start the local development server:
+### Develop
 
 ```bash
 pnpm dev
 ```
 
-Build for production:
-
-```bash
-pnpm build
-```
-
-Run type checking:
+### Verify
 
 ```bash
 pnpm typecheck
-```
-
-Run lint:
-
-```bash
 pnpm lint
+pnpm build
 ```
 
-## Demo Flow
+## Demo Script
 
-1. Open the app.
-2. Connect a Sui wallet.
-3. Switch to Sui testnet.
-4. Make sure the wallet has testnet dUSDC.
-5. Create or load a PredictManager.
-6. Choose an active BTC round.
+1. Connect a Sui wallet.
+2. Switch to Sui testnet.
+3. Load or create a PredictManager.
+4. Confirm wallet dUSDC balance.
+5. Open the Arena page.
+6. Select an active BTC round.
 7. Enter stake size.
-8. Select Above, Below, or Stay In Range.
-9. Review quote and max loss.
-10. Open the position through wallet signing.
-11. Watch the position appear in the Positions panel.
-12. Either cash out before expiry or hold to settlement.
-13. After oracle settlement, redeem the settled position.
-14. Check Community:
-    - leaderboard completed rounds
-    - win rate
-    - PnL
-    - verified feed position status
-15. Check Playbook:
-    - streak leg status
-    - completed / busted / surrendered history
+8. Choose Above, Below, or Stay In Range.
+9. Review quote, max loss, and max payout.
+10. Sign the mint transaction.
+11. Watch the position appear.
+12. Cash out early or wait for settlement.
+13. Redeem after oracle settlement.
+14. Open Community:
+    - completed rounds updates
+    - win rate updates
+    - PnL updates
+    - verified feed position updates
+15. Open Playbook:
+    - streak leg resolves
+    - history shows completed, busted, or surrendered state
 
 ## Project Structure
 
 ```text
 src/
-  app/                  Main app shell and page routing
+  app/                  App shell and page routing
   components/
     account/            Wallet, dUSDC, PredictManager state
     arena-overview/     Market status bar and top-level stats
@@ -240,13 +335,13 @@ src/
     positions/          Position display, cash out, redeem
     sealed-calls/       Local commitment based sealed calls
     social-feed/        Verified Arena posts
-    trade-panel/        Quote, mint, combo entry controls
-  config/               Predict package IDs and product constants
+    trade-panel/        Quote, mint, combo controls
+  config/               Predict IDs and product constants
   hooks/                Query and transaction hooks
   lib/
     deepbook/           Quote and PTB construction
     market-data/        BTC K-line provider
-    predict-server/     Predict Server API client and types
+    predict-server/     Predict Server client and types
     i18n/               English and Chinese copy
 docs/
   product/              Product specification
@@ -256,14 +351,26 @@ docs/
   planning/             Engineering roadmap
 ```
 
-## Key Documents
+## Open Source
 
-- `docs/product/product-spec.md`
-- `docs/technical/architecture.md`
-- `docs/technical/deepbook-integration.md`
-- `docs/demo/demo-plan.md`
-- `docs/planning/implementation-roadmap.md`
-- `docs/decisions/README.md`
+Strike5 is prepared as an open-source hackathon project.
+
+- License: MIT, see `LICENSE`.
+- Contributions: issues and pull requests are welcome.
+- Scope rule: changes should preserve the real DeepBook Predict transaction path.
+- Security: do not commit private keys, wallet seed phrases, API keys, or faucet credentials.
+- Data integrity: do not replace settlement-sensitive data with mocks in production paths.
+
+Suggested contribution flow:
+
+```text
+fork
+-> create feature branch
+-> pnpm typecheck
+-> pnpm lint
+-> pnpm build
+-> open pull request
+```
 
 ## What Is Real In The MVP
 
@@ -295,26 +402,33 @@ Not included:
 - DeepBook Margin or Iron Bank loops.
 - Production Sui Seal integration.
 
-## Current Limitations
+## Limitations
 
 - DeepBook Predict is testnet-only in this demo.
 - dUSDC is a testnet quote asset.
 - BTC is the primary supported underlying because it is the active Predict oracle market.
 - Sealed Calls use local commitment proof in the MVP.
-- Leaderboard is opt-in and local-user scoped for the demo surface, while stats are computed from real Predict indexed data.
+- Leaderboard visibility is opt-in.
 - If the Predict indexer is delayed, the UI may temporarily show partial data, then reconcile from raw events and oracle state.
 
 ## Roadmap
 
-Near-term improvements:
-
 - Sui Seal backed encrypted call storage.
-- Better leaderboard persistence across users.
 - Public share pages for verified calls.
+- Durable cross-user leaderboard backend.
 - More detailed PnL attribution.
 - PLP risk and vault analytics.
 - Multi-oracle support when official Predict markets are available.
 - Keeper-assisted settlement reminders and redeem flows.
+
+## Documentation
+
+- `docs/product/product-spec.md`
+- `docs/technical/architecture.md`
+- `docs/technical/deepbook-integration.md`
+- `docs/demo/demo-plan.md`
+- `docs/planning/implementation-roadmap.md`
+- `docs/decisions/README.md`
 
 ## References
 
