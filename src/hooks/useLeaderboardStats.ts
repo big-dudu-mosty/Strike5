@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  fetchOracleState,
   fetchPredictManagerPositionSummary,
   fetchPredictManagerRanges,
   fetchPredictOracles,
@@ -63,6 +64,16 @@ export function useLeaderboardStats(managerId: string | null) {
         rangesResult.status === 'fulfilled' ? rangesResult.value : { minted: [], redeemed: [] };
       const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
+      const missingOracleWarning = await hydrateMissingReferencedOracles({
+        directionalRows,
+        oracleById,
+        ranges,
+      });
+
+      if (missingOracleWarning && !warnings.includes('oracles')) {
+        warnings.push('oracles');
+      }
+
       const directionalBuild = buildDirectionalResults(directionalRows, oracleById);
       const rangeBuild = buildRangeResults(ranges.minted, ranges.redeemed, oracleById);
       const results = [
@@ -95,6 +106,80 @@ export function useLeaderboardStats(managerId: string | null) {
 }
 
 export { MIN_COMPLETED_ROUNDS };
+
+async function hydrateMissingReferencedOracles({
+  directionalRows,
+  oracleById,
+  ranges,
+}: {
+  directionalRows: PredictManagerPositionSummary[];
+  oracleById: Map<string, PredictOracle>;
+  ranges: {
+    minted: PredictRangeMinted[];
+    redeemed: PredictRangeRedeemed[];
+  };
+}) {
+  const missingOracleIds = getMissingSettlementOracleIds({
+    directionalRows,
+    oracleById,
+    ranges,
+  });
+  if (missingOracleIds.length === 0) return false;
+
+  const oracleStateResults = await Promise.allSettled(
+    missingOracleIds.map((oracleId) => fetchOracleState(oracleId)),
+  );
+  let hasWarning = false;
+
+  for (const result of oracleStateResults) {
+    if (result.status === 'fulfilled') {
+      oracleById.set(result.value.oracle.oracle_id, result.value.oracle);
+    } else {
+      hasWarning = true;
+    }
+  }
+
+  return hasWarning;
+}
+
+function getMissingSettlementOracleIds({
+  directionalRows,
+  oracleById,
+  ranges,
+}: {
+  directionalRows: PredictManagerPositionSummary[];
+  oracleById: Map<string, PredictOracle>;
+  ranges: {
+    minted: PredictRangeMinted[];
+    redeemed: PredictRangeRedeemed[];
+  };
+}) {
+  const now = Date.now();
+  const oracleIds = new Set<string>();
+
+  for (const row of directionalRows) {
+    if (oracleById.has(row.oracle_id)) continue;
+    if (needsSettlementOracle(row.expiry, row.status, now)) {
+      oracleIds.add(row.oracle_id);
+    }
+  }
+
+  for (const event of [...ranges.minted, ...ranges.redeemed]) {
+    if (oracleById.has(event.oracle_id)) continue;
+    if (event.expiry <= now) {
+      oracleIds.add(event.oracle_id);
+    }
+  }
+
+  return Array.from(oracleIds);
+}
+
+function needsSettlementOracle(expiry: number, status: string, now: number) {
+  const normalized = normalizeStatus(status);
+  if (isCompletedDirectionalStatus(normalized)) return false;
+
+  return expiry <= now || normalized.includes('awaiting') || normalized.includes('pending');
+}
 
 function buildDirectionalResults(
   rows: PredictManagerPositionSummary[],
