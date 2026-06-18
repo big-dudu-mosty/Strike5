@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchOracleState,
+  fetchPredictManagerPositions,
   fetchPredictManagerPositionSummary,
   fetchPredictManagerRanges,
   fetchPredictOracles,
@@ -8,6 +9,8 @@ import {
 import type {
   PredictManagerPositionSummary,
   PredictOracle,
+  PredictPositionMinted,
+  PredictPositionRedeemed,
   PredictRangeMinted,
   PredictRangeRedeemed,
 } from '../lib/predict-server/types';
@@ -47,24 +50,40 @@ export function useLeaderboardStats(managerId: string | null) {
     queryFn: async () => {
       if (!managerId) throw new Error('PredictManager id is required.');
 
-      const [directionalResult, rangesResult, oraclesResult] = await Promise.allSettled([
-        fetchPredictManagerPositionSummary(managerId),
-        fetchPredictManagerRanges(managerId),
-        fetchPredictOracles(),
-      ]);
+      const [directionalResult, rangesResult, oraclesResult, directionalEventsResult] =
+        await Promise.allSettled([
+          fetchPredictManagerPositionSummary(managerId),
+          fetchPredictManagerRanges(managerId),
+          fetchPredictOracles(),
+          fetchPredictManagerPositions(managerId),
+        ]);
       const warnings: LeaderboardDataWarning[] = [];
 
-      if (directionalResult.status === 'rejected') warnings.push('directional');
+      if (
+        directionalResult.status === 'rejected' &&
+        directionalEventsResult.status === 'rejected'
+      ) {
+        warnings.push('directional');
+      }
       if (rangesResult.status === 'rejected') warnings.push('ranges');
       if (oraclesResult.status === 'rejected') warnings.push('oracles');
 
       const directionalRows =
         directionalResult.status === 'fulfilled' ? directionalResult.value : [];
+      const directionalEvents =
+        directionalEventsResult.status === 'fulfilled'
+          ? directionalEventsResult.value
+          : { minted: [], redeemed: [] };
       const ranges =
         rangesResult.status === 'fulfilled' ? rangesResult.value : { minted: [], redeemed: [] };
       const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
+      const directionalAggregates = aggregateDirectionalEvents(
+        directionalEvents.minted,
+        directionalEvents.redeemed,
+      );
       const missingOracleWarning = await hydrateMissingReferencedOracles({
+        directionalAggregates,
         directionalRows,
         oracleById,
         ranges,
@@ -74,7 +93,11 @@ export function useLeaderboardStats(managerId: string | null) {
         warnings.push('oracles');
       }
 
-      const directionalBuild = buildDirectionalResults(directionalRows, oracleById);
+      const directionalBuild = buildDirectionalResults(
+        directionalRows,
+        directionalAggregates,
+        oracleById,
+      );
       const rangeBuild = buildRangeResults(ranges.minted, ranges.redeemed, oracleById);
       const results = [
         ...directionalBuild.results,
@@ -108,10 +131,12 @@ export function useLeaderboardStats(managerId: string | null) {
 export { MIN_COMPLETED_ROUNDS };
 
 async function hydrateMissingReferencedOracles({
+  directionalAggregates,
   directionalRows,
   oracleById,
   ranges,
 }: {
+  directionalAggregates: DirectionalAggregate[];
   directionalRows: PredictManagerPositionSummary[];
   oracleById: Map<string, PredictOracle>;
   ranges: {
@@ -120,6 +145,7 @@ async function hydrateMissingReferencedOracles({
   };
 }) {
   const missingOracleIds = getMissingSettlementOracleIds({
+    directionalAggregates,
     directionalRows,
     oracleById,
     ranges,
@@ -143,10 +169,12 @@ async function hydrateMissingReferencedOracles({
 }
 
 function getMissingSettlementOracleIds({
+  directionalAggregates,
   directionalRows,
   oracleById,
   ranges,
 }: {
+  directionalAggregates: DirectionalAggregate[];
   directionalRows: PredictManagerPositionSummary[];
   oracleById: Map<string, PredictOracle>;
   ranges: {
@@ -156,6 +184,13 @@ function getMissingSettlementOracleIds({
 }) {
   const now = Date.now();
   const oracleIds = new Set<string>();
+
+  for (const aggregate of directionalAggregates) {
+    if (oracleById.has(aggregate.oracleId)) continue;
+    if (aggregate.expiry <= now || aggregate.settledRedeemedQuantity > 0) {
+      oracleIds.add(aggregate.oracleId);
+    }
+  }
 
   for (const row of directionalRows) {
     if (oracleById.has(row.oracle_id)) continue;
@@ -183,12 +218,27 @@ function needsSettlementOracle(expiry: number, status: string, now: number) {
 
 function buildDirectionalResults(
   rows: PredictManagerPositionSummary[],
+  eventAggregates: DirectionalAggregate[],
   oracleById: Map<string, PredictOracle>,
 ): RoundBuildResult {
   const results: CompletedRoundResult[] = [];
   let unresolvedRounds = 0;
+  const eventIds = new Set(eventAggregates.map((aggregate) => aggregate.id));
+
+  for (const aggregate of eventAggregates) {
+    const oracle = oracleById.get(aggregate.oracleId);
+    const result = buildDirectionalAggregateResult(aggregate, oracle);
+
+    if (result) {
+      results.push(result);
+    } else if (isUnresolvedDirectionalAggregate(aggregate, oracle)) {
+      unresolvedRounds += 1;
+    }
+  }
 
   for (const row of rows) {
+    if (eventIds.has(getDirectionalRoundId(row))) continue;
+
     const oracle = oracleById.get(row.oracle_id);
     const result =
       buildDirectionalOracleResult(row, oracle) ?? buildDirectionalStatusResult(row);
@@ -201,6 +251,113 @@ function buildDirectionalResults(
   }
 
   return { results, unresolvedRounds };
+}
+
+interface DirectionalAggregate {
+  expiry: number;
+  id: string;
+  isUp: boolean;
+  mintedQuantity: number;
+  oracleId: string;
+  redeemedQuantity: number;
+  settledRedeemedQuantity: number;
+  strike: number;
+  totalCost: number;
+  totalPayout: number;
+}
+
+function aggregateDirectionalEvents(
+  minted: PredictPositionMinted[],
+  redeemed: PredictPositionRedeemed[],
+) {
+  const aggregates = new Map<string, DirectionalAggregate>();
+
+  for (const event of minted) {
+    const aggregate = getOrCreateDirectionalAggregate(aggregates, event);
+    aggregate.mintedQuantity += event.quantity;
+    aggregate.totalCost += event.cost;
+  }
+
+  for (const event of redeemed) {
+    const aggregate = getOrCreateDirectionalAggregate(aggregates, event);
+    aggregate.redeemedQuantity += event.quantity;
+    aggregate.totalPayout += event.payout;
+    if (event.is_settled) aggregate.settledRedeemedQuantity += event.quantity;
+  }
+
+  return Array.from(aggregates.values());
+}
+
+function getOrCreateDirectionalAggregate(
+  aggregates: Map<string, DirectionalAggregate>,
+  event: {
+    expiry: number;
+    is_up: boolean;
+    oracle_id: string;
+    strike: number;
+  },
+) {
+  const id = getDirectionalRoundId({
+    expiry: event.expiry,
+    is_up: event.is_up,
+    oracle_id: event.oracle_id,
+    strike: event.strike,
+  });
+  const existing = aggregates.get(id);
+  if (existing) return existing;
+
+  const aggregate = {
+    expiry: event.expiry,
+    id,
+    isUp: event.is_up,
+    mintedQuantity: 0,
+    oracleId: event.oracle_id,
+    redeemedQuantity: 0,
+    settledRedeemedQuantity: 0,
+    strike: event.strike,
+    totalCost: 0,
+    totalPayout: 0,
+  };
+  aggregates.set(id, aggregate);
+  return aggregate;
+}
+
+function buildDirectionalAggregateResult(
+  aggregate: DirectionalAggregate,
+  oracle: PredictOracle | undefined,
+): CompletedRoundResult | null {
+  if (oracle?.status !== 'settled' || oracle.settlement_price == null) {
+    if (aggregate.settledRedeemedQuantity <= 0) return null;
+
+    return {
+      id: aggregate.id,
+      expiry: aggregate.expiry,
+      pnlRaw: aggregate.totalPayout - aggregate.totalCost,
+      won: aggregate.totalPayout > 0,
+    };
+  }
+
+  const won = aggregate.isUp
+    ? oracle.settlement_price > aggregate.strike
+    : oracle.settlement_price <= aggregate.strike;
+  const openQuantity = Math.max(0, aggregate.mintedQuantity - aggregate.redeemedQuantity);
+  const estimatedPayout = aggregate.totalPayout + (won ? openQuantity : 0);
+
+  return {
+    id: aggregate.id,
+    expiry: aggregate.expiry,
+    pnlRaw: estimatedPayout - aggregate.totalCost,
+    won,
+  };
+}
+
+function isUnresolvedDirectionalAggregate(
+  aggregate: DirectionalAggregate,
+  oracle: PredictOracle | undefined,
+) {
+  if (oracle?.status === 'settled' && oracle.settlement_price == null) return true;
+
+  return aggregate.expiry <= Date.now();
 }
 
 function buildDirectionalOracleResult(
@@ -241,7 +398,12 @@ function buildDirectionalStatusResult(
   };
 }
 
-function getDirectionalRoundId(row: PredictManagerPositionSummary) {
+function getDirectionalRoundId(row: {
+  expiry: number;
+  is_up: boolean;
+  oracle_id: string;
+  strike: number;
+}) {
   return ['directional', row.oracle_id, row.expiry, row.strike, row.is_up ? 'up' : 'down'].join(':');
 }
 

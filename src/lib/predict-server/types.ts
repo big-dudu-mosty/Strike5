@@ -160,6 +160,57 @@ export interface PredictManagerPositionSummary {
   last_activity_at: number;
 }
 
+export interface PredictPositionMinted {
+  event_digest: string;
+  digest: string;
+  sender: string;
+  checkpoint: number;
+  checkpoint_timestamp_ms: number;
+  tx_index: number;
+  event_index: number;
+  package: string;
+  predict_id: string;
+  manager_id: string;
+  trader: string;
+  quote_asset: string;
+  oracle_id: string;
+  expiry: number;
+  strike: number;
+  is_up: boolean;
+  quantity: number;
+  cost: number;
+  ask_price: number;
+}
+
+export interface PredictPositionRedeemed {
+  event_digest: string;
+  digest: string;
+  sender: string;
+  checkpoint: number;
+  checkpoint_timestamp_ms: number;
+  tx_index: number;
+  event_index: number;
+  package: string;
+  predict_id: string;
+  manager_id: string;
+  owner: string;
+  executor: string;
+  quote_asset: string;
+  oracle_id: string;
+  expiry: number;
+  strike: number;
+  is_up: boolean;
+  quantity: number;
+  payout: number;
+  bid_price: number;
+  is_settled: boolean;
+}
+
+export interface PredictManagerPositions {
+  minted: PredictPositionMinted[];
+  redeemed: PredictPositionRedeemed[];
+}
+
 export interface PredictRangeMinted {
   event_digest: string;
   digest: string;

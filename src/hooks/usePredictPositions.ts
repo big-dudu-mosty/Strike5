@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import {
+  fetchOracleState,
+  fetchPredictManagerPositions,
   fetchPredictManagerPositionSummary,
   fetchPredictManagerRanges,
   fetchPredictOracles,
@@ -8,6 +10,8 @@ import type { TradeQuote, TradeQuoteRequest } from '../lib/deepbook/quote';
 import type {
   PredictOracle,
   PredictPositionStatus,
+  PredictPositionMinted,
+  PredictPositionRedeemed,
   PredictRangeMinted,
   PredictRangeRedeemed,
 } from '../lib/predict-server/types';
@@ -70,36 +74,63 @@ export function usePredictPositions(managerId: string | null) {
     queryFn: async () => {
       if (!managerId) throw new Error('PredictManager id is required.');
 
-      const [directionalResult, rangesResult, oraclesResult] = await Promise.allSettled([
-        fetchPredictManagerPositionSummary(managerId),
-        fetchPredictManagerRanges(managerId),
-        fetchPredictOracles(),
-      ]);
+      const [directionalResult, rangesResult, oraclesResult, directionalEventsResult] =
+        await Promise.allSettled([
+          fetchPredictManagerPositionSummary(managerId),
+          fetchPredictManagerRanges(managerId),
+          fetchPredictOracles(),
+          fetchPredictManagerPositions(managerId),
+        ]);
       const warnings: PositionDataWarning[] = [];
 
-      if (directionalResult.status === 'rejected') warnings.push('directional');
+      if (
+        directionalResult.status === 'rejected' &&
+        directionalEventsResult.status === 'rejected'
+      ) {
+        warnings.push('directional');
+      }
       if (rangesResult.status === 'rejected') warnings.push('ranges');
       if (oraclesResult.status === 'rejected') warnings.push('oracles');
 
-      if (directionalResult.status === 'rejected' && rangesResult.status === 'rejected') {
+      if (
+        directionalResult.status === 'rejected' &&
+        directionalEventsResult.status === 'rejected' &&
+        rangesResult.status === 'rejected'
+      ) {
         throw new Error('Predict Server position endpoints unavailable.');
       }
 
       const directionalSummaries =
         directionalResult.status === 'fulfilled' ? directionalResult.value : [];
+      const directionalEvents =
+        directionalEventsResult.status === 'fulfilled'
+          ? directionalEventsResult.value
+          : { minted: [], redeemed: [] };
       const ranges =
         rangesResult.status === 'fulfilled' ? rangesResult.value : { minted: [], redeemed: [] };
       const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
-      const directionRows = directionalSummaries
+      const missingOracleWarning = await hydrateMissingReferencedOracles({
+        directionalEvents,
+        directionalSummaries,
+        oracleById,
+        ranges,
+      });
+
+      if (missingOracleWarning && !warnings.includes('oracles')) {
+        warnings.push('oracles');
+      }
+
+      const eventDirectionRows = aggregateDirectionalEventRows(
+        directionalEvents.minted,
+        directionalEvents.redeemed,
+        oracleById,
+      );
+      const eventDirectionIds = new Set(eventDirectionRows.map((row) => row.id));
+      const summaryDirectionRows = directionalSummaries
+        .filter((row) => !eventDirectionIds.has(getDirectionalPositionId(row)))
         .map<DirectionalPositionDisplayRow>((row) => ({
-          id: [
-            'directional',
-            row.oracle_id,
-            row.expiry,
-            row.strike,
-            row.is_up ? 'up' : 'down',
-          ].join(':'),
+          id: getDirectionalPositionId(row),
           kind: row.is_up ? 'above' : 'below',
           status: getDirectionalStatus(row, oracleById.get(row.oracle_id)),
           oracleId: row.oracle_id,
@@ -116,6 +147,7 @@ export function usePredictPositions(managerId: string | null) {
           unrealizedPnl: row.unrealized_pnl,
           lastActivityAt: row.last_activity_at,
         }));
+      const directionRows = [...eventDirectionRows, ...summaryDirectionRows];
       const rangeRows = aggregateRangeRows(ranges.minted, ranges.redeemed, oracleById);
       const indexedAllRows = [...directionRows, ...rangeRows].sort(comparePositionRows);
       const indexedRows = filterVisiblePositionRows(indexedAllRows);
@@ -137,6 +169,114 @@ export function usePredictPositions(managerId: string | null) {
     refetchInterval: managerId ? 5_000 : false,
     staleTime: 2_000,
   });
+}
+
+async function hydrateMissingReferencedOracles({
+  directionalEvents,
+  directionalSummaries,
+  oracleById,
+  ranges,
+}: {
+  directionalEvents: {
+    minted: PredictPositionMinted[];
+    redeemed: PredictPositionRedeemed[];
+  };
+  directionalSummaries: Array<{
+    expiry: number;
+    oracle_id: string;
+    status: PredictPositionStatus;
+  }>;
+  oracleById: Map<string, PredictOracle>;
+  ranges: {
+    minted: PredictRangeMinted[];
+    redeemed: PredictRangeRedeemed[];
+  };
+}) {
+  const missingOracleIds = getMissingSettlementOracleIds({
+    directionalEvents,
+    directionalSummaries,
+    oracleById,
+    ranges,
+  });
+  if (missingOracleIds.length === 0) return false;
+
+  const oracleStateResults = await Promise.allSettled(
+    missingOracleIds.map((oracleId) => fetchOracleState(oracleId)),
+  );
+  let hasWarning = false;
+
+  for (const result of oracleStateResults) {
+    if (result.status === 'fulfilled') {
+      oracleById.set(result.value.oracle.oracle_id, result.value.oracle);
+    } else {
+      hasWarning = true;
+    }
+  }
+
+  return hasWarning;
+}
+
+function getMissingSettlementOracleIds({
+  directionalEvents,
+  directionalSummaries,
+  oracleById,
+  ranges,
+}: {
+  directionalEvents: {
+    minted: PredictPositionMinted[];
+    redeemed: PredictPositionRedeemed[];
+  };
+  directionalSummaries: Array<{
+    expiry: number;
+    oracle_id: string;
+    status: PredictPositionStatus;
+  }>;
+  oracleById: Map<string, PredictOracle>;
+  ranges: {
+    minted: PredictRangeMinted[];
+    redeemed: PredictRangeRedeemed[];
+  };
+}) {
+  const now = Date.now();
+  const oracleIds = new Set<string>();
+
+  for (const event of [...directionalEvents.minted, ...directionalEvents.redeemed]) {
+    if (oracleById.has(event.oracle_id)) continue;
+    if (event.expiry <= now || ('is_settled' in event && event.is_settled)) {
+      oracleIds.add(event.oracle_id);
+    }
+  }
+
+  for (const row of directionalSummaries) {
+    if (oracleById.has(row.oracle_id)) continue;
+    if (needsSettlementOracle(row.expiry, row.status, now)) {
+      oracleIds.add(row.oracle_id);
+    }
+  }
+
+  for (const event of [...ranges.minted, ...ranges.redeemed]) {
+    if (oracleById.has(event.oracle_id)) continue;
+    if (event.expiry <= now) {
+      oracleIds.add(event.oracle_id);
+    }
+  }
+
+  return Array.from(oracleIds);
+}
+
+function needsSettlementOracle(expiry: number, status: string, now: number) {
+  const normalized = status.toLowerCase();
+  if (
+    normalized.includes('redeemable') ||
+    normalized.includes('lost') ||
+    normalized.includes('loss') ||
+    normalized.includes('redeemed') ||
+    normalized.includes('settled')
+  ) {
+    return false;
+  }
+
+  return expiry <= now || normalized.includes('awaiting') || normalized.includes('pending');
 }
 
 export function addLocalMintedPosition({
@@ -217,6 +357,142 @@ interface MutableRangeAggregate {
   totalCost: number;
   totalPayout: number;
   lastActivityAt: number;
+}
+
+interface MutableDirectionalAggregate {
+  askPrice: number | null;
+  eventCount: number;
+  expiry: number;
+  firstMintedAt: number;
+  id: string;
+  isUp: boolean;
+  lastActivityAt: number;
+  managerId: string;
+  mintedQuantity: number;
+  oracleId: string;
+  predictId: string;
+  quoteAsset: string;
+  redeemedQuantity: number;
+  settledRedeemedQuantity: number;
+  strike: number;
+  totalCost: number;
+  totalPayout: number;
+}
+
+function aggregateDirectionalEventRows(
+  minted: PredictPositionMinted[],
+  redeemed: PredictPositionRedeemed[],
+  oracleById: Map<string, PredictOracle>,
+) {
+  const aggregates = new Map<string, MutableDirectionalAggregate>();
+
+  for (const event of minted) {
+    const aggregate = getOrCreateDirectionalAggregate(aggregates, event);
+    aggregate.eventCount += 1;
+    aggregate.mintedQuantity += event.quantity;
+    aggregate.totalCost += event.cost;
+    aggregate.askPrice = event.ask_price;
+    aggregate.firstMintedAt = Math.min(aggregate.firstMintedAt, event.checkpoint_timestamp_ms);
+    aggregate.lastActivityAt = Math.max(aggregate.lastActivityAt, event.checkpoint_timestamp_ms);
+  }
+
+  for (const event of redeemed) {
+    const aggregate = getOrCreateDirectionalAggregate(aggregates, event);
+    aggregate.eventCount += 1;
+    aggregate.redeemedQuantity += event.quantity;
+    aggregate.totalPayout += event.payout;
+    if (event.is_settled) aggregate.settledRedeemedQuantity += event.quantity;
+    aggregate.lastActivityAt = Math.max(aggregate.lastActivityAt, event.checkpoint_timestamp_ms);
+  }
+
+  return Array.from(aggregates.values()).map<DirectionalPositionDisplayRow>((aggregate) => {
+    const oracle = oracleById.get(aggregate.oracleId);
+    const openQuantity = Math.max(0, aggregate.mintedQuantity - aggregate.redeemedQuantity);
+    const closedCostBasis =
+      aggregate.mintedQuantity > 0
+        ? (aggregate.totalCost * aggregate.redeemedQuantity) / aggregate.mintedQuantity
+        : 0;
+    const status = getDirectionalStatus(
+      {
+        expiry: aggregate.expiry,
+        is_up: aggregate.isUp,
+        open_quantity: openQuantity,
+        status: openQuantity <= 0 ? 'redeemed' : 'active',
+        strike: aggregate.strike,
+      },
+      oracle,
+    );
+    const markValue = status === 'redeemable'
+      ? openQuantity
+      : status === 'lost'
+        ? 0
+        : null;
+
+    return {
+      id: aggregate.id,
+      kind: aggregate.isUp ? 'above' : 'below',
+      status,
+      oracleId: aggregate.oracleId,
+      expiry: aggregate.expiry,
+      strike: aggregate.strike,
+      mintedQuantity: aggregate.mintedQuantity,
+      redeemedQuantity: aggregate.redeemedQuantity,
+      openQuantity,
+      costBasis: aggregate.totalCost - closedCostBasis,
+      settlementPrice: oracle?.settlement_price ?? null,
+      totalPayout: aggregate.totalPayout,
+      realizedPnl: aggregate.totalPayout - closedCostBasis,
+      markValue,
+      unrealizedPnl: markValue == null ? 0 : markValue - (aggregate.totalCost - closedCostBasis),
+      lastActivityAt: aggregate.lastActivityAt,
+    };
+  });
+}
+
+function getOrCreateDirectionalAggregate(
+  aggregates: Map<string, MutableDirectionalAggregate>,
+  event: {
+    ask_price?: number;
+    checkpoint_timestamp_ms: number;
+    expiry: number;
+    is_up: boolean;
+    manager_id: string;
+    oracle_id: string;
+    predict_id: string;
+    quote_asset: string;
+    strike: number;
+  },
+) {
+  const id = getDirectionalPositionId({
+    expiry: event.expiry,
+    is_up: event.is_up,
+    oracle_id: event.oracle_id,
+    strike: event.strike,
+  });
+  const existing = aggregates.get(id);
+  if (existing) return existing;
+
+  const aggregate = {
+    askPrice: event.ask_price ?? null,
+    eventCount: 0,
+    expiry: event.expiry,
+    firstMintedAt: event.checkpoint_timestamp_ms,
+    id,
+    isUp: event.is_up,
+    lastActivityAt: event.checkpoint_timestamp_ms,
+    managerId: event.manager_id,
+    mintedQuantity: 0,
+    oracleId: event.oracle_id,
+    predictId: event.predict_id,
+    quoteAsset: event.quote_asset,
+    redeemedQuantity: 0,
+    settledRedeemedQuantity: 0,
+    strike: event.strike,
+    totalCost: 0,
+    totalPayout: 0,
+  };
+  aggregates.set(id, aggregate);
+  return aggregate;
 }
 
 function aggregateRangeRows(
@@ -352,6 +628,21 @@ function getDirectionalStatus(
   if (Date.now() >= row.expiry) return 'awaiting_settlement';
 
   return row.status;
+}
+
+function getDirectionalPositionId(row: {
+  expiry: number;
+  is_up: boolean;
+  oracle_id: string;
+  strike: number;
+}) {
+  return [
+    'directional',
+    row.oracle_id,
+    row.expiry,
+    row.strike,
+    row.is_up ? 'up' : 'down',
+  ].join(':');
 }
 
 function comparePositionRows(a: PredictPositionDisplayRow, b: PredictPositionDisplayRow) {

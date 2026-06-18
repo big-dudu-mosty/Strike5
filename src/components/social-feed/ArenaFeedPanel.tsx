@@ -32,11 +32,16 @@ interface FeedPost {
 
 interface FeedPositionSnapshot {
   expiry: number;
+  higherStrike?: number;
   instrument: string;
   kind: PredictPositionDisplayRow['kind'];
+  lowerStrike?: number;
   openQuantity: number;
+  oracleId?: string;
   pnl: number | null;
+  quantity?: number;
   status: string;
+  strike?: number;
 }
 
 export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
@@ -48,9 +53,10 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const address = accountOverview.address;
   const managerId = accountOverview.managerId;
+  const allRows = positions.data?.allRows ?? positions.data?.rows ?? [];
   const latestPosition = useMemo(() => {
-    return getLatestPosition(positions.data?.rows ?? []);
-  }, [positions.data?.rows]);
+    return getLatestPosition(allRows);
+  }, [allRows]);
   const visiblePosts = posts.slice(0, MAX_VISIBLE_POSTS);
   const canPublish = Boolean(address && managerId && draft.trim().length > 0);
 
@@ -179,6 +185,7 @@ export function ArenaFeedPanel({ accountOverview }: ArenaFeedPanelProps) {
                 onCopy={() => void copyPost(post)}
                 onDelete={() => deletePost(post.id)}
                 post={post}
+                positionRow={post.position ? findMatchingSnapshotPosition(post.position, allRows) : null}
               />
             ))
           ) : (
@@ -225,14 +232,17 @@ function FeedPostRow({
   onCopy,
   onDelete,
   post,
+  positionRow,
 }: {
   canDelete: boolean;
   isCopied: boolean;
   onCopy: () => void;
   onDelete: () => void;
   post: FeedPost;
+  positionRow: PredictPositionDisplayRow | null;
 }) {
   const { t } = useI18n();
+  const position = positionRow ? buildPositionSnapshot(positionRow) : post.position;
 
   return (
     <article className="soft-panel rounded-2xl p-3">
@@ -266,17 +276,19 @@ function FeedPostRow({
         </div>
       </div>
 
-      {post.position ? (
+      {position ? (
         <div className="mt-3 rounded-xl border border-ink-700/60 p-3 text-xs text-cream-500">
           <div className="flex items-center justify-between gap-3">
             <span className="font-medium text-moss-200">{t('feed.verifiedPosition')}</span>
-            <span>{getStatusLabel(post.position.status, t)}</span>
+            <span>{getStatusLabel(position.status, t)}</span>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <span className="truncate">{post.position.instrument}</span>
-            <span className="text-right">{formatDUsdc(scaleQuoteAsset(post.position.openQuantity))}</span>
-            <span>{formatTime(post.position.expiry)}</span>
-            <span className="text-right">{formatDUsdc(scaleQuoteAsset(post.position.pnl))}</span>
+            <span className="truncate">{position.instrument}</span>
+            <span className="text-right">
+              {formatDUsdc(scaleQuoteAsset(position.quantity ?? position.openQuantity))}
+            </span>
+            <span>{formatTime(position.expiry)}</span>
+            <span className="text-right">{formatDUsdc(scaleQuoteAsset(position.pnl))}</span>
           </div>
         </div>
       ) : null}
@@ -297,15 +309,55 @@ function getLatestPosition(rows: PredictPositionDisplayRow[]) {
 
 function buildPositionSnapshot(row: PredictPositionDisplayRow): FeedPositionSnapshot {
   const markOrPayout = getMarkOrPayout(row);
-
-  return {
+  const base = {
     expiry: row.expiry,
     instrument: formatInstrument(row),
     kind: row.kind,
     openQuantity: row.openQuantity,
+    oracleId: row.oracleId,
     pnl: getPositionPnl(row, markOrPayout),
+    quantity: row.mintedQuantity,
     status: row.status,
   };
+
+  if (row.kind === 'range') {
+    return {
+      ...base,
+      higherStrike: row.higherStrike,
+      lowerStrike: row.lowerStrike,
+    };
+  }
+
+  return {
+    ...base,
+    strike: row.strike,
+  };
+}
+
+function findMatchingSnapshotPosition(
+  snapshot: FeedPositionSnapshot,
+  rows: PredictPositionDisplayRow[],
+) {
+  return rows.find((row) => snapshotMatchesRow(snapshot, row)) ?? null;
+}
+
+function snapshotMatchesRow(snapshot: FeedPositionSnapshot, row: PredictPositionDisplayRow) {
+  if (row.kind !== snapshot.kind) return false;
+  if (row.expiry !== snapshot.expiry) return false;
+
+  if (snapshot.oracleId && row.oracleId !== snapshot.oracleId) return false;
+
+  if (row.kind === 'range') {
+    if (snapshot.lowerStrike != null || snapshot.higherStrike != null) {
+      return row.lowerStrike === snapshot.lowerStrike && row.higherStrike === snapshot.higherStrike;
+    }
+
+    return formatInstrument(row) === snapshot.instrument;
+  }
+
+  if (snapshot.strike != null) return row.strike === snapshot.strike;
+
+  return formatInstrument(row) === snapshot.instrument;
 }
 
 function formatInstrument(row: PredictPositionDisplayRow) {
@@ -320,9 +372,9 @@ function formatInstrument(row: PredictPositionDisplayRow) {
 }
 
 function getMarkOrPayout(row: PredictPositionDisplayRow) {
-  if (row.kind !== 'range') return row.markValue ?? row.totalPayout;
   if (row.status === 'redeemable') return row.openQuantity;
   if (row.status === 'lost') return 0;
+  if (row.kind !== 'range') return row.markValue ?? row.totalPayout;
   return null;
 }
 

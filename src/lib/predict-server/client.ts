@@ -2,6 +2,7 @@ import { PREDICT_CONFIG } from '../../config/predict';
 import type {
   PredictMarketOverview,
   PredictManagerCreated,
+  PredictManagerPositions,
   PredictManagerPositionSummary,
   PredictManagerRanges,
   PredictManagerSummary,
@@ -52,6 +53,10 @@ export function fetchPredictManagerPositionSummary(managerId: string) {
   return fetchJson<PredictManagerPositionSummary[]>(
     `/managers/${managerId}/positions/summary`,
   );
+}
+
+export function fetchPredictManagerPositions(managerId: string) {
+  return fetchJson<PredictManagerPositions>(`/managers/${managerId}/positions`);
 }
 
 export function fetchPredictManagerRanges(managerId: string) {
