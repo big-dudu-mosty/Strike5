@@ -29,6 +29,8 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
   const address = accountOverview.address;
   const optIn = address ? optIns[address] ?? null : null;
   const stats = statsQuery.data ?? null;
+  const isStatsSyncing = isLeaderboardStatsSyncing(stats);
+  const shouldShowUnknownStats = Boolean(accountOverview.managerId) && (!stats || isStatsSyncing);
   const boardRows = useMemo(() => {
     if (!address || !optIn || !stats?.eligible) return [];
 
@@ -117,10 +119,22 @@ export function LeaderboardPanel({ accountOverview }: LeaderboardPanelProps) {
       )}
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <StatTile label={t('leaderboard.winRate')} value={formatWinRate(stats)} />
-        <StatTile label={t('leaderboard.completed')} value={stats ? String(stats.completedRounds) : '0'} />
-        <StatTile label={t('leaderboard.streak')} value={stats ? String(stats.currentStreak) : '0'} />
-        <StatTile label={t('leaderboard.pnl')} value={formatPnl(stats)} />
+        <StatTile
+          label={t('leaderboard.winRate')}
+          value={shouldShowUnknownStats ? t('leaderboard.syncing') : formatWinRate(stats)}
+        />
+        <StatTile
+          label={t('leaderboard.completed')}
+          value={shouldShowUnknownStats ? t('leaderboard.syncing') : stats ? String(stats.completedRounds) : '0'}
+        />
+        <StatTile
+          label={t('leaderboard.streak')}
+          value={shouldShowUnknownStats ? t('leaderboard.syncing') : stats ? String(stats.currentStreak) : '0'}
+        />
+        <StatTile
+          label={t('leaderboard.pnl')}
+          value={shouldShowUnknownStats ? t('leaderboard.syncing') : formatPnl(stats)}
+        />
       </div>
 
       {statsQuery.isLoading ? (
@@ -185,6 +199,10 @@ function formatWinRate(stats: LeaderboardStats | null) {
 function formatPnl(stats: LeaderboardStats | null) {
   if (!stats) return formatDUsdcRaw(0n);
   return formatDUsdcRaw(BigInt(Math.round(stats.totalPnlRaw)));
+}
+
+function isLeaderboardStatsSyncing(stats: LeaderboardStats | null) {
+  return Boolean(stats?.isPartial && stats.completedRounds === 0);
 }
 
 function formatAlias(address: string) {

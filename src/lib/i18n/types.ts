@@ -228,6 +228,7 @@ export type MessageKey =
   | 'leaderboard.pnl'
   | 'leaderboard.loading'
   | 'leaderboard.partial'
+  | 'leaderboard.syncing'
   | 'leaderboard.error'
   | 'leaderboard.top10'
   | 'leaderboard.minRounds'

@@ -58,7 +58,7 @@ export function useLeaderboardStats(managerId: string | null) {
       const oracles = oraclesResult.status === 'fulfilled' ? oraclesResult.value : [];
       const oracleById = new Map(oracles.map((oracle) => [oracle.oracle_id, oracle]));
       const results = [
-        ...buildDirectionalResults(directionalRows, oracleById),
+        ...buildDirectionalResults(directionalRows),
         ...buildRangeResults(ranges.minted, ranges.redeemed, oracleById),
       ].sort((a, b) => a.expiry - b.expiry || a.id.localeCompare(b.id));
 
@@ -89,12 +89,8 @@ export { MIN_COMPLETED_ROUNDS };
 
 function buildDirectionalResults(
   rows: PredictManagerPositionSummary[],
-  oracleById: Map<string, PredictOracle>,
 ) {
   return rows.flatMap<CompletedRoundResult>((row) => {
-    const oracle = oracleById.get(row.oracle_id);
-    if (oracle?.status !== 'settled') return [];
-
     const status = normalizeStatus(row.status);
     if (!['redeemable', 'lost', 'redeemed'].includes(status)) return [];
 
