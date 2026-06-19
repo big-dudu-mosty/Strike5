@@ -70,7 +70,7 @@ flowchart TB
 - **Streak Combo:** 3-leg arena streak scoring built from real opened positions.
 - **Opt-In Leaderboard:** users are hidden by default; public stats only show after opt-in.
 - **Arena Feed:** users can publish market views and attach verified position snapshots.
-- **Sealed Calls:** local commitment-based private calls for the MVP, with a path toward Sui Seal-backed privacy.
+- **Sealed Calls:** commitment-based private calls with a path toward Sui Seal-backed privacy.
 
 ## DeepBook Predict Integration
 
@@ -115,18 +115,18 @@ pnpm lint
 pnpm build
 ```
 
-## Demo Path
+## User Flow
 
 1. Connect a Sui testnet wallet.
 2. Confirm dUSDC and PredictManager state.
 3. Open a BTC Above, Below, or Range position.
 4. Watch the position update from real Predict data.
 5. Cash out early or wait for settlement.
-6. Show the arena layer: streak, leaderboard, and feed.
+6. Continue into the arena layer: streak, leaderboard, and feed.
 
-## Project Status
+## Product Status
 
-Strike5 is a hackathon MVP for the DeepBook Predict track. The core trading flow is real on Sui testnet. Arena mechanics such as streaks, feed, leaderboard visibility, and sealed calls are product-layer features built around the underlying Predict position lifecycle.
+Strike5 is live on Sui testnet as a product layer for DeepBook Predict. The core trading flow uses real Predict positions, real wallet signing, and real oracle settlement data. Arena mechanics such as streaks, feed, leaderboard visibility, and sealed calls are built around the underlying Predict position lifecycle.
 
 ## License
 
